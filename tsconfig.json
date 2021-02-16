@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "lib": [
+      "dom",
+      "es2019"
+    ],
+    "module": "commonjs",
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2018"
+  },
+  "exclude": [
+    "node_modules",
+    "tests/*.test.ts"
+  ]
+}
