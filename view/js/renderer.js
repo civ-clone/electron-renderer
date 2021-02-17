@@ -1,8 +1,14 @@
 "use strict";
-// This file is required by the index.html file and will
-// be executed in the renderer process for that window.
-// No Node.js APIs are available in this process because
-// `nodeIntegration` is turned off. Use `preload.js` to
-// selectively enable features needed in the rendering
-// process.
+const notificationArea = document.getElementById('notification'), dataArea = document.getElementById('data'), startButton = document.querySelector('button');
+transport.receive('notification', (data) => {
+    notificationArea.innerHTML = data;
+});
+transport.receive('gameData', (data) => {
+    dataArea.innerHTML = JSON.stringify(data);
+});
+document.addEventListener('DOMContentLoaded', () => {
+    startButton.addEventListener('click', () => {
+        transport.send('start');
+    });
+});
 //# sourceMappingURL=renderer.js.map

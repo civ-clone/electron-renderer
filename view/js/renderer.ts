@@ -1,6 +1,22 @@
-// This file is required by the index.html file and will
-// be executed in the renderer process for that window.
-// No Node.js APIs are available in this process because
-// `nodeIntegration` is turned off. Use `preload.js` to
-// selectively enable features needed in the rendering
-// process.
+declare var transport: {
+  receive(channel: string, handler: (...args: any[]) => void): void;
+  send(channel: string, payload?: any): void;
+};
+
+const notificationArea = document.getElementById('notification') as HTMLElement,
+  dataArea = document.getElementById('data') as HTMLElement,
+  startButton = document.querySelector('button') as HTMLElement;
+
+transport.receive('notification', (data): void => {
+  notificationArea.innerHTML = data;
+});
+
+transport.receive('gameData', (data): void => {
+  dataArea.innerHTML = JSON.stringify(data);
+});
+
+document.addEventListener('DOMContentLoaded', (): void => {
+  startButton.addEventListener('click', (): void => {
+    transport.send('start');
+  });
+});

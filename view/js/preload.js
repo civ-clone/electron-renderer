@@ -1,13 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
-console.log('preload loaded');
-electron_1.ipcRenderer.on('logger', (event, data) => {
-    console.log('logger');
-    document.getElementById('data').innerHTML += JSON.stringify(data);
-});
-electron_1.ipcRenderer.on('notification', (event, data) => {
-    console.log('notification');
-    document.getElementById('notification').innerHTML = data;
+electron_1.contextBridge.exposeInMainWorld('transport', {
+    receive(channel, handler) {
+        electron_1.ipcRenderer.on(channel, (event, ...args) => {
+            handler(...args);
+        });
+    },
+    send(channel, payload) {
+        electron_1.ipcRenderer.invoke(channel, payload);
+    },
 });
 //# sourceMappingURL=preload.js.map

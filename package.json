@@ -49,6 +49,8 @@
     "@civ-clone/core-engine": "^0.1.0",
     "@civ-clone/core-player": "^0.1.0",
     "@civ-clone/simple-ai-client": "github:civ-clone/simple-ai-client",
+    "@civ-clone/simple-world-generator": "github:civ-clone/simple-world-generator",
+    "@civ-clone/simple-world-path": "github:civ-clone/simple-world-path",
     "electron": "^10.1.3"
   }
 }
