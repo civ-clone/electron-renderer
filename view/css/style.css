@@ -1,3 +1,9 @@
+body {
+    background: #123;
+    color: #edc;
+    font-family: sans-serif;
+}
+
 #notification {
     background: rgba(0, 0, 0, .2);
     border-top-left-radius: .5rem;
@@ -12,5 +18,50 @@
 }
 
 #data {
+    display: none;
     white-space: pre-wrap;
+}
+
+#game {
+    display: none;
+}
+
+#game.active {
+    display: block;
+}
+
+.notificationWindow {
+    background: #edc;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    color: #123;
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, .6);
+    left: calc(50% - 250px);
+    max-height: 60%;
+    position: fixed;
+    top: 20%;
+    width: 500px;
+}
+
+.notificationWindow header {
+    background: #38e;
+    color: #edc;
+    font-weight: bold;
+    padding: .5em;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, .6);
+}
+
+.notificationWindow header h3 {
+    margin: 0;
+}
+
+.notificationWindow p {
+    overflow-y: scroll;
+    margin: 0;
+    padding: 1em .5em;
+    max-height: 227px;
+}
+
+.notificationWindow button {
+    margin: 1em .5em;
 }

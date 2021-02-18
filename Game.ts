@@ -92,8 +92,11 @@ export class Game implements IGame {
   }
 
   private configure(): void {
-    engine.setOption('debug', true);
-    this.sendData('notification', 'debug enabled');
+    // engine.setOption('debug', true);
+    // this.sendData('notification', 'debug enabled');
+
+    engine.setOption('height', 60);
+    engine.setOption('width', 80);
 
     // TODO: Determine number of players via UI
     engine.setOption('players', 5);
@@ -124,7 +127,7 @@ export class Game implements IGame {
                         channel: string,
                         handler: (...args: any[]) => void
                       ): void =>
-                        ipcMain.handleOnce(
+                        ipcMain.handle(
                           channel,
                           (event: IpcMainInvokeEvent, ...args: any[]): void =>
                             handler(...args)

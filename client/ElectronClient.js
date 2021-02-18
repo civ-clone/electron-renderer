@@ -12,33 +12,167 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     }
     return privateMap.get(receiver);
 };
-var _sender, _receiver;
+var _eventEmitter, _sender, _receiver;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ElectronClient = void 0;
 const Client_1 = require("@civ-clone/core-civ-client/Client");
+const PlayerActions_1 = require("@civ-clone/civ1-unit/PlayerActions");
+const PlayerActions_2 = require("@civ-clone/core-city-build/PlayerActions");
+const MandatoryPlayerAction_1 = require("@civ-clone/core-player/MandatoryPlayerAction");
 const TransferObject_1 = require("./TransferObject");
+const EventEmitter = require("events");
+const PlayerRegistry_1 = require("@civ-clone/core-player/PlayerRegistry");
+const Turn_1 = require("@civ-clone/core-turn-based-game/Turn");
+const Year_1 = require("@civ-clone/core-game-year/Year");
+const ChooseResearch_1 = require("@civ-clone/civ1-science/PlayerActions/ChooseResearch");
 class ElectronClient extends Client_1.Client {
     constructor(player, sender, receiver) {
         super(player);
+        _eventEmitter.set(this, void 0);
         _sender.set(this, void 0);
         _receiver.set(this, void 0);
+        __classPrivateFieldSet(this, _eventEmitter, new EventEmitter());
         __classPrivateFieldSet(this, _sender, sender);
         __classPrivateFieldSet(this, _receiver, receiver);
+        __classPrivateFieldGet(this, _receiver).call(this, 'action', (...args) => {
+            __classPrivateFieldGet(this, _eventEmitter).emit('action', ...args);
+        });
+    }
+    handleAction(...args) {
+        const [action] = args, player = this.player(), actions = player.actions(), mandatoryActions = actions.filter((action) => action instanceof MandatoryPlayerAction_1.default);
+        // {
+        //   name: 'ActiveUnit',
+        //   data: {
+        //     id: '...',
+        //     action: {
+        //       name: 'FoundCity',
+        //       target: {
+        //         id: '...'
+        //       }
+        //     }
+        //   }
+        // }
+        // {
+        //   name: 'CityBuild',
+        //   data: {
+        //     id: '...',
+        //     target: {
+        //       name: 'Spearman'
+        //     }
+        //   }
+        // }
+        const { name, id } = action;
+        if (name === 'EndOfTurn') {
+            return mandatoryActions.length === 0;
+        }
+        if (!name) {
+            this.sendNotification('action not specified');
+            return false;
+        }
+        const [playerAction] = actions.filter((action) => action.constructor.name === name &&
+            id === (action.value() ? action.value().id() : undefined));
+        if (!playerAction) {
+            this.sendNotification(`action not found: ${JSON.stringify(action)} (${actions.map((a) => JSON.stringify(a.toPlainObject()))})`);
+            return false;
+        }
+        // TODO: other actions
+        // TODO: make this better...
+        if (playerAction instanceof PlayerActions_1.ActiveUnit) {
+            const { unitAction, target } = action, unit = playerAction.value(), allActions = [
+                ...unit.actions(),
+                ...Object.values(unit.actionsForNeighbours()),
+            ].flat(), actions = allActions.filter((action) => action.constructor.name === unitAction);
+            while (actions.length !== 1) {
+                console.log(action);
+                console.log(actions.map((a) => [a.constructor.name, a.to().id()]));
+                if (actions.length === 0) {
+                    this.sendNotification(`action not found: ${unitAction}`);
+                    return false;
+                }
+                actions.splice(0, actions.length);
+                actions.push(...actions.filter((action) => action.to().id() === target));
+                if (actions.length > 1) {
+                    if (!target) {
+                        this.sendNotification(`too many actions found: ${unitAction} (${actions.length})`);
+                        return false;
+                    }
+                }
+            }
+            const [actionToPerform] = actions;
+            actionToPerform.perform();
+        }
+        if (playerAction instanceof PlayerActions_2.CityBuild) {
+            const cityBuild = playerAction.value(), { chosen } = action;
+            if (!chosen) {
+                this.sendNotification(`no build item specified`);
+                return false;
+            }
+            const [BuildItem] = cityBuild
+                .available()
+                .filter((BuildItem) => BuildItem.name === chosen);
+            if (!BuildItem) {
+                this.sendNotification(`build item not available: ${chosen}`);
+                return false;
+            }
+            cityBuild.build(BuildItem);
+        }
+        if (playerAction instanceof ChooseResearch_1.default) {
+            const playerResearch = playerAction.value(), { chosen } = action;
+            if (!chosen) {
+                this.sendNotification(`no build item specified`);
+                return false;
+            }
+            const [ChosenAdvance] = playerResearch
+                .available()
+                .filter((AdvanceType) => AdvanceType.name === chosen);
+            if (!ChosenAdvance) {
+                this.sendNotification(`build item not available: ${chosen}`);
+                return false;
+            }
+            playerResearch.research(ChosenAdvance);
+        }
+        return !player.mandatoryActions().length;
     }
     sendGameData() {
-        __classPrivateFieldGet(this, _sender).call(this, 'gameData', new TransferObject_1.default(this.player()).toPlainObject());
+        const enemyPlayers = PlayerRegistry_1.instance
+            .entries()
+            .filter((player) => player !== this.player());
+        const dataObject = {
+            player: this.player(),
+            players: enemyPlayers,
+            turn: Turn_1.instance,
+            year: Year_1.instance,
+        };
+        // this.#sender('gameData', new TransferObject(this.player()).toPlainObject());
+        __classPrivateFieldGet(this, _sender).call(this, 'gameData', new TransferObject_1.default(dataObject).toPlainObject());
+    }
+    sendNotification(message) {
+        __classPrivateFieldGet(this, _sender).call(this, 'gameNotification', {
+            message: message,
+        });
     }
     takeTurn() {
         return new Promise((resolve, reject) => {
-            this.sendGameData();
-            __classPrivateFieldGet(this, _receiver).call(this, 'move', (...args) => {
-                console.log(...args);
+            setTimeout(() => this.sendGameData(), 200);
+            // this.sendGameData();
+            const listener = (...args) => {
                 this.sendGameData();
-            });
+                try {
+                    if (this.handleAction(...args)) {
+                        __classPrivateFieldGet(this, _eventEmitter).off('action', listener);
+                        resolve();
+                    }
+                    this.sendGameData();
+                }
+                catch (e) {
+                    reject(e);
+                }
+            };
+            __classPrivateFieldGet(this, _eventEmitter).on('action', listener);
         });
     }
 }
 exports.ElectronClient = ElectronClient;
-_sender = new WeakMap(), _receiver = new WeakMap();
+_eventEmitter = new WeakMap(), _sender = new WeakMap(), _receiver = new WeakMap();
 exports.default = ElectronClient;
 //# sourceMappingURL=ElectronClient.js.map

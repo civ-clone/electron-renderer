@@ -64,8 +64,10 @@ class Game {
         Engine_1.instance.on('player:turn-start', (player) => this.sendData('notification', `player turn-start: ${player.civilization().constructor.name}`));
     }
     configure() {
-        Engine_1.instance.setOption('debug', true);
-        this.sendData('notification', 'debug enabled');
+        // engine.setOption('debug', true);
+        // this.sendData('notification', 'debug enabled');
+        Engine_1.instance.setOption('height', 60);
+        Engine_1.instance.setOption('width', 80);
         // TODO: Determine number of players via UI
         Engine_1.instance.setOption('players', 5);
         this.sendData('notification', '5 players');
@@ -83,7 +85,7 @@ class Game {
                     const player = new Player_1.default(), 
                     // TODO: This is pretty basic.
                     client = i === 0
-                        ? new ElectronClient_1.default(player, (channel, payload) => this.sendData(channel, payload), (channel, handler) => electron_1.ipcMain.handleOnce(channel, (event, ...args) => handler(...args)))
+                        ? new ElectronClient_1.default(player, (channel, payload) => this.sendData(channel, payload), (channel, handler) => electron_1.ipcMain.handle(channel, (event, ...args) => handler(...args)))
                         : new SimpleAIClient_1.default(player);
                     PlayerRegistry_1.instance.register(player);
                     ClientRegistry_1.instance.register(client);

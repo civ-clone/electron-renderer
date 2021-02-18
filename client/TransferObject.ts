@@ -2,18 +2,27 @@ import DataObject from '@civ-clone/core-data-object/DataObject';
 import Player from '@civ-clone/core-player/Player';
 
 export class TransferObject extends DataObject {
-  #player: Player;
+  // #player: Player;
+  //
+  // constructor(player: Player) {
+  //   super();
+  //
+  //   this.#player = player;
+  //
+  //   this.addKey('player');
+  // }
+  //
+  // player() {
+  //   return this.#player;
+  // }
 
-  constructor(player: Player) {
+  constructor(data: Object) {
     super();
 
-    this.#player = player;
+    Object.assign(this, data);
 
-    this.addKey('player');
-  }
-
-  player() {
-    return this.#player;
+    // @ts-ignore
+    this.addKey(...Object.keys(data));
   }
 }
 

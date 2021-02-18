@@ -1,8 +1,23 @@
 import { Client, IClient } from '@civ-clone/core-civ-client/Client';
+import { ActiveUnit } from '@civ-clone/civ1-unit/PlayerActions';
+import { CityBuild } from '@civ-clone/core-city-build/PlayerActions';
+import CityImprovement from '@civ-clone/core-city-improvement/CityImprovement';
+import MandatoryPlayerAction from '@civ-clone/core-player/MandatoryPlayerAction';
 import Player from '@civ-clone/core-player/Player';
+import PlayerAction from '@civ-clone/core-player/PlayerAction';
 import TransferObject from './TransferObject';
+import Unit from '@civ-clone/core-unit/Unit';
+import UnitAction from '@civ-clone/core-unit/Action';
+import * as EventEmitter from 'events';
+import { instance as playerRegistryInstance } from '@civ-clone/core-player/PlayerRegistry';
+import { instance as turnInstance } from '@civ-clone/core-turn-based-game/Turn';
+import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
+import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch';
+import Advance from '@civ-clone/core-science/Advance';
+import PlayerResearch from '@civ-clone/core-science/PlayerResearch';
 
 export class ElectronClient extends Client implements IClient {
+  #eventEmitter: EventEmitter;
   #sender: (channel: string, payload: any) => void;
   #receiver: (channel: string, handler: (...args: any[]) => void) => void;
 
@@ -13,23 +28,218 @@ export class ElectronClient extends Client implements IClient {
   ) {
     super(player);
 
+    this.#eventEmitter = new EventEmitter();
     this.#sender = sender;
     this.#receiver = receiver;
+
+    this.#receiver('action', (...args): void => {
+      this.#eventEmitter.emit('action', ...args);
+    });
+  }
+
+  handleAction(...args: any[]): boolean {
+    const [action] = args,
+      player = this.player(),
+      actions = player.actions(),
+      mandatoryActions = actions.filter(
+        (action: PlayerAction): boolean =>
+          action instanceof MandatoryPlayerAction
+      );
+
+    // {
+    //   name: 'ActiveUnit',
+    //   data: {
+    //     id: '...',
+    //     action: {
+    //       name: 'FoundCity',
+    //       target: {
+    //         id: '...'
+    //       }
+    //     }
+    //   }
+    // }
+    // {
+    //   name: 'CityBuild',
+    //   data: {
+    //     id: '...',
+    //     target: {
+    //       name: 'Spearman'
+    //     }
+    //   }
+    // }
+
+    const { name, id } = action;
+
+    if (name === 'EndOfTurn') {
+      return mandatoryActions.length === 0;
+    }
+
+    if (!name) {
+      this.sendNotification('action not specified');
+
+      return false;
+    }
+
+    const [playerAction] = actions.filter(
+      (action: PlayerAction): boolean =>
+        action.constructor.name === name &&
+        id === (action.value() ? action.value().id() : undefined)
+    );
+
+    if (!playerAction) {
+      this.sendNotification(
+        `action not found: ${JSON.stringify(action)} (${actions.map((a) =>
+          JSON.stringify(a.toPlainObject())
+        )})`
+      );
+
+      return false;
+    }
+
+    // TODO: other actions
+    // TODO: make this better...
+    if (playerAction instanceof ActiveUnit) {
+      const { unitAction, target } = action,
+        unit: Unit = playerAction.value(),
+        allActions = [
+          ...unit.actions(),
+          ...Object.values(unit.actionsForNeighbours()),
+        ].flat(),
+        actions = allActions.filter(
+          (action: UnitAction): boolean =>
+            action.constructor.name === unitAction
+        );
+
+      while (actions.length !== 1) {
+        console.log(action);
+        console.log(actions.map((a) => [a.constructor.name, a.to().id()]));
+        if (actions.length === 0) {
+          this.sendNotification(`action not found: ${unitAction}`);
+
+          return false;
+        }
+
+        actions.splice(0, actions.length);
+
+        actions.push(
+          ...actions.filter(
+            (action: UnitAction): boolean => action.to().id() === target
+          )
+        );
+
+        if (actions.length > 1) {
+          if (!target) {
+            this.sendNotification(
+              `too many actions found: ${unitAction} (${actions.length})`
+            );
+
+            return false;
+          }
+        }
+      }
+
+      const [actionToPerform] = actions;
+
+      actionToPerform.perform();
+    }
+
+    if (playerAction instanceof CityBuild) {
+      const cityBuild = playerAction.value(),
+        { chosen } = action;
+
+      if (!chosen) {
+        this.sendNotification(`no build item specified`);
+
+        return false;
+      }
+
+      const [BuildItem] = cityBuild
+        .available()
+        .filter(
+          (BuildItem: typeof Unit | typeof CityImprovement) =>
+            BuildItem.name === chosen
+        );
+
+      if (!BuildItem) {
+        this.sendNotification(`build item not available: ${chosen}`);
+
+        return false;
+      }
+
+      cityBuild.build(BuildItem);
+    }
+
+    if (playerAction instanceof ChooseResearch) {
+      const playerResearch = playerAction.value() as PlayerResearch,
+        { chosen } = action;
+
+      if (!chosen) {
+        this.sendNotification(`no build item specified`);
+
+        return false;
+      }
+
+      const [ChosenAdvance] = playerResearch
+        .available()
+        .filter((AdvanceType: typeof Advance) => AdvanceType.name === chosen);
+
+      if (!ChosenAdvance) {
+        this.sendNotification(`build item not available: ${chosen}`);
+
+        return false;
+      }
+
+      playerResearch.research(ChosenAdvance);
+    }
+
+    return !player.mandatoryActions().length;
   }
 
   private sendGameData(): void {
-    this.#sender('gameData', new TransferObject(this.player()).toPlainObject());
+    const enemyPlayers = playerRegistryInstance
+      .entries()
+      .filter((player) => player !== this.player());
+
+    const dataObject = {
+      player: this.player(),
+      players: enemyPlayers,
+      turn: turnInstance,
+      year: yearInstance,
+    };
+
+    // this.#sender('gameData', new TransferObject(this.player()).toPlainObject());
+    this.#sender('gameData', new TransferObject(dataObject).toPlainObject());
+  }
+
+  private sendNotification(message: string): void {
+    this.#sender('gameNotification', {
+      message: message,
+    });
   }
 
   takeTurn(): Promise<void> {
     return new Promise<void>((resolve, reject): void => {
-      this.sendGameData();
+      setTimeout(() => this.sendGameData(), 200);
 
-      this.#receiver('move', (...args): void => {
-        console.log(...args);
+      // this.sendGameData();
 
+      const listener = (...args: any[]): void => {
         this.sendGameData();
-      });
+
+        try {
+          if (this.handleAction(...args)) {
+            this.#eventEmitter.off('action', listener);
+
+            resolve();
+          }
+
+          this.sendGameData();
+        } catch (e) {
+          reject(e);
+        }
+      };
+
+      this.#eventEmitter.on('action', listener);
     });
   }
 }
