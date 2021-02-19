@@ -65,3 +65,60 @@ body {
 .notificationWindow button {
     margin: 1em .5em;
 }
+
+.tile {
+    height: 32px;
+    width: 32px;
+}
+
+.tile.Arctic {
+    background: #fff;
+}
+
+.tile.Desert {
+    background: #dc4;
+}
+
+.tile.Forest {
+    background: #273;
+}
+
+.tile.Grassland {
+    background: #9c8;
+}
+
+.tile.Hills {
+    background: #7a6;
+}
+
+.tile.Jungle {
+    background: #a5c;
+}
+
+.tile.Mountains {
+    background: #789;
+}
+
+.tile.Ocean {
+    background: #24a;
+}
+
+.tile.Plains {
+    background: #da8;
+}
+
+.tile.River {
+    background: #47a;
+}
+
+.tile.Swamp {
+    background: #e98;
+}
+
+.tile.Tundra {
+    background: #dfd;
+}
+
+.tile.Unknown {
+    background: #000;
+}

@@ -17,6 +17,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ElectronClient = void 0;
 const Client_1 = require("@civ-clone/core-civ-client/Client");
 const PlayerActions_1 = require("@civ-clone/civ1-unit/PlayerActions");
+const ChooseResearch_1 = require("@civ-clone/civ1-science/PlayerActions/ChooseResearch");
 const PlayerActions_2 = require("@civ-clone/core-city-build/PlayerActions");
 const MandatoryPlayerAction_1 = require("@civ-clone/core-player/MandatoryPlayerAction");
 const TransferObject_1 = require("./TransferObject");
@@ -24,7 +25,6 @@ const EventEmitter = require("events");
 const PlayerRegistry_1 = require("@civ-clone/core-player/PlayerRegistry");
 const Turn_1 = require("@civ-clone/core-turn-based-game/Turn");
 const Year_1 = require("@civ-clone/core-game-year/Year");
-const ChooseResearch_1 = require("@civ-clone/civ1-science/PlayerActions/ChooseResearch");
 class ElectronClient extends Client_1.Client {
     constructor(player, sender, receiver) {
         super(player);
@@ -81,7 +81,8 @@ class ElectronClient extends Client_1.Client {
             const { unitAction, target } = action, unit = playerAction.value(), allActions = [
                 ...unit.actions(),
                 ...Object.values(unit.actionsForNeighbours()),
-            ].flat(), actions = allActions.filter((action) => action.constructor.name === unitAction);
+            ].flat();
+            let actions = allActions.filter((action) => action.constructor.name === unitAction);
             while (actions.length !== 1) {
                 console.log(action);
                 console.log(actions.map((a) => [a.constructor.name, a.to().id()]));
@@ -89,8 +90,7 @@ class ElectronClient extends Client_1.Client {
                     this.sendNotification(`action not found: ${unitAction}`);
                     return false;
                 }
-                actions.splice(0, actions.length);
-                actions.push(...actions.filter((action) => action.to().id() === target));
+                actions = actions.filter((action) => action.to().id() === target);
                 if (actions.length > 1) {
                     if (!target) {
                         this.sendNotification(`too many actions found: ${unitAction} (${actions.length})`);
@@ -137,14 +137,13 @@ class ElectronClient extends Client_1.Client {
         const enemyPlayers = PlayerRegistry_1.instance
             .entries()
             .filter((player) => player !== this.player());
-        const dataObject = {
+        const dataObject = new TransferObject_1.default({
             player: this.player(),
             players: enemyPlayers,
             turn: Turn_1.instance,
             year: Year_1.instance,
-        };
-        // this.#sender('gameData', new TransferObject(this.player()).toPlainObject());
-        __classPrivateFieldGet(this, _sender).call(this, 'gameData', new TransferObject_1.default(dataObject).toPlainObject());
+        });
+        __classPrivateFieldGet(this, _sender).call(this, 'gameData', dataObject.toPlainObject());
     }
     sendNotification(message) {
         __classPrivateFieldGet(this, _sender).call(this, 'gameNotification', {

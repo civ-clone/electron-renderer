@@ -1,15 +1,18 @@
 import {
   City,
+  CityBuild,
+  Entity,
+  EntityInstance,
   GameData,
   ITransport,
   Notification,
   Player,
   PlayerAction,
-  UnitAction,
-  Unit,
-  CityBuild,
   PlayerResearch,
-  Entity,
+  Tile,
+  Unit,
+  UnitAction,
+  Yield,
 } from './types';
 
 // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -27,6 +30,69 @@ const notificationArea = document.getElementById('notification') as HTMLElement,
   turnWrapper = document.getElementById('turn') as HTMLElement,
   playersWrapper = document.getElementById('players') as HTMLElement,
   notifications: Notification[] = [];
+
+class World {
+  #data: Tile[] = [];
+
+  setCityData(cities: City[]): void {
+    cities.forEach((city: City) => {
+      const tile = this.get(city.tile.x, city.tile.y);
+
+      tile.city = city;
+    });
+  }
+
+  get(x: number, y: number): Tile {
+    return (
+      this.#data.filter((tile: Tile) => tile.x === x && tile.y === y)[0] || {
+        improvements: [],
+        terrain: {
+          _: 'Unknown',
+        },
+        units: [],
+        x,
+        y,
+        yields: [],
+      }
+    );
+  }
+
+  getSurrounding(x: number, y: number, radius: number = 1): Tile[] {
+    const tiles = [];
+
+    for (
+      let surroundingX = x - radius;
+      surroundingX <= x + radius;
+      surroundingX++
+    ) {
+      for (
+        let surroundingY = y - radius;
+        surroundingY <= y + radius;
+        surroundingY++
+      ) {
+        tiles.push(this.get(surroundingX, surroundingY));
+      }
+    }
+
+    return tiles;
+  }
+
+  setTileData(tiles: Tile[]): void {
+    this.#data = tiles;
+  }
+
+  setUnitData(units: Unit[]): void {
+    units.forEach((unit: Unit) => {
+      const tile = this.get(unit.tile.x, unit.tile.y);
+
+      if (!tile.units) {
+        tile.units = [];
+      }
+
+      (tile.units as Unit[]).push(unit);
+    });
+  }
+}
 
 const t = (s: string) => document.createTextNode(s);
 const e = (t: string, ...nodes: Node[]) => {
@@ -63,22 +129,91 @@ transport.receive('notification', (data): void => {
   }, 4000);
 });
 
+const world = new World();
+
 transport.receive('gameData', (data: GameData): void => {
   gameArea.classList.add('active');
 
   turnWrapper.innerText = data.turn.value + '';
   yearWrapper.innerText = ((year) => {
     if (year < 0) {
-      return Math.abs(year) + 'BC';
+      return Math.abs(year) + ' BC';
     }
 
-    return year + 'AD';
+    return year + ' AD';
   })(data.year.value);
 
-  const renderCity = (city: City) =>
+  world.setTileData(data.player.world);
+  world.setCityData(data.player.cities);
+  world.setUnitData(data.player.units);
+
+  const renderTile = (tile: Tile) => {
+      if (!tile) {
+        tile = {
+          _: 'Tile',
+          id: '0',
+          improvements: [],
+          terrain: {
+            _: 'Unknown',
+            id: '0',
+          },
+          x: NaN,
+          y: NaN,
+          yields: [],
+        };
+      }
+
+      return a(
+        e(
+          'div',
+          a(e('div'), {
+            class: 'city' + (tile.city ? '' : ' hidden'),
+          }),
+          a(e('div'), {
+            class:
+              'unit ' +
+              (tile.units?.length ? tile.units[0]._ : 'hidden') +
+              ((tile.units?.length ?? 0) > 1 ? ' multiple' : ''),
+          })
+        ),
+        {
+          class: 'tile ' + tile.terrain._,
+        }
+      );
+    },
+    renderMap = (tiles: Tile[]) => {
+      const n = Math.sqrt(tiles.length);
+
+      return e(
+        'table',
+        ...new Array(n)
+          .fill(0)
+          .map((_, x) =>
+            e(
+              'tr',
+              ...new Array(n)
+                .fill(0)
+                .map((_, y) => e('td', renderTile(tiles[x * n + y])))
+            )
+          )
+      );
+    },
+    renderCity = (city: City, includeMap: boolean = false) =>
       e(
         'div',
         e('h4', t(`${city.name} (${city.tile.x},${city.tile.y})`)),
+        ...(includeMap ? [
+          e('h5', t('Map')),
+          e('div', renderMap(world.getSurrounding(city.tile.x, city.tile.y, 2)))
+        ] : []),
+        e('h5', t('Yields')),
+        e(
+          'dl',
+          ...city.yields.flatMap((cityYield: Yield) => [
+            e('dd', t(cityYield._)),
+            e('dt', t(`${cityYield.value}`)),
+          ])
+        ),
         e(
           'ul',
           ...(city.improvements || [{ _: 'Missing improvements' }]).map((i) =>
@@ -109,10 +244,37 @@ transport.receive('gameData', (data: GameData): void => {
           )
         )
       ),
-    renderUnit = (unit: Unit) =>
+    renderUnit = (unit: Unit, includeMap: boolean = false) =>
       e(
         'div',
         e('h4', t(unit ? unit._ : '@')),
+        ...(includeMap ? [
+          e('h5', t('Map')),
+          e('div', renderMap(world.getSurrounding(unit.tile.x, unit.tile.y, unit.visibility ? unit.visibility.value : 1)))
+        ] : []),
+        e('h5', t('Yields')),
+        e(
+          'dl',
+          ...(['attack', 'defence', 'movement', 'moves', 'visibility'] as (
+            | 'attack'
+            | 'defence'
+            | 'movement'
+            | 'moves'
+            | 'visibility'
+          )[]).flatMap(
+            (
+              yieldName:
+                | 'attack'
+                | 'defence'
+                | 'movement'
+                | 'moves'
+                | 'visibility'
+            ) => [
+              e('dd', t(yieldName)),
+              e('dt', t(`${unit[yieldName] ? unit[yieldName].value : '@'}`)),
+            ]
+          )
+        ),
         e('h5', t('Improvements')),
         e(
           'ul',
@@ -155,6 +317,11 @@ transport.receive('gameData', (data: GameData): void => {
         ),
         e(
           'div',
+          e('h2', t(`Treasury`)),
+          e('p', t(`${player.treasury ? player.treasury.value : '@'}`))
+        ),
+        e(
+          'div',
           e('h2', t(`Government`)),
           e(
             'p',
@@ -171,12 +338,12 @@ transport.receive('gameData', (data: GameData): void => {
             })`
           )
         ),
-        e('div', ...(player.cities || []).map(renderCity)),
+        e('div', ...(player.cities || []).map((city) => renderCity(city))),
         e(
           'h3',
           t(`Units (${player.units ? player.units.length : 'Missing units'})`)
         ),
-        e('div', ...(player.units || []).map(renderUnit))
+        e('div', ...(player.units || []).map((unit) => renderUnit(unit)))
       ),
     renderUnitAction = (
       action: PlayerAction,
@@ -214,9 +381,13 @@ transport.receive('gameData', (data: GameData): void => {
 
   dataArea.innerHTML = JSON.stringify(data);
 
-  // @ts-ignore
-  [...playersWrapper.children].forEach((e) => e.remove());
-  playersWrapper.append(...[data.player, ...data.players].map(renderPlayer));
+  try {
+    // @ts-ignore
+    [...playersWrapper.children].forEach((e) => e.remove());
+    playersWrapper.append(...[data.player, ...data.players].map(renderPlayer));
+  } catch (e) {
+    console.error(e);
+  }
 
   // @ts-ignore
   [...actionArea.children].forEach((e) => e.remove());
@@ -239,7 +410,14 @@ transport.receive('gameData', (data: GameData): void => {
     if (action._ === 'ActiveUnit') {
       const unit = action.value as Unit;
 
-      actionArea.append(e('h5', t(unit ? unit._ : '@')));
+      actionArea.append(
+        e('h5', t(unit ? unit._ : '@')),
+        e('h5', t('Map')),
+        e(
+          'div',
+          renderUnit(unit, true)
+        )
+      );
 
       unit.actions.forEach((unitAction) =>
         actionArea.append(renderUnitAction(action, unit, unitAction))

@@ -9,6 +9,5 @@ This doesn't currently render a map, but as I work through the bugs, the game is
 ## Known issues
 
 - It hangs when generating the start `Tile`s for way too long.
-- `Research` is not accrued.
 - `Move`ing `Unit`s to other `Tile`s isn't picked up properly.
 - When running `yarn bulid`, ensure you remove `Object.defineProperty(exports, "__esModule", { value: true });` from the generated `renderer.js` in `view/js`.

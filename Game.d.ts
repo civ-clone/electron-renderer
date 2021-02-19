@@ -1,13 +1,13 @@
 export interface IGame {
-    start(): void;
+  start(): void;
 }
 export declare class Game implements IGame {
-    #private;
-    constructor();
-    private createWindow;
-    private bindEvents;
-    private configure;
-    private sendData;
-    start(): void;
+  #private;
+  constructor();
+  private createWindow;
+  private bindEvents;
+  private configure;
+  private sendData;
+  start(): void;
 }
 export default Game;

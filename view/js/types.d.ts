@@ -23,6 +23,7 @@ export interface City extends EntityInstance {
   growth: CityGrowth;
   improvements: EntityInstance[];
   tile: Tile;
+  yields: Yield[];
 }
 
 export interface CityGrowth extends EntityInstance {
@@ -53,6 +54,7 @@ export interface Player extends EntityInstance {
   government: PlayerGovernment;
   mandatoryActions: PlayerAction[];
   research: PlayerResearch;
+  treasury: Yield;
   units: Unit[];
   world: Tile[];
 }
@@ -78,8 +80,14 @@ export interface Unit extends EntityInstance {
   actionsForNeighbours: {
     [key: string]: UnitAction[];
   };
+  attack: Yield;
+  defence: Yield;
   improvements: EntityInstance[];
+  movement: Yield;
+  moves: Yield;
   tile: Tile;
+  visibility: Yield;
+  yields: Yield[];
 }
 
 export interface UnitAction extends EntityInstance {
@@ -88,6 +96,10 @@ export interface UnitAction extends EntityInstance {
 }
 
 export interface Tile extends EntityInstance {
+  city?: City;
+  improvements: EntityInstance[];
+  terrain: EntityInstance;
+  units?: Unit[];
   x: number;
   y: number;
   yields: Yield[];

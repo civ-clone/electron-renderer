@@ -1,10 +1,13 @@
 import { Client, IClient } from '@civ-clone/core-civ-client/Client';
 import { ActiveUnit } from '@civ-clone/civ1-unit/PlayerActions';
+import Advance from '@civ-clone/core-science/Advance';
+import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch';
 import { CityBuild } from '@civ-clone/core-city-build/PlayerActions';
 import CityImprovement from '@civ-clone/core-city-improvement/CityImprovement';
 import MandatoryPlayerAction from '@civ-clone/core-player/MandatoryPlayerAction';
 import Player from '@civ-clone/core-player/Player';
 import PlayerAction from '@civ-clone/core-player/PlayerAction';
+import PlayerResearch from '@civ-clone/core-science/PlayerResearch';
 import TransferObject from './TransferObject';
 import Unit from '@civ-clone/core-unit/Unit';
 import UnitAction from '@civ-clone/core-unit/Action';
@@ -12,9 +15,6 @@ import * as EventEmitter from 'events';
 import { instance as playerRegistryInstance } from '@civ-clone/core-player/PlayerRegistry';
 import { instance as turnInstance } from '@civ-clone/core-turn-based-game/Turn';
 import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
-import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch';
-import Advance from '@civ-clone/core-science/Advance';
-import PlayerResearch from '@civ-clone/core-science/PlayerResearch';
 
 export class ElectronClient extends Client implements IClient {
   #eventEmitter: EventEmitter;
@@ -104,11 +104,10 @@ export class ElectronClient extends Client implements IClient {
         allActions = [
           ...unit.actions(),
           ...Object.values(unit.actionsForNeighbours()),
-        ].flat(),
-        actions = allActions.filter(
-          (action: UnitAction): boolean =>
-            action.constructor.name === unitAction
-        );
+        ].flat();
+      let actions = allActions.filter(
+        (action: UnitAction): boolean => action.constructor.name === unitAction
+      );
 
       while (actions.length !== 1) {
         console.log(action);
@@ -119,12 +118,8 @@ export class ElectronClient extends Client implements IClient {
           return false;
         }
 
-        actions.splice(0, actions.length);
-
-        actions.push(
-          ...actions.filter(
-            (action: UnitAction): boolean => action.to().id() === target
-          )
+        actions = actions.filter(
+          (action: UnitAction): boolean => action.to().id() === target
         );
 
         if (actions.length > 1) {
@@ -200,15 +195,14 @@ export class ElectronClient extends Client implements IClient {
       .entries()
       .filter((player) => player !== this.player());
 
-    const dataObject = {
+    const dataObject = new TransferObject({
       player: this.player(),
       players: enemyPlayers,
       turn: turnInstance,
       year: yearInstance,
-    };
+    });
 
-    // this.#sender('gameData', new TransferObject(this.player()).toPlainObject());
-    this.#sender('gameData', new TransferObject(dataObject).toPlainObject());
+    this.#sender('gameData', dataObject.toPlainObject());
   }
 
   private sendNotification(message: string): void {
