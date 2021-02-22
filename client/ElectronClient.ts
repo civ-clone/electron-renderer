@@ -87,11 +87,7 @@ export class ElectronClient extends Client implements IClient {
     );
 
     if (!playerAction) {
-      this.sendNotification(
-        `action not found: ${JSON.stringify(action)} (${actions.map((a) =>
-          JSON.stringify(a.toPlainObject())
-        )})`
-      );
+      this.sendNotification(`action not found: ${name}`);
 
       return false;
     }
@@ -110,8 +106,6 @@ export class ElectronClient extends Client implements IClient {
       );
 
       while (actions.length !== 1) {
-        console.log(action);
-        console.log(actions.map((a) => [a.constructor.name, a.to().id()]));
         if (actions.length === 0) {
           this.sendNotification(`action not found: ${unitAction}`);
 
@@ -191,13 +185,8 @@ export class ElectronClient extends Client implements IClient {
   }
 
   private sendGameData(): void {
-    const enemyPlayers = playerRegistryInstance
-      .entries()
-      .filter((player) => player !== this.player());
-
     const dataObject = new TransferObject({
       player: this.player(),
-      players: enemyPlayers,
       turn: turnInstance,
       year: yearInstance,
     });

@@ -1,6 +1,8 @@
+import { ObjectMap } from './lib/reconstituteData.js';
+
 export interface ITransport {
   receive(channel: string, handler: (...args: any[]) => void): void;
-  receive(channel: 'gameData', handler: (data: GameData) => void): void;
+  receive(channel: 'gameData', handler: (data: ObjectMap) => void): void;
   receive(channel: 'notification', handler: (data: string) => void): void;
   receive(
     channel: 'gameNotification',
@@ -22,6 +24,7 @@ export interface City extends EntityInstance {
   build: CityBuild;
   growth: CityGrowth;
   improvements: EntityInstance[];
+  player: Player;
   tile: Tile;
   yields: Yield[];
 }
@@ -39,7 +42,13 @@ export interface CityBuild extends EntityInstance {
   progress: Yield;
 }
 
+export interface Attribute extends EntityInstance {
+  name: string;
+  value: any;
+}
+
 export interface Civilization extends EntityInstance {
+  attributes: Attribute[];
   leader: Leader;
 }
 
@@ -85,6 +94,8 @@ export interface Unit extends EntityInstance {
   improvements: EntityInstance[];
   movement: Yield;
   moves: Yield;
+  player: Player;
+  status: EntityInstance;
   tile: Tile;
   visibility: Yield;
   yields: Yield[];
@@ -95,11 +106,18 @@ export interface UnitAction extends EntityInstance {
   to: Tile;
 }
 
+export interface Terrain extends EntityInstance {
+  features: EntityInstance[];
+}
+
 export interface Tile extends EntityInstance {
-  city?: City;
+  city: City | null;
   improvements: EntityInstance[];
-  terrain: EntityInstance;
-  units?: Unit[];
+  isCoast: boolean;
+  isLand: boolean;
+  isWater: boolean;
+  terrain: Terrain;
+  units: Unit[];
   x: number;
   y: number;
   yields: Yield[];

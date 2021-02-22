@@ -22,7 +22,6 @@ const PlayerActions_2 = require("@civ-clone/core-city-build/PlayerActions");
 const MandatoryPlayerAction_1 = require("@civ-clone/core-player/MandatoryPlayerAction");
 const TransferObject_1 = require("./TransferObject");
 const EventEmitter = require("events");
-const PlayerRegistry_1 = require("@civ-clone/core-player/PlayerRegistry");
 const Turn_1 = require("@civ-clone/core-turn-based-game/Turn");
 const Year_1 = require("@civ-clone/core-game-year/Year");
 class ElectronClient extends Client_1.Client {
@@ -72,7 +71,7 @@ class ElectronClient extends Client_1.Client {
         const [playerAction] = actions.filter((action) => action.constructor.name === name &&
             id === (action.value() ? action.value().id() : undefined));
         if (!playerAction) {
-            this.sendNotification(`action not found: ${JSON.stringify(action)} (${actions.map((a) => JSON.stringify(a.toPlainObject()))})`);
+            this.sendNotification(`action not found: ${name}`);
             return false;
         }
         // TODO: other actions
@@ -84,8 +83,6 @@ class ElectronClient extends Client_1.Client {
             ].flat();
             let actions = allActions.filter((action) => action.constructor.name === unitAction);
             while (actions.length !== 1) {
-                console.log(action);
-                console.log(actions.map((a) => [a.constructor.name, a.to().id()]));
                 if (actions.length === 0) {
                     this.sendNotification(`action not found: ${unitAction}`);
                     return false;
@@ -134,12 +131,8 @@ class ElectronClient extends Client_1.Client {
         return !player.mandatoryActions().length;
     }
     sendGameData() {
-        const enemyPlayers = PlayerRegistry_1.instance
-            .entries()
-            .filter((player) => player !== this.player());
         const dataObject = new TransferObject_1.default({
             player: this.player(),
-            players: enemyPlayers,
             turn: Turn_1.instance,
             year: Year_1.instance,
         });

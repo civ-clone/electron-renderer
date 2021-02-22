@@ -5,15 +5,12 @@
       "dom",
       "es2019"
     ],
-    "module": "commonjs",
+    "module": "esnext",
     "sourceMap": true,
     "strict": true,
     "target": "ES2018"
   },
-  "include": [
-    "client/*",
-    "Game.ts",
-    "main.ts",
-    "view/js/preload.ts"
+  "exclude": [
+    "preload.ts"
   ]
 }

@@ -2,10 +2,8 @@ import {
   City,
   CityBuild,
   Entity,
-  EntityInstance,
   GameData,
   ITransport,
-  Notification,
   Player,
   PlayerAction,
   PlayerResearch,
@@ -14,6 +12,11 @@ import {
   UnitAction,
   Yield,
 } from './types';
+import Map from './components/Map.js';
+import Notifications from './components/Notifications.js';
+import World from './components/World.js';
+import { a, e, h, t } from './lib/html.js';
+import { reconstituteData, ObjectMap } from './lib/reconstituteData.js';
 
 // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //  ! Break this down and use a front-end framework. !
@@ -22,96 +25,15 @@ import {
 declare var transport: ITransport;
 
 const notificationArea = document.getElementById('notification') as HTMLElement,
-  dataArea = document.getElementById('data') as HTMLElement,
   startButton = document.querySelector('button') as HTMLElement,
   actionArea = document.getElementById('actions') as HTMLElement,
   gameArea = document.getElementById('game') as HTMLElement,
+  mapWrapper = document.getElementById('map') as HTMLElement,
+  mapPortal = mapWrapper.querySelector('canvas') as HTMLCanvasElement,
   yearWrapper = document.getElementById('year') as HTMLElement,
   turnWrapper = document.getElementById('turn') as HTMLElement,
   playersWrapper = document.getElementById('players') as HTMLElement,
-  notifications: Notification[] = [];
-
-class World {
-  #data: Tile[] = [];
-
-  setCityData(cities: City[]): void {
-    cities.forEach((city: City) => {
-      const tile = this.get(city.tile.x, city.tile.y);
-
-      tile.city = city;
-    });
-  }
-
-  get(x: number, y: number): Tile {
-    return (
-      this.#data.filter((tile: Tile) => tile.x === x && tile.y === y)[0] || {
-        improvements: [],
-        terrain: {
-          _: 'Unknown',
-        },
-        units: [],
-        x,
-        y,
-        yields: [],
-      }
-    );
-  }
-
-  getSurrounding(x: number, y: number, radius: number = 1): Tile[] {
-    const tiles = [];
-
-    for (
-      let surroundingX = x - radius;
-      surroundingX <= x + radius;
-      surroundingX++
-    ) {
-      for (
-        let surroundingY = y - radius;
-        surroundingY <= y + radius;
-        surroundingY++
-      ) {
-        tiles.push(this.get(surroundingX, surroundingY));
-      }
-    }
-
-    return tiles;
-  }
-
-  setTileData(tiles: Tile[]): void {
-    this.#data = tiles;
-  }
-
-  setUnitData(units: Unit[]): void {
-    units.forEach((unit: Unit) => {
-      const tile = this.get(unit.tile.x, unit.tile.y);
-
-      if (!tile.units) {
-        tile.units = [];
-      }
-
-      (tile.units as Unit[]).push(unit);
-    });
-  }
-}
-
-const t = (s: string) => document.createTextNode(s);
-const e = (t: string, ...nodes: Node[]) => {
-  const e = document.createElement(t);
-
-  e.append(...nodes);
-
-  return e;
-};
-const a = (e: HTMLElement, a: { [key: string]: string }) => {
-  Object.entries(a).forEach(([k, v]) => e.setAttribute(k, v));
-
-  return e;
-};
-const h = (e: HTMLElement, h: { [key: string]: () => void }) => {
-  Object.entries(h).forEach(([n, h]) => e.addEventListener(n, h));
-
-  return e;
-};
+  notifications = new Notifications();
 
 let globalNotificationTimer: number | undefined;
 
@@ -129,83 +51,93 @@ transport.receive('notification', (data): void => {
   }, 4000);
 });
 
-const world = new World();
+const height: number = 60,
+  width: number = 80,
+  world = new World(height, width),
+  center = {
+    x: 0,
+    y: 0,
+  };
 
-transport.receive('gameData', (data: GameData): void => {
+let activeUnit: Unit;
+
+transport.receive('gameData', (objectMap: ObjectMap): void => {
+  const data: GameData = reconstituteData(objectMap) as GameData;
+
   gameArea.classList.add('active');
 
   turnWrapper.innerText = data.turn.value + '';
   yearWrapper.innerText = ((year) => {
     if (year < 0) {
-      return Math.abs(year) + ' BC';
+      return Math.abs(year) + ' BCE';
     }
 
-    return year + ' AD';
+    if (year === 0) {
+      return '1 CE';
+    }
+
+    return year + ' CE';
   })(data.year.value);
 
   world.setTileData(data.player.world);
-  world.setCityData(data.player.cities);
-  world.setUnitData(data.player.units);
 
-  const renderTile = (tile: Tile) => {
-      if (!tile) {
-        tile = {
-          _: 'Tile',
-          id: '0',
-          improvements: [],
-          terrain: {
-            _: 'Unknown',
-            id: '0',
-          },
-          x: NaN,
-          y: NaN,
-          yields: [],
-        };
-      }
+  const [activeUnitAction] = data.player.actions.filter(
+    (action: PlayerAction): boolean => action._ === 'ActiveUnit'
+  );
 
-      return a(
-        e(
-          'div',
-          a(e('div'), {
-            class: 'city' + (tile.city ? '' : ' hidden'),
-          }),
-          a(e('div'), {
-            class:
-              'unit ' +
-              (tile.units?.length ? tile.units[0]._ : 'hidden') +
-              ((tile.units?.length ?? 0) > 1 ? ' multiple' : ''),
-          })
-        ),
-        {
-          class: 'tile ' + tile.terrain._,
-        }
-      );
-    },
-    renderMap = (tiles: Tile[]) => {
-      const n = Math.sqrt(tiles.length);
+  activeUnit = activeUnitAction && (activeUnitAction.value as Unit);
 
-      return e(
-        'table',
-        ...new Array(n)
-          .fill(0)
-          .map((_, x) =>
-            e(
-              'tr',
-              ...new Array(n)
-                .fill(0)
-                .map((_, y) => e('td', renderTile(tiles[x * n + y])))
-            )
-          )
-      );
-    },
-    renderCity = (city: City, includeMap: boolean = false) =>
+  if (activeUnit) {
+    center.x = activeUnit.tile.x;
+    center.y = activeUnit.tile.y;
+  }
+
+  try {
+    const offscreenMap = e('canvas') as HTMLCanvasElement,
+      map = new Map(world, offscreenMap),
+      portalContext = mapPortal.getContext('2d') as CanvasRenderingContext2D,
+      sourceX =
+        center.x * (map.tileSize() * map.scale()) -
+        mapPortal.offsetWidth / 2 -
+        (map.tileSize() * map.scale()) / 2,
+      sourceY =
+        center.y * (map.tileSize() * map.scale()) -
+        mapPortal.offsetHeight / 2 -
+        (map.tileSize() * map.scale()) / 2;
+
+    offscreenMap.height = height * map.tileSize();
+    offscreenMap.width = width * map.tileSize();
+    offscreenMap.setAttribute(
+      'height',
+      (height * map.tileSize() * map.scale()).toString()
+    );
+    offscreenMap.setAttribute(
+      'width',
+      (width * map.tileSize() * map.scale()).toString()
+    );
+
+    map.render();
+
+    // TODO: render the map around for map edges
+    portalContext.drawImage(
+      offscreenMap,
+      sourceX,
+      sourceY,
+      mapPortal.width,
+      mapPortal.height,
+      0,
+      0,
+      mapPortal.width,
+      mapPortal.height
+    );
+  } catch (e) {
+    console.error(e);
+  }
+
+  const renderCity = (city: City) =>
       e(
         'div',
         e('h4', t(`${city.name} (${city.tile.x},${city.tile.y})`)),
-        ...(includeMap ? [
-          e('h5', t('Map')),
-          e('div', renderMap(world.getSurrounding(city.tile.x, city.tile.y, 2)))
-        ] : []),
         e('h5', t('Yields')),
         e(
           'dl',
@@ -241,45 +173,6 @@ transport.receive('gameData', (data: GameData): void => {
                   : 'No CityBuild'
               } (${city.build.progress.value}/${city.build.cost.value})`
             )
-          )
-        )
-      ),
-    renderUnit = (unit: Unit, includeMap: boolean = false) =>
-      e(
-        'div',
-        e('h4', t(unit ? unit._ : '@')),
-        ...(includeMap ? [
-          e('h5', t('Map')),
-          e('div', renderMap(world.getSurrounding(unit.tile.x, unit.tile.y, unit.visibility ? unit.visibility.value : 1)))
-        ] : []),
-        e('h5', t('Yields')),
-        e(
-          'dl',
-          ...(['attack', 'defence', 'movement', 'moves', 'visibility'] as (
-            | 'attack'
-            | 'defence'
-            | 'movement'
-            | 'moves'
-            | 'visibility'
-          )[]).flatMap(
-            (
-              yieldName:
-                | 'attack'
-                | 'defence'
-                | 'movement'
-                | 'moves'
-                | 'visibility'
-            ) => [
-              e('dd', t(yieldName)),
-              e('dt', t(`${unit[yieldName] ? unit[yieldName].value : '@'}`)),
-            ]
-          )
-        ),
-        e('h5', t('Improvements')),
-        e(
-          'ul',
-          ...(unit.improvements || [{ _: 'Missing improvements' }]).map((i) =>
-            e('li', t(i ? i._ : '@'))
           )
         )
       ),
@@ -338,31 +231,7 @@ transport.receive('gameData', (data: GameData): void => {
             })`
           )
         ),
-        e('div', ...(player.cities || []).map((city) => renderCity(city))),
-        e(
-          'h3',
-          t(`Units (${player.units ? player.units.length : 'Missing units'})`)
-        ),
-        e('div', ...(player.units || []).map((unit) => renderUnit(unit)))
-      ),
-    renderUnitAction = (
-      action: PlayerAction,
-      unit: Unit,
-      unitAction: UnitAction,
-      labelSuffix: string | undefined = undefined
-    ) =>
-      h(
-        e('button', t(unitAction._ + (labelSuffix ? ` (${labelSuffix})` : ''))),
-        {
-          click() {
-            transport.send('action', {
-              name: action._,
-              id: unit.id,
-              unitAction: unitAction._,
-              target: unitAction.to.id,
-            });
-          },
-        }
+        e('div', ...(player.cities || []).map((city) => renderCity(city)))
       ),
     renderEntityAction = (
       action: PlayerAction,
@@ -379,12 +248,10 @@ transport.receive('gameData', (data: GameData): void => {
         },
       });
 
-  dataArea.innerHTML = JSON.stringify(data);
-
   try {
     // @ts-ignore
     [...playersWrapper.children].forEach((e) => e.remove());
-    playersWrapper.append(...[data.player, ...data.players].map(renderPlayer));
+    playersWrapper.append(renderPlayer(data.player));
   } catch (e) {
     console.error(e);
   }
@@ -407,31 +274,6 @@ transport.receive('gameData', (data: GameData): void => {
   (data.player.actions || []).forEach((action): void => {
     actionArea.append(e('h4', t(action ? action._ : '@')));
 
-    if (action._ === 'ActiveUnit') {
-      const unit = action.value as Unit;
-
-      actionArea.append(
-        e('h5', t(unit ? unit._ : '@')),
-        e('h5', t('Map')),
-        e(
-          'div',
-          renderUnit(unit, true)
-        )
-      );
-
-      unit.actions.forEach((unitAction) =>
-        actionArea.append(renderUnitAction(action, unit, unitAction))
-      );
-
-      Object.entries(
-        unit.actionsForNeighbours
-      ).forEach(([label, unitActions]: [string, UnitAction[]]) =>
-        unitActions.forEach((unitAction) =>
-          actionArea.append(renderUnitAction(action, unit, unitAction, label))
-        )
-      );
-    }
-
     if (action._ === 'CityBuild' || action._ === 'ChooseResearch') {
       const value = action.value as PlayerResearch | CityBuild;
 
@@ -443,7 +285,7 @@ transport.receive('gameData', (data: GameData): void => {
 });
 
 transport.receive('gameNotification', (data): void => {
-  notifications.push(data);
+  notifications.receive(data);
 });
 
 document.addEventListener('DOMContentLoaded', (): void => {
@@ -453,32 +295,6 @@ document.addEventListener('DOMContentLoaded', (): void => {
     startButton.remove();
   });
 });
-
-window.setInterval((): void => {
-  const active = document.querySelector('.notificationWindow');
-
-  if (!notifications.length || active) {
-    return;
-  }
-
-  const notification = notifications.shift() as Notification;
-
-  document.body.append(
-    a(
-      e(
-        'div',
-        e('header', e('h3', t('Notification'))),
-        e('p', t(notification.message)),
-        a(e('button', t('Close')), {
-          'data-action': 'close',
-        })
-      ),
-      {
-        class: 'notificationWindow',
-      }
-    )
-  );
-}, 500);
 
 document.addEventListener('click', (event) => {
   if (!event.target) {
@@ -495,5 +311,89 @@ document.addEventListener('click', (event) => {
     }
 
     parent.remove();
+  }
+});
+
+const keyToActionsMap: {
+    [key: string]: string[];
+  } = {
+    b: ['FoundCity'],
+    D: ['Disband'],
+    f: ['Fortify', 'BuildFortress'],
+    i: ['BuildIrrigation', 'ClearForest'],
+    m: ['BuildMine', 'PlantForest'],
+    P: ['Pillage'],
+    r: ['BuildRoad', 'BuildRailroad'],
+    s: ['Sleep'],
+    w: ['Wait'],
+  },
+  directionKeyMap: { [key: string]: string } = {
+    ArrowUp: 'n',
+    PageUp: 'ne',
+    ArrowRight: 'e',
+    PageDown: 'se',
+    ArrowDown: 's',
+    End: 'sw',
+    ArrowLeft: 'w',
+    Home: 'nw',
+  };
+
+document.addEventListener('keydown', (event) => {
+  if (activeUnit) {
+    if (event.key in keyToActionsMap) {
+      const actions = [...keyToActionsMap[event.key]];
+
+      while (actions.length) {
+        const actionName = actions.shift(),
+          [unitAction] = activeUnit.actions.filter(
+            (action): boolean => action._ === actionName
+          );
+
+        if (unitAction) {
+          transport.send('action', {
+            name: 'ActiveUnit',
+            id: activeUnit.id,
+            unitAction: unitAction._,
+            target: unitAction.to.id,
+          });
+
+          event.stopPropagation();
+          event.preventDefault();
+
+          return;
+        }
+      }
+    }
+
+    if (event.key in directionKeyMap) {
+      const [unitAction] = activeUnit.actionsForNeighbours[
+        directionKeyMap[event.key]
+      ];
+
+      if (unitAction) {
+        transport.send('action', {
+          name: 'ActiveUnit',
+          id: activeUnit.id,
+          unitAction: unitAction._,
+          target: unitAction.to.id,
+        });
+
+        event.stopPropagation();
+        event.preventDefault();
+
+        return;
+      }
+    }
+  }
+
+  if (event.key === 'Enter') {
+    transport.send('action', {
+      name: 'EndOfTurn',
+    });
+
+    event.stopPropagation();
+    event.preventDefault();
+
+    return;
   }
 });

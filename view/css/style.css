@@ -2,6 +2,7 @@ body {
     background: #123;
     color: #edc;
     font-family: sans-serif;
+    margin: 0;
 }
 
 #notification {
@@ -121,4 +122,10 @@ body {
 
 .tile.Unknown {
     background: #000;
+}
+
+#preload {
+    left: -100%;
+    position: absolute;
+    width: 100%;
 }
