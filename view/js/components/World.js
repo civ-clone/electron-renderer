@@ -11,10 +11,10 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     }
     return privateMap.get(receiver);
 };
-var _data, _height, _width;
+var _tiles, _height, _width;
 export class World {
     constructor(height = 60, width = 80) {
-        _data.set(this, []);
+        _tiles.set(this, []);
         _height.set(this, void 0);
         _width.set(this, void 0);
         __classPrivateFieldSet(this, _height, height);
@@ -27,7 +27,7 @@ export class World {
         while (y < 0) {
             y += __classPrivateFieldGet(this, _height);
         }
-        return (__classPrivateFieldGet(this, _data).filter((tile) => tile.x === x % __classPrivateFieldGet(this, _width) && tile.y === y % __classPrivateFieldGet(this, _height))[0] || {
+        return (__classPrivateFieldGet(this, _tiles).filter((tile) => tile.x === x % __classPrivateFieldGet(this, _width) && tile.y === y % __classPrivateFieldGet(this, _height))[0] || {
             improvements: [],
             isLand: false,
             isOcean: false,
@@ -89,28 +89,16 @@ export class World {
     height() {
         return __classPrivateFieldGet(this, _height);
     }
+    tiles() {
+        return __classPrivateFieldGet(this, _tiles);
+    }
     width() {
         return __classPrivateFieldGet(this, _width);
     }
-    setCityData(cities) {
-        cities.forEach((city) => {
-            const tile = this.get(city.tile.x, city.tile.y);
-            tile.city = city;
-        });
-    }
     setTileData(tiles) {
-        __classPrivateFieldSet(this, _data, tiles);
-    }
-    setUnitData(units) {
-        units.forEach((unit) => {
-            const tile = this.get(unit.tile.x, unit.tile.y);
-            if (!tile.units) {
-                tile.units = [];
-            }
-            tile.units.push(unit);
-        });
+        __classPrivateFieldSet(this, _tiles, tiles);
     }
 }
-_data = new WeakMap(), _height = new WeakMap(), _width = new WeakMap();
+_tiles = new WeakMap(), _height = new WeakMap(), _width = new WeakMap();
 export default World;
 //# sourceMappingURL=World.js.map

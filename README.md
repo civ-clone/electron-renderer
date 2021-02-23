@@ -9,4 +9,7 @@ This doesn't currently render a map, but as I work through the bugs, the game is
 ## Known issues
 
 - It hangs when generating the start `Tile`s for way too long.
-- `Move`ing `Unit`s to other `Tile`s isn't picked up properly.
+- Coastlines are rendered wrong
+- Moves aren't validated correctly when they don't succeed.
+- Can't attack other units
+- Yield overlay isn't working yet.

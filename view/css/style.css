@@ -1,8 +1,37 @@
 body {
     background: #123;
     color: #edc;
+    cursor: url('../assets/cursor/torch.png'), default;
     font-family: sans-serif;
     margin: 0;
+}
+
+#game {
+    align-items: stretch;
+    display: none;
+    min-height: 100vh;
+}
+
+#game.active {
+    display: flex;
+}
+
+#sidebar {
+    background: #8a8a8e;
+    box-sizing: border-box;
+    flex-grow: 0;
+    padding: 5px;
+    width: 200px;
+}
+
+#map {
+    flex-grow: 1;
+    max-height: 100vh;
+}
+
+#map canvas {
+    height: 100%;
+    width: 100%;
 }
 
 #notification {
@@ -16,19 +45,6 @@ body {
 
 #notification:empty {
     display: none;
-}
-
-#data {
-    display: none;
-    white-space: pre-wrap;
-}
-
-#game {
-    display: none;
-}
-
-#game.active {
-    display: block;
 }
 
 .notificationWindow {
@@ -65,63 +81,6 @@ body {
 
 .notificationWindow button {
     margin: 1em .5em;
-}
-
-.tile {
-    height: 32px;
-    width: 32px;
-}
-
-.tile.Arctic {
-    background: #fff;
-}
-
-.tile.Desert {
-    background: #dc4;
-}
-
-.tile.Forest {
-    background: #273;
-}
-
-.tile.Grassland {
-    background: #9c8;
-}
-
-.tile.Hills {
-    background: #7a6;
-}
-
-.tile.Jungle {
-    background: #a5c;
-}
-
-.tile.Mountains {
-    background: #789;
-}
-
-.tile.Ocean {
-    background: #24a;
-}
-
-.tile.Plains {
-    background: #da8;
-}
-
-.tile.River {
-    background: #47a;
-}
-
-.tile.Swamp {
-    background: #e98;
-}
-
-.tile.Tundra {
-    background: #dfd;
-}
-
-.tile.Unknown {
-    background: #000;
 }
 
 #preload {

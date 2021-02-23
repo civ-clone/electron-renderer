@@ -1,7 +1,7 @@
 import { City, Tile, Unit } from '../types';
 
 export class World {
-  #data: Tile[] = [];
+  #tiles: Tile[] = [];
   #height: number;
   #width: number;
 
@@ -20,7 +20,7 @@ export class World {
     }
 
     return (
-      this.#data.filter(
+      this.#tiles.filter(
         (tile: Tile) =>
           tile.x === x % this.#width && tile.y === y % this.#height
       )[0] || {
@@ -115,32 +115,16 @@ export class World {
     return this.#height;
   }
 
+  tiles(): Tile[] {
+    return this.#tiles;
+  }
+
   width(): number {
     return this.#width;
   }
 
-  setCityData(cities: City[]): void {
-    cities.forEach((city: City) => {
-      const tile = this.get(city.tile.x, city.tile.y);
-
-      tile.city = city;
-    });
-  }
-
   setTileData(tiles: Tile[]): void {
-    this.#data = tiles;
-  }
-
-  setUnitData(units: Unit[]): void {
-    units.forEach((unit: Unit) => {
-      const tile = this.get(unit.tile.x, unit.tile.y);
-
-      if (!tile.units) {
-        tile.units = [];
-      }
-
-      (tile.units as Unit[]).push(unit);
-    });
+    this.#tiles = tiles;
   }
 }
 

@@ -7,16 +7,18 @@ import {
   Player,
   PlayerAction,
   PlayerResearch,
-  Tile,
   Unit,
-  UnitAction,
   Yield,
 } from './types';
-import Map from './components/Map.js';
+import { e, h, t } from './lib/html.js';
+import { reconstituteData, ObjectMap } from './lib/reconstituteData.js';
+import ActiveUnit from './components/Map/ActiveUnit.js';
+import Full from './components/Map/Full.js';
 import Notifications from './components/Notifications.js';
 import World from './components/World.js';
-import { a, e, h, t } from './lib/html.js';
-import { reconstituteData, ObjectMap } from './lib/reconstituteData.js';
+import Cities from './components/Map/Cities.js';
+import Units from './components/Map/Units.js';
+import Yields from './components/Map/Yields.js';
 
 // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //  ! Break this down and use a front-end framework. !
@@ -33,9 +35,12 @@ const notificationArea = document.getElementById('notification') as HTMLElement,
   yearWrapper = document.getElementById('year') as HTMLElement,
   turnWrapper = document.getElementById('turn') as HTMLElement,
   playersWrapper = document.getElementById('players') as HTMLElement,
+  minimap = document.getElementById('minimap') as HTMLCanvasElement,
+  unitInfo = document.getElementById('unitInfo') as HTMLCanvasElement,
   notifications = new Notifications();
 
-let globalNotificationTimer: number | undefined;
+let globalNotificationTimer: number | undefined,
+  showYields = false;
 
 transport.receive('notification', (data): void => {
   notificationArea.innerHTML = data;
@@ -59,10 +64,44 @@ const height: number = 60,
     y: 0,
   };
 
-let activeUnit: Unit;
+let activeUnit: Unit | null,
+  activeUnits: PlayerAction[] = [];
+
+window.addEventListener('resize', () => {
+  mapPortal.width = mapPortal.offsetWidth;
+  mapPortal.height = mapPortal.offsetHeight;
+});
+
+class IntervalHandler {
+  #stack: (() => void)[] = [];
+
+  constructor(tick: number = 500) {
+    setInterval(() => this.check(), tick);
+  }
+
+  check(): void {
+    this.#stack.forEach((item) => item());
+  }
+
+  clear(): void {
+    this.#stack = [];
+  }
+
+  off(handler: () => void): void {
+    this.#stack = this.#stack.filter((item) => item !== handler);
+  }
+
+  on(handler: () => void): void {
+    this.#stack.push(handler);
+  }
+}
+
+const intervalHandler = new IntervalHandler();
 
 transport.receive('gameData', (objectMap: ObjectMap): void => {
   const data: GameData = reconstituteData(objectMap) as GameData;
+
+  intervalHandler.clear();
 
   gameArea.classList.add('active');
 
@@ -81,55 +120,167 @@ transport.receive('gameData', (objectMap: ObjectMap): void => {
 
   world.setTileData(data.player.world);
 
-  const [activeUnitAction] = data.player.actions.filter(
+  activeUnits = data.player.actions.filter(
     (action: PlayerAction): boolean => action._ === 'ActiveUnit'
   );
 
-  activeUnit = activeUnitAction && (activeUnitAction.value as Unit);
+  const [activeUnitAction] = activeUnits;
+
+  activeUnit = activeUnitAction ? (activeUnitAction.value as Unit) : null;
 
   if (activeUnit) {
     center.x = activeUnit.tile.x;
     center.y = activeUnit.tile.y;
+
+    unitInfo.innerHTML = `
+<p>${activeUnit.player.civilization._} ${activeUnit._}</p>
+<p>${activeUnit.moves.value} / ${activeUnit.movement.value} moves</p>
+<p>A: ${activeUnit.attack.value} / D: ${activeUnit.defence.value} / V: ${
+      activeUnit.visibility.value
+    }</p>
+<p>${activeUnit.improvements.map((improvement) => improvement._).join('')}</p>
+`;
   }
 
   try {
-    const offscreenMap = e('canvas') as HTMLCanvasElement,
-      map = new Map(world, offscreenMap),
+    const layers: HTMLCanvasElement[] = [],
       portalContext = mapPortal.getContext('2d') as CanvasRenderingContext2D,
-      sourceX =
-        center.x * (map.tileSize() * map.scale()) -
-        mapPortal.offsetWidth / 2 -
-        (map.tileSize() * map.scale()) / 2,
-      sourceY =
-        center.y * (map.tileSize() * map.scale()) -
-        mapPortal.offsetHeight / 2 -
-        (map.tileSize() * map.scale()) / 2;
+      setCanvasSize = (canvas: HTMLCanvasElement): HTMLCanvasElement => {
+        canvas.height = height * fullMap.tileSize();
+        canvas.width = width * fullMap.tileSize();
+        canvas.setAttribute('height', (height * fullMap.tileSize()).toString());
+        canvas.setAttribute('width', (width * fullMap.tileSize()).toString());
 
-    offscreenMap.height = height * map.tileSize();
-    offscreenMap.width = width * map.tileSize();
-    offscreenMap.setAttribute(
-      'height',
-      (height * map.tileSize() * map.scale()).toString()
-    );
-    offscreenMap.setAttribute(
-      'width',
-      (width * map.tileSize() * map.scale()).toString()
-    );
+        return canvas;
+      };
 
-    map.render();
+    mapPortal.width = mapPortal.offsetWidth;
+    mapPortal.height = mapPortal.offsetHeight;
 
-    // TODO: render the map around for map edges
-    portalContext.drawImage(
-      offscreenMap,
-      sourceX,
-      sourceY,
-      mapPortal.width,
-      mapPortal.height,
-      0,
-      0,
-      mapPortal.width,
-      mapPortal.height
-    );
+    const fullCanvas = e('canvas') as HTMLCanvasElement,
+      fullMap = new Full(world, fullCanvas);
+
+    setCanvasSize(fullCanvas);
+
+    fullMap.render();
+    layers.push(fullCanvas);
+
+    const unitCanvas = e('canvas') as HTMLCanvasElement,
+      unitMap = new Units(world, unitCanvas);
+
+    setCanvasSize(unitCanvas);
+
+    unitMap.render(world.tiles(), activeUnit);
+    layers.push(unitCanvas);
+
+    const citiesCanvas = e('canvas') as HTMLCanvasElement,
+      citiesMap = new Cities(world, citiesCanvas);
+
+    setCanvasSize(citiesCanvas);
+
+    citiesMap.render();
+    layers.push(citiesCanvas);
+
+    const yieldsCanvas = e('canvas') as HTMLCanvasElement,
+      yieldsMap = new Yields(world, yieldsCanvas);
+
+    setCanvasSize(yieldsCanvas);
+
+    if (showYields) {
+      yieldsMap.render();
+      layers.push(yieldsCanvas);
+    }
+
+    const activeUnitCanvas = e('canvas') as HTMLCanvasElement,
+      activeUnitMap = new ActiveUnit(world, activeUnitCanvas);
+
+    setCanvasSize(activeUnitCanvas);
+
+    if (activeUnit) {
+      activeUnitMap.render(activeUnit);
+
+      layers.push(activeUnitCanvas);
+    }
+
+    const render = (skipActiveUnit: boolean) => {
+      let tileSize = fullMap.tileSize(),
+        layerWidth = width * tileSize,
+        centerX = center.x * tileSize + Math.trunc(tileSize / 2),
+        portalCenterX = Math.trunc(mapPortal.width / 2),
+        layerHeight = height * tileSize,
+        centerY = center.y * tileSize + Math.trunc(tileSize / 2),
+        portalCenterY = Math.trunc(mapPortal.height / 2);
+
+      let startX = portalCenterX - centerX,
+        endX = portalCenterX + layerWidth,
+        startY = portalCenterY - centerY,
+        endY = portalCenterY + layerHeight;
+
+      while (startX > 0) {
+        startX -= layerWidth;
+      }
+
+      while (startY > 0) {
+        startY -= layerHeight;
+      }
+
+      while (endX < mapPortal.width) {
+        endX += layerWidth;
+      }
+
+      while (endY < mapPortal.height) {
+        endY += layerHeight;
+      }
+
+      portalContext.fillStyle = '#000';
+      portalContext.fillRect(
+        0,
+        0,
+        world.width() * tileSize,
+        world.height() * tileSize
+      );
+
+      for (let x = startX; x < endX; x += layerWidth) {
+        for (let y = startY; y < endY; y += layerHeight) {
+          layers.forEach((layer) => {
+            if (
+              (skipActiveUnit && layer === activeUnitCanvas) ||
+              (!showYields && layer === yieldsCanvas)
+            ) {
+              return;
+            }
+
+            portalContext.drawImage(
+              layer,
+              0,
+              0,
+              layer.width,
+              layer.height,
+              x,
+              y,
+              layer.width,
+              layer.height
+            );
+          });
+        }
+      }
+    };
+
+    render(false);
+
+    let skipActiveUnit = true;
+
+    intervalHandler.on(() => {
+      render(skipActiveUnit);
+
+      skipActiveUnit = !skipActiveUnit;
+    });
+
+    const minimapContext = minimap.getContext('2d') as CanvasRenderingContext2D;
+
+    minimap.height = fullCanvas.height * (190 / fullCanvas.width);
+
+    minimapContext.drawImage(fullCanvas, 0, 0, 190, minimap.height);
   } catch (e) {
     console.error(e);
   }
@@ -338,6 +489,10 @@ const keyToActionsMap: {
     Home: 'nw',
   };
 
+mapPortal.addEventListener('click', (e) => {
+  console.log(e);
+});
+
 document.addEventListener('keydown', (event) => {
   if (activeUnit) {
     if (event.key in keyToActionsMap) {
@@ -393,6 +548,12 @@ document.addEventListener('keydown', (event) => {
 
     event.stopPropagation();
     event.preventDefault();
+
+    return;
+  }
+
+  if (event.key === 'y') {
+    showYields = !showYields;
 
     return;
   }

@@ -30,6 +30,28 @@ export class Map {
         __classPrivateFieldSet(this, _context, __classPrivateFieldGet(this, _canvas).getContext('2d'));
         __classPrivateFieldSet(this, _preload, document.querySelector('#preload'));
     }
+    context() {
+        return __classPrivateFieldGet(this, _context);
+    }
+    render(...args) {
+        throw new TypeError('Map#render must be overridden.');
+    }
+    scale() {
+        return __classPrivateFieldGet(this, _scale);
+    }
+    tileSize() {
+        return __classPrivateFieldGet(this, _tileSize) * __classPrivateFieldGet(this, _scale);
+    }
+    world() {
+        return __classPrivateFieldGet(this, _world);
+    }
+    drawImage(path, x, y, augment = (image) => image) {
+        const size = this.tileSize(), offsetX = x * size, offsetY = y * size, image = this.getPreloadedImage(path);
+        this.putImage(augment(image), offsetX, offsetY);
+    }
+    filterNeighbours(tile, filter, directions = ['n', 'e', 's', 'w']) {
+        return directions.filter((direction) => filter(__classPrivateFieldGet(this, _world).getNeighbour(tile, direction)));
+    }
     getPreloadedImage(path) {
         const image = __classPrivateFieldGet(this, _preload).querySelector(`[src$="${path}.png"]`);
         if (image === null) {
@@ -38,134 +60,15 @@ export class Map {
         }
         return image;
     }
-    render(rows = __classPrivateFieldGet(this, _world).getRows()) {
-        const filterNeighbours = (tile, filter, directions = ['n', 'e', 's', 'w']) => directions.filter((direction) => filter(__classPrivateFieldGet(this, _world).getNeighbour(tile, direction))), putImage = (image, offsetX, offsetY) => {
-            __classPrivateFieldGet(this, _context).imageSmoothingEnabled = false;
-            __classPrivateFieldGet(this, _context).drawImage(image, offsetX, offsetY, image.width * __classPrivateFieldGet(this, _scale), image.height * __classPrivateFieldGet(this, _scale));
-        }, drawImage = (path, x, y, augment = (image) => image) => {
-            const size = __classPrivateFieldGet(this, _tileSize) * __classPrivateFieldGet(this, _scale), offsetX = x * size, offsetY = y * size, image = this.getPreloadedImage(path);
-            putImage(augment(image), offsetX, offsetY);
-        };
-        rows.forEach((row) => {
-            row.forEach((tile) => {
-                const x = tile.x, y = tile.y, size = __classPrivateFieldGet(this, _tileSize) * __classPrivateFieldGet(this, _scale), offsetX = x * size, offsetY = y * size;
-                __classPrivateFieldGet(this, _context).fillStyle = '#000';
-                __classPrivateFieldGet(this, _context).fillRect(offsetX, offsetY, size, size);
-                if (tile.terrain._ === 'Unknown') {
-                    return;
-                }
-                if (tile.isLand) {
-                    drawImage('terrain/land', x, y);
-                }
-                else if (tile.isWater) {
-                    drawImage('terrain/ocean', x, y);
-                    const sprite = this.getPreloadedImage('terrain/coast_sprite'), 
-                    // formula from: http://forums.civfanatics.com/showpost.php?p=13507808&postcount=40
-                    // Build a bit mask of all 8 surrounding tiles, setting the bit if the tile is not an
-                    // ocean tile. Starting with the tile to the left as the least significant bit and
-                    // going clockwise
-                    bitmask = (!__classPrivateFieldGet(this, _world).getNeighbour(tile, 'w').isWater ? 1 : 0) |
-                        (!__classPrivateFieldGet(this, _world).getNeighbour(tile, 'nw').isWater ? 2 : 0) |
-                        (!__classPrivateFieldGet(this, _world).getNeighbour(tile, 'n').isWater ? 4 : 0) |
-                        (!__classPrivateFieldGet(this, _world).getNeighbour(tile, 'nw').isWater ? 8 : 0) |
-                        (!__classPrivateFieldGet(this, _world).getNeighbour(tile, 'e').isWater ? 16 : 0) |
-                        (!__classPrivateFieldGet(this, _world).getNeighbour(tile, 'se').isWater ? 32 : 0) |
-                        (!__classPrivateFieldGet(this, _world).getNeighbour(tile, 's').isWater ? 64 : 0) |
-                        (!__classPrivateFieldGet(this, _world).getNeighbour(tile, 'sw').isWater ? 128 : 0);
-                    if (bitmask > 0) {
-                        // There are at least one surrounding tile that is not ocean, so we need to render
-                        // coast. We divide the tile into four 8x8 subtiles and for each of these we want
-                        // a 3 bit bitmask of the surrounding tiles. We do this by looking at the 3 least
-                        // significant bits for the top left subtile and shift the mask to the right as we
-                        // are going around the tile. This way we are "rotating" our bitmask. The result
-                        // are our x offsets into ter257.pic
-                        let topLeftSubtileOffset = bitmask & 7, topRightSubtileOffset = (bitmask >> 2) & 7, bottomRightSubtileOffset = (bitmask >> 4) & 7, bottomLeftSubtileOffset = ((bitmask >> 6) & 7) | ((bitmask & 1) << 2);
-                        __classPrivateFieldGet(this, _context).drawImage(sprite, topLeftSubtileOffset << 4, 0, 8, 8, offsetX, offsetY, 8 * __classPrivateFieldGet(this, _scale), 8 * __classPrivateFieldGet(this, _scale));
-                        __classPrivateFieldGet(this, _context).drawImage(sprite, (topRightSubtileOffset << 4) + 8, 0, 8, 8, offsetX + 8 * __classPrivateFieldGet(this, _scale), offsetY, 8, 8);
-                        __classPrivateFieldGet(this, _context).drawImage(sprite, (bottomRightSubtileOffset << 4) + 8, 8, 8, 8, offsetX + 8 * __classPrivateFieldGet(this, _scale), offsetY + 8 * __classPrivateFieldGet(this, _scale), 8 * __classPrivateFieldGet(this, _scale), 8 * __classPrivateFieldGet(this, _scale));
-                        __classPrivateFieldGet(this, _context).drawImage(sprite, bottomLeftSubtileOffset << 4, 8, 8, 8, offsetX + 8 * __classPrivateFieldGet(this, _scale), offsetY, 8 * __classPrivateFieldGet(this, _scale), 8 * __classPrivateFieldGet(this, _scale));
-                    }
-                    filterNeighbours(tile, (tile) => tile.terrain._ === 'River').forEach((direction) => drawImage(`terrain/river_mouth_${direction}`, x, y));
-                }
-                const improvements = tile.improvements.reduce((state, improvement) => {
-                    state[improvement._] = true;
-                    return state;
-                }, {
-                    Irrigation: false,
-                    Mine: false,
-                    Road: false,
-                    Railroad: false,
-                    Pollution: false,
-                });
-                if (improvements.Irrigation) {
-                    drawImage('improvements/irrigation', x, y);
-                }
-                const adjoining = filterNeighbours(tile, (adjoiningTile) => (tile.terrain._ === 'River' && adjoiningTile.isWater) ||
-                    tile.terrain._ === adjoiningTile.terrain._).join('');
-                if (adjoining && tile.terrain._ !== 'Ocean') {
-                    drawImage(`terrain/${tile.terrain._.toLowerCase()}_${adjoining}`, x, y);
-                }
-                else {
-                    drawImage(`terrain/${tile.terrain._.toLowerCase()}`, x, y);
-                }
-                ['Mine', 'Pollution'].forEach((improvementName) => {
-                    if (improvements[improvementName]) {
-                        drawImage(`improvements/${improvementName.toLowerCase()}`, x, y);
-                    }
-                });
-                if (improvements.Road) {
-                    const neighbouringRoad = filterNeighbours(tile, (adjoiningTile) => adjoiningTile.improvements.some((improvement) => improvement._ === 'Road'), ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']), neighbouringRailroad = filterNeighbours(tile, (adjoiningTile) => adjoiningTile.improvements.some((improvement) => improvement._ === 'Railroad'), ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']);
-                    neighbouringRoad.forEach((direction) => {
-                        if (improvements.Railroad &&
-                            !neighbouringRailroad.includes(direction)) {
-                            drawImage(`improvements/road_${direction}`, x, y);
-                        }
-                    });
-                    neighbouringRailroad.forEach((direction) => drawImage(`improvements/railroad_${direction}`, x, y));
-                    // TODO: render a dot or something like civ
-                }
-                const activeUnit = __classPrivateFieldGet(this, _activeUnit);
-                if (tile.units.length > 0 &&
-                    (activeUnit !== null ? activeUnit.tile.id !== tile.id : true)) {
-                    const [unit] = tile.units.sort((a, b) => b.defence.value - a.defence.value), player = unit.player, civilization = player.civilization, [colors] = civilization.attributes.filter((attribute) => attribute.name === 'colors'), image = this.replaceColors(this.getPreloadedImage(`units/${unit._.toLowerCase()}`), ['#61e365', '#2c7900'], colors.value);
-                    if (tile.units.length > 1) {
-                        const size = __classPrivateFieldGet(this, _tileSize) * __classPrivateFieldGet(this, _scale), offsetX = x * size, offsetY = y * size;
-                        putImage(image, offsetX - __classPrivateFieldGet(this, _scale), offsetY - __classPrivateFieldGet(this, _scale));
-                    }
-                    putImage(image, offsetX, offsetY);
-                }
-                if (tile.city) {
-                    const city = tile.city, player = city.player, civilization = player.civilization, [colors] = civilization.attributes.filter((attribute) => attribute.name === 'colors');
-                    __classPrivateFieldGet(this, _context).fillStyle = colors.value[0];
-                    __classPrivateFieldGet(this, _context).fillRect(offsetX, offsetY, size, size);
-                    drawImage(`map/city`, x, y, (image) => this.replaceColors(image, ['#61e365', '#2c7900'], [colors.value[1]]));
-                    putImage(this.replaceColors(this.getPreloadedImage(`map/city`), ['#000'], [colors.value[1]]), offsetX, offsetY);
-                    const sizeOffsetX = (__classPrivateFieldGet(this, _tileSize) / 2) * __classPrivateFieldGet(this, _scale), sizeOffsetY = __classPrivateFieldGet(this, _tileSize) * 0.75 * __classPrivateFieldGet(this, _scale), textOffsetX = (__classPrivateFieldGet(this, _tileSize) / 2) * __classPrivateFieldGet(this, _scale), textOffsetY = __classPrivateFieldGet(this, _tileSize) * __classPrivateFieldGet(this, _scale);
-                    __classPrivateFieldGet(this, _context).font = `bold ${10 * __classPrivateFieldGet(this, _scale)}px sans-serif`;
-                    __classPrivateFieldGet(this, _context).fillStyle = 'black';
-                    __classPrivateFieldGet(this, _context).textAlign = 'center';
-                    __classPrivateFieldGet(this, _context).fillText(city.growth.size.toString(), offsetX + textOffsetX, offsetY + textOffsetY);
-                    __classPrivateFieldGet(this, _context).fillText(city.name, offsetX + sizeOffsetX, offsetY + sizeOffsetY);
-                    __classPrivateFieldGet(this, _context).fillStyle = 'white';
-                    __classPrivateFieldGet(this, _context).fillText(city.growth.size.toString(), offsetX + textOffsetX - 1, offsetY + textOffsetY - 1);
-                    __classPrivateFieldGet(this, _context).fillText(city.name, offsetX + sizeOffsetX - 1, offsetY + sizeOffsetY - 1);
-                }
-                filterNeighbours(tile, (tile) => tile.terrain._ === 'Unknown').forEach((direction) => drawImage(`map/fog_${direction}`, x, y));
-                if (activeUnit !== null) {
-                    const player = activeUnit.player, civilization = player.civilization, [colors] = civilization.attributes.filter((attribute) => attribute.name === 'colors'), image = this.replaceColors(this.getPreloadedImage(`units/${activeUnit._.toLowerCase()}`), ['#61e365', '#2c7900'], colors.value);
-                    if (tile.units.length > 1) {
-                        const size = __classPrivateFieldGet(this, _tileSize) * __classPrivateFieldGet(this, _scale), offsetX = x * size, offsetY = y * size;
-                        putImage(image, offsetX - __classPrivateFieldGet(this, _scale), offsetY - __classPrivateFieldGet(this, _scale));
-                    }
-                    putImage(image, offsetX, offsetY);
-                }
-            });
-        });
+    putImage(image, offsetX, offsetY) {
+        __classPrivateFieldGet(this, _context).imageSmoothingEnabled = false;
+        __classPrivateFieldGet(this, _context).drawImage(image, offsetX, offsetY, image.width * __classPrivateFieldGet(this, _scale), image.height * __classPrivateFieldGet(this, _scale));
     }
     replaceColors(image, source, replacement) {
         const canvas = e('canvas'), context = canvas.getContext('2d');
+        canvas.width = image.width;
+        canvas.height = image.height;
         context.drawImage(image, 0, 0, image.width, image.height);
-        context.save();
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height), getColor = (input) => {
             var _a;
             let match = null, color = {
@@ -223,7 +126,8 @@ export class Map {
             sourceColors.forEach((color, n) => {
                 if (imageData.data[i] === color.r &&
                     imageData.data[i + 1] === color.g &&
-                    imageData.data[i + 2] === color.b) {
+                    imageData.data[i + 2] === color.b &&
+                    imageData.data[i + 3] === color.a * 255) {
                     imageData.data[i] = (replaceColors[n] || replaceColors[0]).r;
                     imageData.data[i + 1] = (replaceColors[n] || replaceColors[0]).g;
                     imageData.data[i + 2] = (replaceColors[n] || replaceColors[0]).b;
@@ -232,14 +136,7 @@ export class Map {
             });
         }
         context.putImageData(imageData, 0, 0);
-        context.save();
         return canvas;
-    }
-    scale() {
-        return __classPrivateFieldGet(this, _scale);
-    }
-    tileSize() {
-        return __classPrivateFieldGet(this, _tileSize);
     }
 }
 _activeUnit = new WeakMap(), _canvas = new WeakMap(), _context = new WeakMap(), _preload = new WeakMap(), _scale = new WeakMap(), _tileSize = new WeakMap(), _world = new WeakMap();

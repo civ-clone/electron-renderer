@@ -2,7 +2,6 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
     <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
     <title>civ-clone</title>
@@ -13,6 +12,26 @@
     <div id="menu">
       <button>Start</button>
     </div>
+
+    <div id="game">
+      <div id="sidebar">
+        <canvas id="minimap" width="190"></canvas>
+        <h3><span id="year"></span> (<span id="turn"></span>)</h3>
+        <div id="unitInfo"></div>
+      </div>
+
+      <div id="map">
+        <canvas></canvas>
+      </div>
+    </div>
+
+    <div id="info">
+      <div id="players"></div>
+
+      <div id="actions"></div>
+    </div>
+
+    <div id="notification"></div>
 
     <div id="preload">
       <img src="../assets/city/bulb.png"/>
@@ -30,7 +49,7 @@
       <img src="../assets/city/people_unhappy_m.png"/>
       <img src="../assets/city/pollution.png"/>
       <img src="../assets/city/sad.png"/>
-      <img src="../assets/city/shield.png"/>
+      <img src="../assets/city/production.png"/>
       <img src="../assets/city/trade.png"/>
       <img src="../assets/cursor/go.png"/>
       <img src="../assets/cursor/torch.png"/>
@@ -248,7 +267,7 @@
       <img src="../assets/terrain/river_w.png"/>
       <img src="../assets/terrain/seal.png"/>
       <img src="../assets/terrain/shield.png"/>
-      <img src="../assets/terrain/stag.png"/>
+      <img src="../assets/terrain/game.png"/>
       <img src="../assets/terrain/swamp.png"/>
       <img src="../assets/terrain/swamp_e.png"/>
       <img src="../assets/terrain/swamp_es.png"/>
@@ -319,25 +338,6 @@
       <img src="../assets/units/tririme.png"/>
     </div>
 
-    <div id="game">
-      <div id="map">
-        <canvas width="785" height="575"></canvas>
-<!--        <canvas class="fullMap" width="2560" height="1920"></canvas>-->
-      </div>
-
-      <div id="info">
-        <h2><span id="year"></span> (Turn: <span id="turn"></span>)</h2>
-        <div id="players"></div>
-      </div>
-
-      <div id="actions"></div>
-
-      <pre id="data"></pre>
-    </div>
-
-    <div id="notification"></div>
-
-    <!-- You can also require other files to run in this process -->
     <script src="../js/renderer.js" type="module"></script>
   </body>
 </html>
