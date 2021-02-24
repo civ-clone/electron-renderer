@@ -1,13 +1,14 @@
-import { City, Tile, Unit } from '../types';
+import { Tile, World as WorldData } from '../types';
 
 export class World {
-  #tiles: Tile[] = [];
+  #tiles: Tile[];
   #height: number;
   #width: number;
 
-  constructor(height: number = 60, width: number = 80) {
-    this.#height = height;
-    this.#width = width;
+  constructor(world: WorldData) {
+    this.#height = world.height;
+    this.#width = world.width;
+    this.#tiles = world.tiles || [];
   }
 
   get(x: number, y: number): Tile {
@@ -75,40 +76,6 @@ export class World {
     }
 
     throw new TypeError('Invalid direction.');
-  }
-
-  getSurrounding(x: number, y: number, radius: number = 1): Tile[] {
-    const tiles = [];
-
-    for (
-      let surroundingY = y - radius;
-      surroundingY <= y + radius;
-      surroundingY++
-    ) {
-      for (
-        let surroundingX = x - radius;
-        surroundingX <= x + radius;
-        surroundingX++
-      ) {
-        tiles.push(this.get(surroundingX, surroundingY));
-      }
-    }
-
-    return tiles;
-  }
-
-  getRows(): Tile[][] {
-    const rows: Tile[][] = [];
-
-    for (let y = 0; y < this.#height; y++) {
-      rows[y] = [];
-
-      for (let x = 0; x < this.#width; x++) {
-        rows[y][x] = this.get(x, y);
-      }
-    }
-
-    return rows;
   }
 
   height(): number {

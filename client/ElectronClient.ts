@@ -202,13 +202,9 @@ export class ElectronClient extends Client implements IClient {
 
   takeTurn(): Promise<void> {
     return new Promise<void>((resolve, reject): void => {
-      setTimeout(() => this.sendGameData(), 200);
-
-      // this.sendGameData();
+      this.sendGameData();
 
       const listener = (...args: any[]): void => {
-        this.sendGameData();
-
         try {
           if (this.handleAction(...args)) {
             this.#eventEmitter.off('action', listener);

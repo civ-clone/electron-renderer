@@ -1,8 +1,10 @@
-import { Unit } from '../../types';
-import { Map, IMap } from '../Map.js';
+import { IMap } from '../Map.js';
+import Units from './Units.js';
 
-export class ActiveUnit extends Map implements IMap {
-  render(activeUnit: Unit | null = null): void {
+export class ActiveUnit extends Units implements IMap {
+  render(): void {
+    const activeUnit = this.activeUnit();
+
     this.context().clearRect(
       0,
       0,

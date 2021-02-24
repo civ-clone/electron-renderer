@@ -8,6 +8,13 @@ export interface ITransport {
     channel: 'gameNotification',
     handler: (data: Notification) => void
   ): void;
+  receiveOnce(channel: string, handler: (...args: any[]) => void): void;
+  receiveOnce(channel: 'gameData', handler: (data: ObjectMap) => void): void;
+  receiveOnce(channel: 'notification', handler: (data: string) => void): void;
+  receiveOnce(
+    channel: 'gameNotification',
+    handler: (data: Notification) => void
+  ): void;
   send(channel: string, payload?: any): void;
 }
 
@@ -26,6 +33,8 @@ export interface City extends EntityInstance {
   improvements: EntityInstance[];
   player: Player;
   tile: Tile;
+  tiles: Tile[];
+  tilesWorked: Tile[];
   yields: Yield[];
 }
 
@@ -38,6 +47,7 @@ export interface CityGrowth extends EntityInstance {
 export interface CityBuild extends EntityInstance {
   available: Entity[];
   building: Entity | null;
+  city: City;
   cost: Yield;
   progress: Yield;
 }
@@ -65,7 +75,7 @@ export interface Player extends EntityInstance {
   research: PlayerResearch;
   treasury: Yield;
   units: Unit[];
-  world: Tile[];
+  world: World;
 }
 
 export interface PlayerAction extends EntityInstance {
@@ -112,6 +122,7 @@ export interface Terrain extends EntityInstance {
 
 export interface Tile extends EntityInstance {
   city: City | null;
+  goodyHut: EntityInstance;
   improvements: EntityInstance[];
   isCoast: boolean;
   isLand: boolean;
@@ -121,6 +132,12 @@ export interface Tile extends EntityInstance {
   x: number;
   y: number;
   yields: Yield[];
+}
+
+export interface World extends EntityInstance {
+  height: number;
+  tiles: Tile[];
+  width: number;
 }
 
 export interface Yield extends EntityInstance {

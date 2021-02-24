@@ -1,6 +1,9 @@
 import { Tile, Unit } from '../../types';
 import { Map, IMap } from '../Map.js';
 export declare class Units extends Map implements IMap {
-  render(tiles?: Tile[], activeUnit?: Unit | null): void;
+    #private;
+    render(tiles?: Tile[]): void;
+    setActiveUnit(unit: Unit | null): void;
+    protected activeUnit(): Unit | null;
 }
 export default Units;

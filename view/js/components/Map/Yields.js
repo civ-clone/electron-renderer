@@ -16,6 +16,7 @@ export class Yields extends Map {
                         this.putImage(this.getPreloadedImage(`city/${tileYield._.toLowerCase()}`), ...offsets[i++]);
                     }
                 });
+                return;
             }
             if (total < 7) {
                 const offsets = [
@@ -31,6 +32,7 @@ export class Yields extends Map {
                         this.putImage(this.getPreloadedImage(`city/${tileYield._.toLowerCase()}`), offsets[i][0], offsets[i++][1]);
                     }
                 });
+                return;
             }
             if (total < 9) {
                 const offsets = [
@@ -48,6 +50,7 @@ export class Yields extends Map {
                         this.putImage(this.getPreloadedImage(`city/${tileYield._.toLowerCase()}`), ...offsets[i++]);
                     }
                 });
+                return;
             }
             if (total < 11) {
                 const offsets = [
@@ -67,6 +70,7 @@ export class Yields extends Map {
                         this.putImage(this.getPreloadedImage(`city/${tileYield._.toLowerCase()}`), ...offsets[i++]);
                     }
                 });
+                return;
             }
             if (total < 13) {
                 const offsets = [
@@ -88,6 +92,7 @@ export class Yields extends Map {
                         this.putImage(this.getPreloadedImage(`city/${tileYield._.toLowerCase()}`), ...offsets[i++]);
                     }
                 });
+                return;
             }
         });
     }

@@ -7,6 +7,11 @@ electron_1.contextBridge.exposeInMainWorld('transport', {
             handler(...args);
         });
     },
+    receiveOnce(channel, handler) {
+        electron_1.ipcRenderer.once(channel, (event, ...args) => {
+            handler(...args);
+        });
+    },
     send(channel, payload) {
         electron_1.ipcRenderer.invoke(channel, payload);
     },

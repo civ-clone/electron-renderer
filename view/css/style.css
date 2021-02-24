@@ -20,8 +20,8 @@ body {
     background: #8a8a8e;
     box-sizing: border-box;
     flex-grow: 0;
-    padding: 5px;
-    width: 200px;
+    padding: .5em;
+    width: 12.5em;
 }
 
 #map {
@@ -32,6 +32,55 @@ body {
 #map canvas {
     height: 100%;
     width: 100%;
+}
+
+#actions {
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: 100vh;
+    position: absolute;
+    right: 0;
+}
+
+#actions .action {
+    margin: 1em;
+}
+
+#actions .action button {
+    appearance: none;
+    border-radius: 50%;
+    background: #ccc none no-repeat center center;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, .4);
+    cursor: pointer;
+    height: 3em;
+    outline: none;
+    width: 3em;
+}
+
+#actions .action button:hover {
+    background-color: #eee;
+}
+
+#actions .action button:active {
+    background-color: #aaa;
+    position: relative;
+    top: 2px;
+    left: 2px;
+}
+
+#actions .action button.chooseResearch {
+    background-image: url('../assets/city/bulb.png');
+    background-position: 0.5625em 0.5625em;
+    background-size: 16px;
+    image-rendering: pixelated;
+}
+
+#actions .action button.cityBuild {
+    background-image: url('../assets/city/production.png');
+    background-position: 0.5625em 0.5625em;
+    background-size: 16px;
+    image-rendering: pixelated;
 }
 
 #notification {
@@ -53,11 +102,11 @@ body {
     border-radius: 3px;
     color: #123;
     box-shadow: 1px 1px 5px rgba(0, 0, 0, .6);
-    left: calc(50% - 250px);
+    left: calc(50% - 20em);
     max-height: 60%;
     position: fixed;
     top: 20%;
-    width: 500px;
+    width: 40em;
 }
 
 .notificationWindow header {
@@ -76,7 +125,7 @@ body {
     overflow-y: scroll;
     margin: 0;
     padding: 1em .5em;
-    max-height: 227px;
+    max-height: 20em;
 }
 
 .notificationWindow button {

@@ -1,6 +1,7 @@
-import { Map } from '../Map.js';
-export class ActiveUnit extends Map {
-    render(activeUnit = null) {
+import Units from './Units.js';
+export class ActiveUnit extends Units {
+    render() {
+        const activeUnit = this.activeUnit();
         this.context().clearRect(0, 0, this.world().width() * this.tileSize(), this.world().height() * this.tileSize());
         if (activeUnit === null) {
             return;

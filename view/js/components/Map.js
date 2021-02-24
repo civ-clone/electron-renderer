@@ -11,13 +11,14 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     }
     return privateMap.get(receiver);
 };
-var _activeUnit, _canvas, _context, _preload, _scale, _tileSize, _world;
+var _activeUnit, _canvas, _context, _visible, _preload, _scale, _tileSize, _world;
 import { e } from '../lib/html.js';
 export class Map {
-    constructor(world, canvas, activeUnit = null, scale = 2) {
+    constructor(world, canvas = e('canvas'), activeUnit = null, scale = 2) {
         _activeUnit.set(this, void 0);
         _canvas.set(this, void 0);
         _context.set(this, void 0);
+        _visible.set(this, true);
         _preload.set(this, void 0);
         _scale.set(this, void 0);
         _tileSize.set(this, void 0);
@@ -27,8 +28,12 @@ export class Map {
         __classPrivateFieldSet(this, _world, world);
         __classPrivateFieldSet(this, _tileSize, 16);
         __classPrivateFieldSet(this, _scale, scale);
+        this.setCanvasSize();
         __classPrivateFieldSet(this, _context, __classPrivateFieldGet(this, _canvas).getContext('2d'));
         __classPrivateFieldSet(this, _preload, document.querySelector('#preload'));
+    }
+    canvas() {
+        return __classPrivateFieldGet(this, _canvas);
     }
     context() {
         return __classPrivateFieldGet(this, _context);
@@ -138,7 +143,19 @@ export class Map {
         context.putImageData(imageData, 0, 0);
         return canvas;
     }
+    setCanvasSize() {
+        __classPrivateFieldGet(this, _canvas).height = __classPrivateFieldGet(this, _world).height() * this.tileSize();
+        __classPrivateFieldGet(this, _canvas).width = __classPrivateFieldGet(this, _world).width() * this.tileSize();
+        // this.#canvas.setAttribute('height', this.#canvas.height.toString());
+        // this.#canvas.setAttribute('width',this.#canvas.width.toString());
+    }
+    isVisible() {
+        return __classPrivateFieldGet(this, _visible);
+    }
+    setVisible(visible) {
+        __classPrivateFieldSet(this, _visible, visible);
+    }
 }
-_activeUnit = new WeakMap(), _canvas = new WeakMap(), _context = new WeakMap(), _preload = new WeakMap(), _scale = new WeakMap(), _tileSize = new WeakMap(), _world = new WeakMap();
+_activeUnit = new WeakMap(), _canvas = new WeakMap(), _context = new WeakMap(), _visible = new WeakMap(), _preload = new WeakMap(), _scale = new WeakMap(), _tileSize = new WeakMap(), _world = new WeakMap();
 export default Map;
 //# sourceMappingURL=Map.js.map

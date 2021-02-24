@@ -6,6 +6,14 @@ contextBridge.exposeInMainWorld('transport', {
       handler(...args);
     });
   },
+  receiveOnce(channel: string, handler: (...args: any[]) => void): void {
+    ipcRenderer.once(
+      channel,
+      (event: IpcRendererEvent, ...args: any[]): void => {
+        handler(...args);
+      }
+    );
+  },
   send(channel: string, payload: any): void {
     ipcRenderer.invoke(channel, payload);
   },

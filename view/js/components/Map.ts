@@ -17,6 +17,7 @@ export class Map implements IMap {
   #activeUnit: Unit | null;
   #canvas: HTMLCanvasElement;
   #context: CanvasRenderingContext2D;
+  #visible: boolean = true;
   #preload: HTMLElement;
   #scale: number;
   #tileSize: number;
@@ -24,7 +25,7 @@ export class Map implements IMap {
 
   constructor(
     world: World,
-    canvas: HTMLCanvasElement,
+    canvas: HTMLCanvasElement = e('canvas') as HTMLCanvasElement,
     activeUnit: Unit | null = null,
     scale: number = 2
   ) {
@@ -34,8 +35,14 @@ export class Map implements IMap {
     this.#tileSize = 16;
     this.#scale = scale;
 
+    this.setCanvasSize();
+
     this.#context = this.#canvas.getContext('2d') as CanvasRenderingContext2D;
     this.#preload = document.querySelector('#preload') as HTMLElement;
+  }
+
+  canvas(): HTMLCanvasElement {
+    return this.#canvas;
   }
 
   context(): CanvasRenderingContext2D {
@@ -221,6 +228,21 @@ export class Map implements IMap {
     context.putImageData(imageData, 0, 0);
 
     return canvas;
+  }
+
+  protected setCanvasSize(): void {
+    this.#canvas.height = this.#world.height() * this.tileSize();
+    this.#canvas.width = this.#world.width() * this.tileSize();
+    // this.#canvas.setAttribute('height', this.#canvas.height.toString());
+    // this.#canvas.setAttribute('width',this.#canvas.width.toString());
+  }
+
+  isVisible(): boolean {
+    return this.#visible;
+  }
+
+  setVisible(visible: boolean): void {
+    this.#visible = visible;
   }
 }
 

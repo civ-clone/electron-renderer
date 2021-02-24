@@ -13,12 +13,13 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _tiles, _height, _width;
 export class World {
-    constructor(height = 60, width = 80) {
-        _tiles.set(this, []);
+    constructor(world) {
+        _tiles.set(this, void 0);
         _height.set(this, void 0);
         _width.set(this, void 0);
-        __classPrivateFieldSet(this, _height, height);
-        __classPrivateFieldSet(this, _width, width);
+        __classPrivateFieldSet(this, _height, world.height);
+        __classPrivateFieldSet(this, _width, world.width);
+        __classPrivateFieldSet(this, _tiles, world.tiles || []);
     }
     get(x, y) {
         while (x < 0) {
@@ -66,25 +67,6 @@ export class World {
             return this.get(tile.x - 1, tile.y - 1);
         }
         throw new TypeError('Invalid direction.');
-    }
-    getSurrounding(x, y, radius = 1) {
-        const tiles = [];
-        for (let surroundingY = y - radius; surroundingY <= y + radius; surroundingY++) {
-            for (let surroundingX = x - radius; surroundingX <= x + radius; surroundingX++) {
-                tiles.push(this.get(surroundingX, surroundingY));
-            }
-        }
-        return tiles;
-    }
-    getRows() {
-        const rows = [];
-        for (let y = 0; y < __classPrivateFieldGet(this, _height); y++) {
-            rows[y] = [];
-            for (let x = 0; x < __classPrivateFieldGet(this, _width); x++) {
-                rows[y][x] = this.get(x, y);
-            }
-        }
-        return rows;
     }
     height() {
         return __classPrivateFieldGet(this, _height);

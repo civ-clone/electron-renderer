@@ -32,6 +32,8 @@ export class Yields extends Map {
             );
           }
         });
+
+        return;
       }
 
       if (total < 7) {
@@ -53,6 +55,8 @@ export class Yields extends Map {
             );
           }
         });
+
+        return;
       }
 
       if (total < 9) {
@@ -75,6 +79,8 @@ export class Yields extends Map {
             );
           }
         });
+
+        return;
       }
 
       if (total < 11) {
@@ -99,6 +105,8 @@ export class Yields extends Map {
             );
           }
         });
+
+        return;
       }
 
       if (total < 13) {
@@ -125,6 +133,8 @@ export class Yields extends Map {
             );
           }
         });
+
+        return;
       }
     });
   }

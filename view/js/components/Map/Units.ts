@@ -2,10 +2,9 @@ import { Tile, Unit } from '../../types';
 import { Map, IMap } from '../Map.js';
 
 export class Units extends Map implements IMap {
-  render(
-    tiles: Tile[] = this.world().tiles(),
-    activeUnit: Unit | null = null
-  ): void {
+  #activeUnit: Unit | null = null;
+
+  render(tiles: Tile[] = this.world().tiles()): void {
     this.context().clearRect(
       0,
       0,
@@ -22,7 +21,9 @@ export class Units extends Map implements IMap {
 
       if (
         tile.units.length > 0 &&
-        (activeUnit !== null ? activeUnit.tile.id !== tile.id : true)
+        (this.#activeUnit !== null
+          ? this.#activeUnit.tile.id !== tile.id
+          : true)
       ) {
         const [unit] = tile.units.sort(
             (a: Unit, b: Unit): number => b.defence.value - a.defence.value
@@ -43,8 +44,22 @@ export class Units extends Map implements IMap {
         }
 
         this.putImage(image, offsetX, offsetY);
+
+        if (
+          unit.improvements.some((improvement) => improvement._ === 'Fortified')
+        ) {
+          this.drawImage('map/fortify', x, y);
+        }
       }
     });
+  }
+
+  setActiveUnit(unit: Unit | null): void {
+    this.#activeUnit = unit;
+  }
+
+  protected activeUnit(): Unit | null {
+    return this.#activeUnit;
   }
 }
 

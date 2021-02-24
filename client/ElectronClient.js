@@ -145,10 +145,8 @@ class ElectronClient extends Client_1.Client {
     }
     takeTurn() {
         return new Promise((resolve, reject) => {
-            setTimeout(() => this.sendGameData(), 200);
-            // this.sendGameData();
+            this.sendGameData();
             const listener = (...args) => {
-                this.sendGameData();
                 try {
                     if (this.handleAction(...args)) {
                         __classPrivateFieldGet(this, _eventEmitter).off('action', listener);
