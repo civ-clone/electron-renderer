@@ -1,9 +1,10 @@
-import { a, e, t } from '../lib/html.js';
+import { a, e, h, t } from '../lib/html.js';
 import { City as CityData } from '../types';
 import Portal from './Portal.js';
-import Terrain from './Map/Terrain';
-import World from './World';
-import Yields from './Map/Yields';
+import Terrain from './Map/Terrain.js';
+import World from './World.js';
+import Yields from './Map/Yields.js';
+import Cities from './Map/Cities.js';
 
 export class City {
   #city: CityData;
@@ -24,16 +25,39 @@ export class City {
   build(): void {
     const mapCanvas = e('canvas') as HTMLCanvasElement;
 
-    const world = new World(this.#city.player.world),
+    const worldData = this.#city.player.world,
+      world = new World({
+        ...worldData,
+        tiles: this.#city.tiles,
+      }),
       terrainMap = new Terrain(world),
-      yieldWorld = new World(this.#city.player.world),
+      cityMap = new Cities(world),
+      yieldWorld = new World({
+        ...worldData,
+        tiles: this.#city.tilesWorked,
+      }),
       yieldMap = new Yields(yieldWorld),
-      map = new Portal(world, mapCanvas, terrainMap, yieldMap);
+      map = new Portal(world, mapCanvas, terrainMap, cityMap, yieldMap);
+
+    cityMap.setShowNames(false);
 
     map.setCenter(this.#city.tile.x, this.#city.tile.y);
 
     this.#element.append(
-      e('header', e('h2', t(this.#city.name))),
+      e(
+        'header',
+        e('h2', t(this.#city.name)),
+        h(
+          a(e('button', t('Close')), {
+            class: 'close',
+          }),
+          {
+            click: () => {
+              this.#element.remove();
+            },
+          }
+        )
+      ),
       a(
         e(
           'div',

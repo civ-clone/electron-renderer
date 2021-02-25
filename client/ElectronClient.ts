@@ -12,6 +12,7 @@ import TransferObject from './TransferObject';
 import Unit from '@civ-clone/core-unit/Unit';
 import UnitAction from '@civ-clone/core-unit/Action';
 import * as EventEmitter from 'events';
+import { instance as engineInstance } from '@civ-clone/core-engine/Engine';
 import { instance as playerRegistryInstance } from '@civ-clone/core-player/PlayerRegistry';
 import { instance as turnInstance } from '@civ-clone/core-turn-based-game/Turn';
 import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
@@ -34,6 +35,12 @@ export class ElectronClient extends Client implements IClient {
 
     this.#receiver('action', (...args): void => {
       this.#eventEmitter.emit('action', ...args);
+    });
+
+    engineInstance.on('player:turn-end', (player: Player) => {
+      if (player !== this.player()) {
+        this.sendGameData();
+      }
     });
   }
 
@@ -75,7 +82,8 @@ export class ElectronClient extends Client implements IClient {
     }
 
     if (!name) {
-      this.sendNotification('action not specified');
+      // this.sendNotification('action not specified');
+      console.log('action not specified');
 
       return false;
     }
@@ -87,7 +95,8 @@ export class ElectronClient extends Client implements IClient {
     );
 
     if (!playerAction) {
-      this.sendNotification(`action not found: ${name}`);
+      // this.sendNotification(`action not found: ${name}`);
+      console.log('action not specified');
 
       return false;
     }
@@ -107,7 +116,8 @@ export class ElectronClient extends Client implements IClient {
 
       while (actions.length !== 1) {
         if (actions.length === 0) {
-          this.sendNotification(`action not found: ${unitAction}`);
+          // this.sendNotification(`action not found: ${unitAction}`);
+          console.log(`action not found: ${unitAction}`);
 
           return false;
         }
@@ -118,7 +128,10 @@ export class ElectronClient extends Client implements IClient {
 
         if (actions.length > 1) {
           if (!target) {
-            this.sendNotification(
+            // this.sendNotification(
+            //   `too many actions found: ${unitAction} (${actions.length})`
+            // );
+            console.log(
               `too many actions found: ${unitAction} (${actions.length})`
             );
 
@@ -130,6 +143,8 @@ export class ElectronClient extends Client implements IClient {
       const [actionToPerform] = actions;
 
       actionToPerform.perform();
+
+      return false;
     }
 
     if (playerAction instanceof CityBuild) {
@@ -137,7 +152,8 @@ export class ElectronClient extends Client implements IClient {
         { chosen } = action;
 
       if (!chosen) {
-        this.sendNotification(`no build item specified`);
+        // this.sendNotification(`no build item specified`);
+        console.log(`no build item specified`);
 
         return false;
       }
@@ -150,12 +166,15 @@ export class ElectronClient extends Client implements IClient {
         );
 
       if (!BuildItem) {
-        this.sendNotification(`build item not available: ${chosen}`);
+        // this.sendNotification(`build item not available: ${chosen}`);
+        console.log(`build item not available: ${chosen}`);
 
         return false;
       }
 
       cityBuild.build(BuildItem);
+
+      return false;
     }
 
     if (playerAction instanceof ChooseResearch) {
@@ -173,15 +192,19 @@ export class ElectronClient extends Client implements IClient {
         .filter((AdvanceType: typeof Advance) => AdvanceType.name === chosen);
 
       if (!ChosenAdvance) {
-        this.sendNotification(`build item not available: ${chosen}`);
+        // this.sendNotification(`build item not available: ${chosen}`);
+        console.log(`build item not available: ${chosen}`);
 
         return false;
       }
 
       playerResearch.research(ChosenAdvance);
+
+      return false;
     }
 
-    return !player.mandatoryActions().length;
+    console.log(`unhandled action: ${JSON.stringify(action)}`);
+    return false;
   }
 
   private sendGameData(): void {

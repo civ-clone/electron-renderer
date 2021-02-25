@@ -1,5 +1,18 @@
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, privateMap, value) {
+    if (!privateMap.has(receiver)) {
+        throw new TypeError("attempted to set private field on non-instance");
+    }
+    privateMap.set(receiver, value);
+    return value;
+};
+var _showNames, _showSize;
 import { Map } from '../Map.js';
 export class Cities extends Map {
+    constructor() {
+        super(...arguments);
+        _showNames.set(this, true);
+        _showSize.set(this, true);
+    }
     render(tiles = this.world().tiles(), activeUnit = null) {
         this.context().clearRect(0, 0, this.world().width() * this.tileSize(), this.world().height() * this.tileSize());
         tiles.forEach((tile) => {
@@ -25,6 +38,13 @@ export class Cities extends Map {
             }
         });
     }
+    setShowSize(showSize) {
+        __classPrivateFieldSet(this, _showSize, showSize);
+    }
+    setShowNames(showNames) {
+        __classPrivateFieldSet(this, _showNames, showNames);
+    }
 }
+_showNames = new WeakMap(), _showSize = new WeakMap();
 export default Cities;
 //# sourceMappingURL=Cities.js.map

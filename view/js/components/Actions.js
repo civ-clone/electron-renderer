@@ -34,8 +34,9 @@ export class Actions {
                 case 'CityBuild':
                     actionInstance = new CityBuild(action);
                     break;
-                case 'ActiveUnit':
                 // This is handled separately so no need to worry.
+                case 'ActiveUnit':
+                    return;
                 default:
                     console.log('need to handle ' + action._);
                     return;

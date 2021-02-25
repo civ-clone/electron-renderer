@@ -39,8 +39,10 @@ export class Actions implements IActions {
 
           break;
 
-        case 'ActiveUnit':
         // This is handled separately so no need to worry.
+        case 'ActiveUnit':
+          return;
+
         default:
           console.log('need to handle ' + action._);
           return;

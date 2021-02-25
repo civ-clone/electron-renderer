@@ -1682,9 +1682,9 @@
     "@civ-clone/core-rule" "^0.1.0"
 
 "@civ-clone/core-player-world@^0.1.0":
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/@civ-clone/core-player-world/-/core-player-world-0.1.2.tgz#c353a77d7a2d075afc00f56f806ee18b178a1d98"
-  integrity sha512-+6JxuhACfvqv+1nZhLgavaHW+UkP5Ehi5+WItqheX3RbmK5K52+TwiCLnk2ZbCaSos7JMM4KGhMpqV07w2AtVQ==
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/@civ-clone/core-player-world/-/core-player-world-0.1.3.tgz#328f0c5fd2fff18059a4be70e35ea922eb02e2eb"
+  integrity sha512-u4vD24gLq+V8gupo5EYTTkgXcQ8QPQ6ixwxuY2Ad2uKvib7JLJ7DliZuErp4kuctmmD6hJSyCrYUWf/l0SGO1w==
   dependencies:
     "@civ-clone/core-data-object" "^0.1.0"
     "@civ-clone/core-player" "^0.1.0"

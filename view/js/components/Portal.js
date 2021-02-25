@@ -29,6 +29,16 @@ export class Portal {
     build() {
         __classPrivateFieldGet(this, _layers).forEach((layer) => layer.render());
     }
+    center() {
+        return __classPrivateFieldGet(this, _center);
+    }
+    isVisible(x, y) {
+        const xRange = Math.floor(__classPrivateFieldGet(this, _canvas).width / __classPrivateFieldGet(this, _layers)[0].tileSize() / 2), yRange = Math.floor(__classPrivateFieldGet(this, _canvas).height / __classPrivateFieldGet(this, _layers)[0].tileSize() / 2);
+        return (x < __classPrivateFieldGet(this, _center).x + xRange ||
+            x > __classPrivateFieldGet(this, _center).x - xRange ||
+            y < __classPrivateFieldGet(this, _center).y + yRange ||
+            y > __classPrivateFieldGet(this, _center).y - yRange);
+    }
     render() {
         const tileSize = __classPrivateFieldGet(this, _layers)[0].tileSize(), layerWidth = __classPrivateFieldGet(this, _world).width() * tileSize, centerX = __classPrivateFieldGet(this, _center).x * tileSize + Math.trunc(tileSize / 2), portalCenterX = Math.trunc(__classPrivateFieldGet(this, _canvas).width / 2), layerHeight = __classPrivateFieldGet(this, _world).height() * tileSize, centerY = __classPrivateFieldGet(this, _center).y * tileSize + Math.trunc(tileSize / 2), portalCenterY = Math.trunc(__classPrivateFieldGet(this, _canvas).height / 2);
         let startX = portalCenterX - centerX, endX = portalCenterX + layerWidth, startY = portalCenterY - centerY, endY = portalCenterY + layerHeight;
@@ -61,6 +71,7 @@ export class Portal {
     setCenter(x, y) {
         __classPrivateFieldGet(this, _center).x = x;
         __classPrivateFieldGet(this, _center).y = y;
+        this.render();
     }
 }
 _canvas = new WeakMap(), _center = new WeakMap(), _context = new WeakMap(), _layers = new WeakMap(), _world = new WeakMap();

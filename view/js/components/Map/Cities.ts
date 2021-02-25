@@ -1,7 +1,15 @@
 import { Tile, Unit } from '../../types';
 import { Map, IMap } from '../Map.js';
 
-export class Cities extends Map implements IMap {
+export interface ICities extends IMap {
+  setShowSize(showSize: boolean): void;
+  setShowNames(showNames: boolean): void;
+}
+
+export class Cities extends Map implements ICities {
+  #showNames: boolean = true;
+  #showSize: boolean = true;
+
   render(
     tiles: Tile[] = this.world().tiles(),
     activeUnit: Unit | null = null
@@ -76,6 +84,14 @@ export class Cities extends Map implements IMap {
         );
       }
     });
+  }
+
+  setShowSize(showSize: boolean): void {
+    this.#showSize = showSize;
+  }
+
+  setShowNames(showNames: boolean): void {
+    this.#showNames = showNames;
   }
 }
 

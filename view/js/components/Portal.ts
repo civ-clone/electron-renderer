@@ -10,6 +10,7 @@ export type Coordinate = {
 
 export interface IPortal {
   build(): void;
+  isVisible(x: number, y: number): boolean;
   render(): void;
   setCenter(x: number, y: number): void;
 }
@@ -37,6 +38,24 @@ export class Portal implements IPortal {
 
   build(): void {
     this.#layers.forEach((layer: Map) => layer.render());
+  }
+
+  center(): Coordinate {
+    return this.#center;
+  }
+
+  isVisible(x: number, y: number): boolean {
+    const xRange = Math.floor(
+        this.#canvas.width / this.#layers[0].tileSize() / 2
+      ),
+      yRange = Math.floor(this.#canvas.height / this.#layers[0].tileSize() / 2);
+
+    return (
+      x < this.#center.x + xRange ||
+      x > this.#center.x - xRange ||
+      y < this.#center.y + yRange ||
+      y > this.#center.y - yRange
+    );
   }
 
   render(): void {
@@ -95,6 +114,8 @@ export class Portal implements IPortal {
   setCenter(x: number, y: number): void {
     this.#center.x = x;
     this.#center.y = y;
+
+    this.render();
   }
 }
 

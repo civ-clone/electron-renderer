@@ -3,11 +3,12 @@ import Action from './Action.js';
 import SelectionWindow from '../SelectionWindow.js';
 export class CityBuild extends Action {
     build() {
+        const cityBuild = this.value();
         this.element().append(h(a(e('button'), {
             class: 'cityBuild',
         }), {
             click: () => {
-                const chooseWindow = new SelectionWindow('What do you want to build?', this.value().available.map((advance) => ({
+                const chooseWindow = new SelectionWindow(`What do you want to build in ${cityBuild.city.name}?`, this.value().available.map((advance) => ({
                     value: advance._,
                 })), [
                     {
