@@ -1,4 +1,4 @@
-import { a, e, h, t } from '../lib/html.js';
+import { e, h, t } from '../lib/html.js';
 import NotificationWindow from './NotificationWindow.js';
 
 export interface SelectionWindowAction {
@@ -21,9 +21,7 @@ export class SelectionWindow extends NotificationWindow {
     const selectionList = e(
       'select',
       ...options.map((option) =>
-        a(e('option', t(option.label || option.value)), {
-          value: option.value,
-        })
+        e(`option[value="${option.value}"]`, t(option.label || option.value))
       )
     ) as HTMLSelectElement;
 
@@ -37,9 +35,7 @@ export class SelectionWindow extends NotificationWindow {
           'footer',
           ...actions.map((action) =>
             h(e('button', t(action.label)), {
-              click: () => {
-                action.handler(selectionList.value);
-              },
+              click: () => action.handler(selectionList.value),
             })
           )
         )

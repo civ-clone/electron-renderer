@@ -1,7 +1,8 @@
-import { a, e, h, t } from '../lib/html.js';
+import NotificationWindow from './NotificationWindow.js';
 
 export interface Notification {
   message: string;
+  title?: string;
 }
 
 export class Notifications {
@@ -10,43 +11,36 @@ export class Notifications {
 
   constructor(container: HTMLElement = document.body) {
     this.#container = container;
-    this.bindEvents();
-  }
-
-  private bindEvents(): void {
-    window.setInterval((): void => {
-      const active = document.querySelector('.notificationWindow');
-
-      if (!this.#notifications.length || active) {
-        return;
-      }
-
-      const notification = this.#notifications.shift() as Notification;
-
-      this.publish(notification);
-    }, 500);
   }
 
   receive(notification: Notification): void {
     this.#notifications.push(notification);
+
+    this.check();
   }
 
-  publish(notification: Notification): void {
-    document.body.append(
-      a(
-        e(
-          'div',
-          e('header', e('h3', t('Notification'))),
-          e('p', t(notification.message)),
-          a(e('button', t('Close')), {
-            'data-action': 'close',
-          })
-        ),
-        {
-          class: 'notificationWindow',
-        }
-      )
+  private check(): void {
+    const active = document.querySelector('.notificationWindow');
+
+    if (!this.#notifications.length || active) {
+      return;
+    }
+
+    const notification = this.#notifications.shift() as Notification;
+
+    this.publish(notification);
+  }
+
+  private publish(notification: Notification): void {
+    const notificationWindow = new NotificationWindow(
+      notification.title ?? 'Notification',
+      notification.message,
+      this.#container
     );
+
+    notificationWindow.element().addEventListener('close', () => this.check());
+
+    notificationWindow.display();
   }
 }
 

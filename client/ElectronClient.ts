@@ -9,8 +9,11 @@ import Player from '@civ-clone/core-player/Player';
 import PlayerAction from '@civ-clone/core-player/PlayerAction';
 import PlayerResearch from '@civ-clone/core-science/PlayerResearch';
 import TransferObject from './TransferObject';
+import Turn from '@civ-clone/core-turn-based-game/Turn';
 import Unit from '@civ-clone/core-unit/Unit';
 import UnitAction from '@civ-clone/core-unit/Action';
+import World from '@civ-clone/core-world/World';
+import Year from '@civ-clone/core-game-year/Year';
 import * as EventEmitter from 'events';
 import { instance as engineInstance } from '@civ-clone/core-engine/Engine';
 import { instance as playerRegistryInstance } from '@civ-clone/core-player/PlayerRegistry';
@@ -21,6 +24,8 @@ export class ElectronClient extends Client implements IClient {
   #eventEmitter: EventEmitter;
   #sender: (channel: string, payload: any) => void;
   #receiver: (channel: string, handler: (...args: any[]) => void) => void;
+  #shift56 = false;
+  #wholeWorld: World | null = null;
 
   constructor(
     player: Player,
@@ -41,6 +46,10 @@ export class ElectronClient extends Client implements IClient {
       if (player !== this.player()) {
         this.sendGameData();
       }
+    });
+
+    engineInstance.on('world:built', (world: World) => {
+      this.#wholeWorld = world;
     });
   }
 
@@ -76,6 +85,10 @@ export class ElectronClient extends Client implements IClient {
     // }
 
     const { name, id } = action;
+
+    if (name === '%^') {
+      this.#shift56 = !this.#shift56;
+    }
 
     if (name === 'EndOfTurn') {
       return mandatoryActions.length === 0;
@@ -208,11 +221,23 @@ export class ElectronClient extends Client implements IClient {
   }
 
   private sendGameData(): void {
-    const dataObject = new TransferObject({
+    const rawData: {
+      player: Player;
+      turn: Turn;
+      world: World | null;
+      year: Year;
+    } = {
       player: this.player(),
       turn: turnInstance,
+      world: null,
       year: yearInstance,
-    });
+    };
+
+    if (this.#shift56) {
+      rawData.world = this.#wholeWorld;
+    }
+
+    const dataObject = new TransferObject(rawData);
 
     this.#sender('gameData', dataObject.toPlainObject());
   }

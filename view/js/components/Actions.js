@@ -12,13 +12,11 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     return privateMap.get(receiver);
 };
 var _actions, _element;
-import { a, e } from '../lib/html.js';
+import { e } from '../lib/html.js';
 import ChooseResearch from './Actions/ChooseResearch.js';
 import CityBuild from './Actions/CityBuild.js';
 export class Actions {
-    constructor(actions, container = a(e('div'), {
-        class: 'actions',
-    })) {
+    constructor(actions, container = e('div.actions')) {
         _actions.set(this, []);
         _element.set(this, void 0);
         __classPrivateFieldSet(this, _element, container);

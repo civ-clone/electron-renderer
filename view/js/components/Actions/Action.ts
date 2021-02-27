@@ -1,5 +1,5 @@
 import { CityBuild, PlayerAction, PlayerResearch, Unit } from '../../types';
-import { a, e } from '../../lib/html.js';
+import { e } from '../../lib/html.js';
 
 export interface IAction {
   build(): void;
@@ -14,9 +14,7 @@ export class Action implements IAction {
 
   constructor(action: PlayerAction) {
     this.#action = action;
-    this.#element = a(e('div'), {
-      class: 'action',
-    });
+    this.#element = e('div.action');
 
     this.build();
   }

@@ -11,29 +11,25 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     }
     return privateMap.get(receiver);
 };
-var _activeUnit, _element;
+var _activeUnit;
 import { e, t } from '../lib/html.js';
-export class UnitDetails {
+import Element from './Element.js';
+export class UnitDetails extends Element {
     constructor(element, activeUnit) {
+        super(element);
         _activeUnit.set(this, void 0);
-        _element.set(this, void 0);
-        __classPrivateFieldSet(this, _element, element);
         __classPrivateFieldSet(this, _activeUnit, activeUnit);
+        this.build();
     }
     build() {
-        while (__classPrivateFieldGet(this, _element).firstChild !== null) {
-            __classPrivateFieldGet(this, _element).firstChild.remove();
-        }
+        this.clear();
         if (__classPrivateFieldGet(this, _activeUnit) === null) {
             return;
         }
-        __classPrivateFieldGet(this, _element).append(e('p', t(`${__classPrivateFieldGet(this, _activeUnit).player.civilization._} ${__classPrivateFieldGet(this, _activeUnit)._} (${__classPrivateFieldGet(this, _activeUnit).tile.x}, ${__classPrivateFieldGet(this, _activeUnit).tile.y})`)), e('p', t(`${__classPrivateFieldGet(this, _activeUnit).moves.value} / ${__classPrivateFieldGet(this, _activeUnit).movement.value} moves`)), e('p', t(`A: ${__classPrivateFieldGet(this, _activeUnit).attack.value} / D: ${__classPrivateFieldGet(this, _activeUnit).defence.value} / V: ${__classPrivateFieldGet(this, _activeUnit).visibility.value}`)), e('p', t(`${__classPrivateFieldGet(this, _activeUnit).improvements
+        this.element().append(e('p', t(`${__classPrivateFieldGet(this, _activeUnit).player.civilization._} ${__classPrivateFieldGet(this, _activeUnit)._} (${__classPrivateFieldGet(this, _activeUnit).tile.x}, ${__classPrivateFieldGet(this, _activeUnit).tile.y})`)), e('p', t(`${__classPrivateFieldGet(this, _activeUnit).moves.value} / ${__classPrivateFieldGet(this, _activeUnit).movement.value} moves`)), e('p', t(`A: ${__classPrivateFieldGet(this, _activeUnit).attack.value} / D: ${__classPrivateFieldGet(this, _activeUnit).defence.value} / V: ${__classPrivateFieldGet(this, _activeUnit).visibility.value}`)), e('p', t(`${__classPrivateFieldGet(this, _activeUnit).improvements
             .map((improvement) => improvement._)
             .join(', ')}`)));
     }
-    element() {
-        return __classPrivateFieldGet(this, _element);
-    }
 }
-_activeUnit = new WeakMap(), _element = new WeakMap();
+_activeUnit = new WeakMap();
 //# sourceMappingURL=UnitDetails.js.map

@@ -12,7 +12,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     }
     return privateMap.get(receiver);
 };
-var _eventEmitter, _sender, _receiver;
+var _eventEmitter, _sender, _receiver, _shift56, _wholeWorld;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ElectronClient = void 0;
 const Client_1 = require("@civ-clone/core-civ-client/Client");
@@ -31,6 +31,8 @@ class ElectronClient extends Client_1.Client {
         _eventEmitter.set(this, void 0);
         _sender.set(this, void 0);
         _receiver.set(this, void 0);
+        _shift56.set(this, false);
+        _wholeWorld.set(this, null);
         __classPrivateFieldSet(this, _eventEmitter, new EventEmitter());
         __classPrivateFieldSet(this, _sender, sender);
         __classPrivateFieldSet(this, _receiver, receiver);
@@ -41,6 +43,9 @@ class ElectronClient extends Client_1.Client {
             if (player !== this.player()) {
                 this.sendGameData();
             }
+        });
+        Engine_1.instance.on('world:built', (world) => {
+            __classPrivateFieldSet(this, _wholeWorld, world);
         });
     }
     handleAction(...args) {
@@ -67,6 +72,9 @@ class ElectronClient extends Client_1.Client {
         //   }
         // }
         const { name, id } = action;
+        if (name === '%^') {
+            __classPrivateFieldSet(this, _shift56, !__classPrivateFieldGet(this, _shift56));
+        }
         if (name === 'EndOfTurn') {
             return mandatoryActions.length === 0;
         }
@@ -150,11 +158,16 @@ class ElectronClient extends Client_1.Client {
         return false;
     }
     sendGameData() {
-        const dataObject = new TransferObject_1.default({
+        const rawData = {
             player: this.player(),
             turn: Turn_1.instance,
+            world: null,
             year: Year_1.instance,
-        });
+        };
+        if (__classPrivateFieldGet(this, _shift56)) {
+            rawData.world = __classPrivateFieldGet(this, _wholeWorld);
+        }
+        const dataObject = new TransferObject_1.default(rawData);
         __classPrivateFieldGet(this, _sender).call(this, 'gameData', dataObject.toPlainObject());
     }
     sendNotification(message) {
@@ -182,6 +195,6 @@ class ElectronClient extends Client_1.Client {
     }
 }
 exports.ElectronClient = ElectronClient;
-_eventEmitter = new WeakMap(), _sender = new WeakMap(), _receiver = new WeakMap();
+_eventEmitter = new WeakMap(), _sender = new WeakMap(), _receiver = new WeakMap(), _shift56 = new WeakMap(), _wholeWorld = new WeakMap();
 exports.default = ElectronClient;
 //# sourceMappingURL=ElectronClient.js.map

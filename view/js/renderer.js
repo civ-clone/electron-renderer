@@ -12,9 +12,11 @@ import EventHandler from './lib/EventHandler.js';
 import Actions from './components/Actions.js';
 import { UnitDetails } from './components/UnitDetails.js';
 import City from './components/City.js';
+import GameDetails from './components/GameDetails.js';
+import PlayerDetails from './components/PlayerDetails.js';
 try {
     ((transport) => {
-        const notificationArea = document.getElementById('notification'), startButton = document.querySelector('button'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), yearWrapper = document.getElementById('year'), turnWrapper = document.getElementById('turn'), minimap = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications();
+        const notificationArea = document.getElementById('notification'), startButton = document.querySelector('button'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimap = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications();
         document.addEventListener('DOMContentLoaded', () => {
             startButton.addEventListener('click', () => {
                 transport.send('start');
@@ -33,15 +35,16 @@ try {
             }, 4000);
         });
         transport.receiveOnce('gameData', (objectMap) => {
+            var _a;
             const data = reconstituteData(objectMap);
             gameArea.classList.add('active');
             mapPortal.width = mapPortal.parentElement.offsetWidth;
             mapPortal.height = mapPortal.parentElement.offsetHeight;
-            const world = new World(data.player.world);
+            const world = new World((_a = data.world) !== null && _a !== void 0 ? _a : data.player.world);
             let activeUnit = null, activeUnits = [], shouldBuild = true;
-            const intervalHandler = new IntervalHandler(), eventHandler = new EventHandler(), terrainMap = new Terrain(world), unitsMap = new Units(world), yieldsMap = new Yields(world), activeUnitsMap = new ActiveUnit(world);
+            const intervalHandler = new IntervalHandler(), eventHandler = new EventHandler(), terrainMap = new Terrain(world), yieldsMap = new Yields(world), unitsMap = new Units(world), citiesMap = new Cities(world), activeUnitsMap = new ActiveUnit(world);
             yieldsMap.setVisible(false);
-            const portal = new Portal(world, mapPortal, terrainMap, unitsMap, new Cities(world), yieldsMap, activeUnitsMap);
+            const portal = new Portal(world, mapPortal, terrainMap, yieldsMap, unitsMap, citiesMap, activeUnitsMap);
             intervalHandler.on(() => {
                 activeUnitsMap.setVisible(!activeUnitsMap.isVisible());
                 if (shouldBuild) {
@@ -59,18 +62,18 @@ try {
                 const actions = new Actions(data.player.mandatoryActions, actionArea);
                 gameArea.append(actions.element());
                 world.setTileData(data.player.world.tiles);
-                turnWrapper.innerText = `${data.turn.value}`;
-                yearWrapper.innerText = ((year) => {
-                    if (year < 0) {
-                        return Math.abs(year) + ' BCE';
-                    }
-                    if (year === 0) {
-                        return '1 CE';
-                    }
-                    return year + ' CE';
-                })(data.year.value);
+                const gameDetails = new GameDetails(gameInfo, data.turn, data.year);
+                gameDetails.build();
+                const playerDetails = new PlayerDetails(playerInfo, data.player);
+                playerDetails.build();
                 activeUnits = data.player.actions.filter((action) => action._ === 'ActiveUnit');
-                const [activeUnitAction] = activeUnits;
+                // This prioritises units that are already on screen
+                const [activeUnitAction] = activeUnits.sort(({ value: unitA }, { value: unitB }) => (portal.isVisible(unitB.tile.x, unitB.tile.y)
+                    ? 1
+                    : 0) -
+                    (portal.isVisible(unitA.tile.x, unitA.tile.y)
+                        ? 1
+                        : 0));
                 activeUnit = activeUnitAction ? activeUnitAction.value : null;
                 unitsMap.setActiveUnit(activeUnit);
                 activeUnitsMap.setActiveUnit(activeUnit);
@@ -217,6 +220,12 @@ try {
                         portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
                         portal.render();
                     }
+                }
+                if (event.key === 't') {
+                    unitsMap.setVisible(!unitsMap.isVisible());
+                    citiesMap.setVisible(!citiesMap.isVisible());
+                    activeUnitsMap.setVisible(!activeUnitsMap.isVisible());
+                    portal.render();
                 }
                 if (event.key === 'y') {
                     yieldsMap.setVisible(!yieldsMap.isVisible());

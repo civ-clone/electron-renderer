@@ -1,5 +1,5 @@
 import Action from './Action.js';
-import { a, e, h } from '../../lib/html.js';
+import { e, h } from '../../lib/html.js';
 import SelectionWindow from '../SelectionWindow.js';
 import { ITransport, PlayerResearch } from '../../types';
 
@@ -8,43 +8,38 @@ declare var transport: ITransport;
 export class ChooseResearch extends Action {
   build(): void {
     this.element().append(
-      h(
-        a(e('button'), {
-          class: 'chooseResearch',
-        }),
-        {
-          click: () => {
-            const chooseWindow = new SelectionWindow(
-              'Choose research',
-              this.value().available.map((advance) => ({
-                value: advance._,
-              })),
-              [
-                {
-                  label: 'OK',
-                  handler: (selection) => {
-                    if (!selection) {
-                      return;
-                    }
+      h(e('button.chooseResearch'), {
+        click: () => {
+          const chooseWindow = new SelectionWindow(
+            'Choose research',
+            this.value().available.map((advance) => ({
+              value: advance._,
+            })),
+            [
+              {
+                label: 'OK',
+                handler: (selection) => {
+                  if (!selection) {
+                    return;
+                  }
 
-                    transport.send('action', {
-                      name: 'ChooseResearch',
-                      id: this.value().id,
-                      chosen: selection ? selection : '@',
-                    });
+                  transport.send('action', {
+                    name: 'ChooseResearch',
+                    id: this.value().id,
+                    chosen: selection ? selection : '@',
+                  });
 
-                    chooseWindow.close();
+                  chooseWindow.close();
 
-                    this.complete();
-                  },
+                  this.complete();
                 },
-              ]
-            );
+              },
+            ]
+          );
 
-            chooseWindow.display();
-          },
-        }
-      )
+          chooseWindow.display();
+        },
+      })
     );
   }
 

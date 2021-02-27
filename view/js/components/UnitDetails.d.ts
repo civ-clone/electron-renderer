@@ -1,7 +1,7 @@
 import { Unit } from '../types';
-export declare class UnitDetails {
+import Element from './Element.js';
+export declare class UnitDetails extends Element {
     #private;
     constructor(element: HTMLElement, activeUnit: Unit | null);
     build(): void;
-    element(): HTMLElement;
 }

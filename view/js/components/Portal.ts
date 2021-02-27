@@ -1,5 +1,4 @@
 import { e } from '../lib/html.js';
-import IntervalHandler from '../lib/IntervalHandler.js';
 import Map from './Map.js';
 import World from './World.js';
 
@@ -51,9 +50,9 @@ export class Portal implements IPortal {
       yRange = Math.floor(this.#canvas.height / this.#layers[0].tileSize() / 2);
 
     return (
-      x < this.#center.x + xRange ||
-      x > this.#center.x - xRange ||
-      y < this.#center.y + yRange ||
+      x < this.#center.x + xRange &&
+      x > this.#center.x - xRange &&
+      y < this.#center.y + yRange &&
       y > this.#center.y - yRange
     );
   }

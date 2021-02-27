@@ -34,9 +34,9 @@ export class Portal {
     }
     isVisible(x, y) {
         const xRange = Math.floor(__classPrivateFieldGet(this, _canvas).width / __classPrivateFieldGet(this, _layers)[0].tileSize() / 2), yRange = Math.floor(__classPrivateFieldGet(this, _canvas).height / __classPrivateFieldGet(this, _layers)[0].tileSize() / 2);
-        return (x < __classPrivateFieldGet(this, _center).x + xRange ||
-            x > __classPrivateFieldGet(this, _center).x - xRange ||
-            y < __classPrivateFieldGet(this, _center).y + yRange ||
+        return (x < __classPrivateFieldGet(this, _center).x + xRange &&
+            x > __classPrivateFieldGet(this, _center).x - xRange &&
+            y < __classPrivateFieldGet(this, _center).y + yRange &&
             y > __classPrivateFieldGet(this, _center).y - yRange);
     }
     render() {

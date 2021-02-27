@@ -11,31 +11,27 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     }
     return privateMap.get(receiver);
 };
-var _element, _parent;
-import { a, e, h, t } from '../lib/html.js';
-export class NotificationWindow {
+var _body, _title;
+import { e, h, t } from '../lib/html.js';
+import TransientElement from './TransientElement.js';
+export class NotificationWindow extends TransientElement {
     constructor(title, body, parent = document.body) {
-        _element.set(this, void 0);
-        _parent.set(this, void 0);
-        __classPrivateFieldSet(this, _element, a(e('div', e('header', e('h3', t(title), h(a(e('button', t('Close')), {
-            class: 'close',
-        }), {
+        super(parent, e('div.notificationWindow'));
+        _body.set(this, void 0);
+        _title.set(this, void 0);
+        __classPrivateFieldSet(this, _body, body);
+        __classPrivateFieldSet(this, _title, title);
+    }
+    build() {
+        this.element().append(e('header', e('h3', t(__classPrivateFieldGet(this, _title)), h(e('button.close', t('Close')), {
             click: () => this.close(),
-        }))), body instanceof Node ? body : e('p', t(body))), {
-            class: 'notificationWindow',
-        }));
-        __classPrivateFieldSet(this, _parent, parent);
+        }))), __classPrivateFieldGet(this, _body) instanceof Node ? __classPrivateFieldGet(this, _body) : e('p', t(__classPrivateFieldGet(this, _body))));
     }
     close() {
         this.element().remove();
-    }
-    display() {
-        __classPrivateFieldGet(this, _parent).append(this.element());
-    }
-    element() {
-        return __classPrivateFieldGet(this, _element);
+        this.element().dispatchEvent(new CustomEvent('close'));
     }
 }
-_element = new WeakMap(), _parent = new WeakMap();
+_body = new WeakMap(), _title = new WeakMap();
 export default NotificationWindow;
 //# sourceMappingURL=NotificationWindow.js.map

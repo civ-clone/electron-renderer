@@ -1,11 +1,9 @@
 import Action from './Action.js';
-import { a, e, h } from '../../lib/html.js';
+import { e, h } from '../../lib/html.js';
 import SelectionWindow from '../SelectionWindow.js';
 export class ChooseResearch extends Action {
     build() {
-        this.element().append(h(a(e('button'), {
-            class: 'chooseResearch',
-        }), {
+        this.element().append(h(e('button.chooseResearch'), {
             click: () => {
                 const chooseWindow = new SelectionWindow('Choose research', this.value().available.map((advance) => ({
                     value: advance._,

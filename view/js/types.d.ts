@@ -148,6 +148,7 @@ export interface GameData extends EntityInstance {
   player: Player;
   players: Player[];
   turn: Yield;
+  world: World;
   year: Yield;
 }
 

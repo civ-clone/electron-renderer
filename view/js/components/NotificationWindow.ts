@@ -1,57 +1,45 @@
-import { a, e, h, t } from '../lib/html.js';
+import { e, h, t } from '../lib/html.js';
+import TransientElement, { ITransientElement } from './TransientElement.js';
 
-export interface INotificationWindow {
-  display(): void;
-  element(): HTMLElement;
-}
+export interface INotificationWindow extends ITransientElement {}
 
-export class NotificationWindow implements INotificationWindow {
-  #element: HTMLElement;
-  #parent: HTMLElement;
+export class NotificationWindow
+  extends TransientElement
+  implements INotificationWindow {
+  #body: string | Node;
+  #title: string;
 
   constructor(
     title: string,
     body: string | Node,
     parent: HTMLElement = document.body
   ) {
-    this.#element = a(
-      e(
-        'div',
-        e(
-          'header',
-          e(
-            'h3',
-            t(title),
-            h(
-              a(e('button', t('Close')), {
-                class: 'close',
-              }),
-              {
-                click: () => this.close(),
-              }
-            )
-          )
-        ),
-        body instanceof Node ? body : e('p', t(body))
-      ),
-      {
-        class: 'notificationWindow',
-      }
-    );
+    super(parent, e('div.notificationWindow'));
 
-    this.#parent = parent;
+    this.#body = body;
+    this.#title = title;
+  }
+
+  build(): void {
+    this.element().append(
+      e(
+        'header',
+        e(
+          'h3',
+          t(this.#title),
+          h(e('button.close', t('Close')), {
+            click: () => this.close(),
+          })
+        )
+      ),
+      this.#body instanceof Node ? this.#body : e('p', t(this.#body))
+    );
   }
 
   close(): void {
     this.element().remove();
-  }
 
-  display(): void {
-    this.#parent.append(this.element());
-  }
-
-  element(): HTMLElement {
-    return this.#element;
+    this.element().dispatchEvent(new CustomEvent('close'));
   }
 }
 

@@ -11,31 +11,23 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     }
     return privateMap.get(receiver);
 };
-var _action, _element;
-import { e } from '../../lib/html.js';
-export class Action {
-    constructor(action) {
-        _action.set(this, void 0);
+var _element;
+import { e } from '../lib/html.js';
+export class Element {
+    constructor(element = e('div')) {
         _element.set(this, void 0);
-        __classPrivateFieldSet(this, _action, action);
-        __classPrivateFieldSet(this, _element, e('div.action'));
-        this.build();
+        __classPrivateFieldSet(this, _element, element);
     }
     build() { }
-    complete() {
-        const event = new CustomEvent('actioned', {
-            bubbles: true,
-            detail: this,
-        });
-        __classPrivateFieldGet(this, _element).dispatchEvent(event);
+    clear() {
+        while (__classPrivateFieldGet(this, _element).firstChild !== null) {
+            __classPrivateFieldGet(this, _element).firstChild.remove();
+        }
     }
     element() {
         return __classPrivateFieldGet(this, _element);
     }
-    value() {
-        return __classPrivateFieldGet(this, _action).value;
-    }
 }
-_action = new WeakMap(), _element = new WeakMap();
-export default Action;
-//# sourceMappingURL=Action.js.map
+_element = new WeakMap();
+export default Element;
+//# sourceMappingURL=Element.js.map

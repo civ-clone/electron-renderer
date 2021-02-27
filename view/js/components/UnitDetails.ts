@@ -1,29 +1,30 @@
 import { Unit } from '../types';
 import { e, t } from '../lib/html.js';
+import Element from './Element.js';
 
-export class UnitDetails {
+export class UnitDetails extends Element {
   #activeUnit: Unit | null;
-  #element: HTMLElement;
 
   constructor(element: HTMLElement, activeUnit: Unit | null) {
-    this.#element = element;
+    super(element);
+
     this.#activeUnit = activeUnit;
+
+    this.build();
   }
 
   build(): void {
-    while (this.#element.firstChild !== null) {
-      this.#element.firstChild.remove();
-    }
+    this.clear();
 
     if (this.#activeUnit === null) {
       return;
     }
 
-    this.#element.append(
+    this.element().append(
       e(
         'p',
         t(
-          `${this.#activeUnit.player.civilization._} ${this.#activeUnit._} (${
+          `${this.#activeUnit._} (${
             this.#activeUnit.tile.x
           }, ${this.#activeUnit.tile.y})`
         )
@@ -54,8 +55,6 @@ export class UnitDetails {
       )
     );
   }
-
-  element(): HTMLElement {
-    return this.#element;
-  }
 }
+
+export default UnitDetails;

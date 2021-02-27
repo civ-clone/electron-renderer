@@ -1,12 +1,10 @@
-export interface INotificationWindow {
-    display(): void;
-    element(): HTMLElement;
+import TransientElement, { ITransientElement } from './TransientElement.js';
+export interface INotificationWindow extends ITransientElement {
 }
-export declare class NotificationWindow implements INotificationWindow {
+export declare class NotificationWindow extends TransientElement implements INotificationWindow {
     #private;
     constructor(title: string, body: string | Node, parent?: HTMLElement);
+    build(): void;
     close(): void;
-    display(): void;
-    element(): HTMLElement;
 }
 export default NotificationWindow;

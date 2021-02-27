@@ -1,4 +1,4 @@
-import { a, e } from '../lib/html.js';
+import { e } from '../lib/html.js';
 import { PlayerAction } from '../types';
 import Action from './Actions/Action.js';
 import ChooseResearch from './Actions/ChooseResearch.js';
@@ -15,9 +15,7 @@ export class Actions implements IActions {
 
   constructor(
     actions: PlayerAction[],
-    container: HTMLElement = a(e('div'), {
-      class: 'actions',
-    })
+    container: HTMLElement = e('div.actions')
   ) {
     this.#element = container;
 
