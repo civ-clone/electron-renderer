@@ -12,4 +12,3 @@ This doesn't currently render a map, but as I work through the bugs, the game is
 - Coastlines are rendered wrong
 - Moves aren't validated correctly when they don't succeed.
 - Can't attack other units
-- Yield overlay isn't working yet.
