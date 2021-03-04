@@ -35,6 +35,9 @@ export class Map {
     canvas() {
         return __classPrivateFieldGet(this, _canvas);
     }
+    clear() {
+        this.context().clearRect(0, 0, this.canvas().width, this.canvas().height);
+    }
     context() {
         return __classPrivateFieldGet(this, _context);
     }

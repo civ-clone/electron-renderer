@@ -49,7 +49,7 @@ class Game {
             },
         }));
         __classPrivateFieldGet(this, _window).loadURL(`file://${__dirname}/view/html/index.html`);
-        __classPrivateFieldGet(this, _window).webContents.openDevTools();
+        // this.#window.webContents.openDevTools();
     }
     bindEvents() {
         this.sendData('notification', `binding events`);

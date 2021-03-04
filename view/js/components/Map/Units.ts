@@ -5,16 +5,10 @@ export class Units extends Map implements IMap {
   #activeUnit: Unit | null = null;
 
   render(tiles: Tile[] = this.world().tiles()): void {
-    this.context().clearRect(
-      0,
-      0,
-      this.world().width() * this.tileSize(),
-      this.world().height() * this.tileSize()
-    );
+    this.clear();
 
-    tiles.forEach((tile: Tile) => {
-      const x = tile.x,
-        y = tile.y,
+    tiles.forEach(({ x, y }: Tile) => {
+      const tile = this.world().get(x, y),
         size = this.tileSize(),
         offsetX = x * size,
         offsetY = y * size;

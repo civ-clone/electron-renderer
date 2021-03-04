@@ -1,28 +1,24 @@
 import { reconstituteData } from './lib/reconstituteData.js';
-import ActiveUnit from './components/Map/ActiveUnit.js';
-import Terrain from './components/Map/Terrain.js';
-import Notifications from './components/Notifications.js';
-import World from './components/World.js';
-import Portal from './components/Portal.js';
-import Cities from './components/Map/Cities.js';
-import Units from './components/Map/Units.js';
-import Yields from './components/Map/Yields.js';
-import IntervalHandler from './lib/IntervalHandler.js';
-import EventHandler from './lib/EventHandler.js';
 import Actions from './components/Actions.js';
-import { UnitDetails } from './components/UnitDetails.js';
+import ActiveUnit from './components/Map/ActiveUnit.js';
+import Cities from './components/Map/Cities.js';
 import City from './components/City.js';
+import EventHandler from './lib/EventHandler.js';
 import GameDetails from './components/GameDetails.js';
+import IntervalHandler from './lib/IntervalHandler.js';
+import Notifications from './components/Notifications.js';
 import PlayerDetails from './components/PlayerDetails.js';
+import Portal from './components/Portal.js';
+import Terrain from './components/Map/Terrain.js';
+import UnitDetails from './components/UnitDetails.js';
+import Units from './components/Map/Units.js';
+import World from './components/World.js';
+import Yields from './components/Map/Yields.js';
+import MainMenu from './components/MainMenu.js';
 try {
     ((transport) => {
-        const notificationArea = document.getElementById('notification'), startButton = document.querySelector('button'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimap = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications();
-        document.addEventListener('DOMContentLoaded', () => {
-            startButton.addEventListener('click', () => {
-                transport.send('start');
-                startButton.remove();
-            });
-        });
+        const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimap = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications();
+        const mainMenu = new MainMenu(mainMenuElement);
         let globalNotificationTimer;
         transport.receive('notification', (data) => {
             notificationArea.innerHTML = data;
@@ -162,6 +158,7 @@ try {
                 P: ['Pillage'],
                 r: ['BuildRoad', 'BuildRailroad'],
                 s: ['Sleep'],
+                u: ['Unload'],
                 w: ['Wait'],
             }, directionKeyMap = {
                 ArrowUp: 'n',

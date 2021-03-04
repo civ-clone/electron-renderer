@@ -3,9 +3,10 @@ import { Tile } from '../../types';
 
 export class Yields extends Map {
   render(tiles: Tile[] = this.world().tiles()): void {
-    tiles.forEach((tile: Tile) => {
-      const x = tile.x,
-        y = tile.y,
+    this.clear();
+
+    tiles.forEach(({ x, y }: Tile) => {
+      const tile = this.world().get(x, y),
         size = this.tileSize(),
         offsetX = x * size,
         offsetY = y * size,

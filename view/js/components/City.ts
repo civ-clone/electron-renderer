@@ -21,41 +21,24 @@ export class City {
   }
 
   build(): void {
-    const mapCanvas = e('canvas') as HTMLCanvasElement;
-
-    const worldData = this.#city.player.world,
-      world = new World({
-        ...worldData,
-        tiles: this.#city.tiles,
-      }),
+    const mapCanvas = e('canvas') as HTMLCanvasElement,
+      build: CityBuild = this.#city.build,
+      growth: CityGrowth = this.#city.growth,
+      world = new World(this.#city.player.world),
       terrainMap = new Terrain(world),
       cityMap = new Cities(world),
-      yieldWorld = new World({
-        ...worldData,
-        tiles: this.#city.tilesWorked,
-      }),
-      yieldMap = new Yields(yieldWorld),
+      yieldMap = new Yields(world),
       map = new Portal(world, mapCanvas, terrainMap, cityMap, yieldMap);
 
+    mapCanvas.height = terrainMap.tileSize() * 5;
+    mapCanvas.width = terrainMap.tileSize() * 5;
+
+    map.build();
+
+    terrainMap.render(this.#city.tiles);
     cityMap.setShowNames(false);
-    cityMap.render();
-
-    const yields = this.#city.yields.reduce(
-        (
-          object: {
-            [key: string]: number;
-          },
-          cityYield
-        ) => {
-          object[cityYield._] = cityYield.value;
-
-          return object;
-        },
-        {}
-      ),
-      build: CityBuild = this.#city.build,
-      growth: CityGrowth = this.#city.growth;
-
+    cityMap.render(this.#city.tiles);
+    yieldMap.render(this.#city.tilesWorked);
     map.setCenter(this.#city.tile.x, this.#city.tile.y);
 
     this.#element.append(

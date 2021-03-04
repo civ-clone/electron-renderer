@@ -19,9 +19,9 @@ export class Units extends Map {
         _activeUnit.set(this, null);
     }
     render(tiles = this.world().tiles()) {
-        this.context().clearRect(0, 0, this.world().width() * this.tileSize(), this.world().height() * this.tileSize());
-        tiles.forEach((tile) => {
-            const x = tile.x, y = tile.y, size = this.tileSize(), offsetX = x * size, offsetY = y * size;
+        this.clear();
+        tiles.forEach(({ x, y }) => {
+            const tile = this.world().get(x, y), size = this.tileSize(), offsetX = x * size, offsetY = y * size;
             if (tile.units.length > 0 &&
                 (__classPrivateFieldGet(this, _activeUnit) !== null
                     ? __classPrivateFieldGet(this, _activeUnit).tile.id !== tile.id

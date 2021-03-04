@@ -1,0 +1,11 @@
+#sidebar {
+  background: #8a8a8e;
+  box-sizing: border-box;
+  flex-grow: 0;
+  padding: .5em;
+  width: 12.5em;
+
+  #minimap {
+    background: #000;
+  }
+}

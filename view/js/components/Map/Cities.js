@@ -14,9 +14,9 @@ export class Cities extends Map {
         _showSize.set(this, true);
     }
     render(tiles = this.world().tiles(), activeUnit = null) {
-        this.context().clearRect(0, 0, this.world().width() * this.tileSize(), this.world().height() * this.tileSize());
-        tiles.forEach((tile) => {
-            const x = tile.x, y = tile.y, size = this.tileSize(), offsetX = x * size, offsetY = y * size;
+        this.clear();
+        tiles.forEach(({ x, y }) => {
+            const tile = this.world().get(x, y), size = this.tileSize(), offsetX = x * size, offsetY = y * size;
             if (tile.city) {
                 const city = tile.city, player = city.player, civilization = player.civilization, [colors] = civilization.attributes.filter((attribute) => attribute.name === 'colors');
                 if (tile.units.length > 0) {
@@ -25,7 +25,9 @@ export class Cities extends Map {
                 }
                 this.context().fillStyle = colors.value[0];
                 this.context().fillRect(offsetX + this.scale(), offsetY + this.scale(), size - this.scale() * 2, size - this.scale() * 2);
-                this.drawImage(`map/city`, x, y, (image) => this.replaceColors(image, ['#000'], [colors.value[1]]));
+                this.drawImage(`map/city`, x, y, (image) => this.replaceColors(image, 
+                // To come from theme manifest
+                ['#000'], [colors.value[1]]));
                 const sizeOffsetX = this.tileSize() / 2, sizeOffsetY = this.tileSize() * 0.75, textOffsetX = this.tileSize() / 2, textOffsetY = this.tileSize() * 1.6;
                 this.context().font = `bold ${8 * this.scale()}px sans-serif`;
                 this.context().fillStyle = 'black';

@@ -1,8 +1,9 @@
 import Map from '../Map.js';
 export class Yields extends Map {
     render(tiles = this.world().tiles()) {
-        tiles.forEach((tile) => {
-            const x = tile.x, y = tile.y, size = this.tileSize(), offsetX = x * size, offsetY = y * size, total = tile.yields.reduce((total, tileYield) => total + tileYield.value, 0);
+        this.clear();
+        tiles.forEach(({ x, y }) => {
+            const tile = this.world().get(x, y), size = this.tileSize(), offsetX = x * size, offsetY = y * size, total = tile.yields.reduce((total, tileYield) => total + tileYield.value, 0);
             let i = 0;
             if (total < 5) {
                 const offsets = [

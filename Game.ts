@@ -45,7 +45,7 @@ export class Game implements IGame {
 
     this.#window.loadURL(`file://${__dirname}/view/html/index.html`);
 
-    this.#window.webContents.openDevTools();
+    // this.#window.webContents.openDevTools();
   }
 
   private bindEvents(): void {

@@ -3,22 +3,16 @@ import Units from './Units.js';
 
 export class ActiveUnit extends Units implements IMap {
   render(): void {
-    const activeUnit = this.activeUnit();
+    this.clear();
 
-    this.context().clearRect(
-      0,
-      0,
-      this.world().width() * this.tileSize(),
-      this.world().height() * this.tileSize()
-    );
+    const activeUnit = this.activeUnit();
 
     if (activeUnit === null) {
       return;
     }
 
-    const tile = activeUnit.tile,
-      x = tile.x,
-      y = tile.y,
+    const { x, y } = activeUnit.tile,
+      tile = this.world().get(x, y),
       size = this.tileSize(),
       offsetX = x * size,
       offsetY = y * size;
@@ -31,6 +25,7 @@ export class ActiveUnit extends Units implements IMap {
         ),
         image = this.replaceColors(
           this.getPreloadedImage(`units/${activeUnit._.toLowerCase()}`),
+          // To come from theme manifest
           ['#61e365', '#2c7900'],
           colors.value
         );

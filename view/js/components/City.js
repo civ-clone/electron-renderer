@@ -28,20 +28,14 @@ export class City {
         this.build();
     }
     build() {
-        const mapCanvas = e('canvas');
-        const worldData = __classPrivateFieldGet(this, _city).player.world, world = new World({
-            ...worldData,
-            tiles: __classPrivateFieldGet(this, _city).tiles,
-        }), terrainMap = new Terrain(world), cityMap = new Cities(world), yieldWorld = new World({
-            ...worldData,
-            tiles: __classPrivateFieldGet(this, _city).tilesWorked,
-        }), yieldMap = new Yields(yieldWorld), map = new Portal(world, mapCanvas, terrainMap, cityMap, yieldMap);
+        const mapCanvas = e('canvas'), build = __classPrivateFieldGet(this, _city).build, growth = __classPrivateFieldGet(this, _city).growth, world = new World(__classPrivateFieldGet(this, _city).player.world), terrainMap = new Terrain(world), cityMap = new Cities(world), yieldMap = new Yields(world), map = new Portal(world, mapCanvas, terrainMap, cityMap, yieldMap);
+        mapCanvas.height = terrainMap.tileSize() * 5;
+        mapCanvas.width = terrainMap.tileSize() * 5;
+        map.build();
+        terrainMap.render(__classPrivateFieldGet(this, _city).tiles);
         cityMap.setShowNames(false);
-        cityMap.render();
-        const yields = __classPrivateFieldGet(this, _city).yields.reduce((object, cityYield) => {
-            object[cityYield._] = cityYield.value;
-            return object;
-        }, {}), build = __classPrivateFieldGet(this, _city).build, growth = __classPrivateFieldGet(this, _city).growth;
+        cityMap.render(__classPrivateFieldGet(this, _city).tiles);
+        yieldMap.render(__classPrivateFieldGet(this, _city).tilesWorked);
         map.setCenter(__classPrivateFieldGet(this, _city).tile.x, __classPrivateFieldGet(this, _city).tile.y);
         __classPrivateFieldGet(this, _element).append(e('header', e('h2', t(__classPrivateFieldGet(this, _city).name)), h(e('button.close', t('Close')), {
             click: () => {

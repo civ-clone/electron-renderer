@@ -14,16 +14,10 @@ export class Cities extends Map implements ICities {
     tiles: Tile[] = this.world().tiles(),
     activeUnit: Unit | null = null
   ): void {
-    this.context().clearRect(
-      0,
-      0,
-      this.world().width() * this.tileSize(),
-      this.world().height() * this.tileSize()
-    );
+    this.clear();
 
-    tiles.forEach((tile: Tile): void => {
-      const x = tile.x,
-        y = tile.y,
+    tiles.forEach(({ x, y }: Tile) => {
+      const tile = this.world().get(x, y),
         size = this.tileSize(),
         offsetX = x * size,
         offsetY = y * size;
@@ -50,7 +44,12 @@ export class Cities extends Map implements ICities {
         );
 
         this.drawImage(`map/city`, x, y, (image) =>
-          this.replaceColors(image, ['#000'], [colors.value[1]])
+          this.replaceColors(
+            image,
+            // To come from theme manifest
+            ['#000'],
+            [colors.value[1]]
+          )
         );
 
         const sizeOffsetX = this.tileSize() / 2,

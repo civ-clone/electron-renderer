@@ -24,9 +24,9 @@ export class UnitDetails extends Element {
       e(
         'p',
         t(
-          `${this.#activeUnit._} (${
-            this.#activeUnit.tile.x
-          }, ${this.#activeUnit.tile.y})`
+          `${this.#activeUnit._} (${this.#activeUnit.tile.x}, ${
+            this.#activeUnit.tile.y
+          })`
         )
       ),
       e(
@@ -50,6 +50,15 @@ export class UnitDetails extends Element {
         t(
           `${this.#activeUnit.improvements
             .map((improvement) => improvement._)
+            .join(', ')}`
+        )
+      ),
+      e(
+        'p',
+        t(
+          `${this.#activeUnit.tile.units
+            .filter((unit) => unit !== this.#activeUnit)
+            .map((unit) => unit._)
             .join(', ')}`
         )
       )

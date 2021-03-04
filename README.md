@@ -8,7 +8,9 @@ This doesn't currently render a map, but as I work through the bugs, the game is
 
 ## Known issues
 
-- It hangs when generating the start `Tile`s for way too long.
-- Coastlines are rendered wrong
+- It hangs when generating the start `Tile`s for way too long - this has been moved to a `Worker` but transferring the data is still slow and locks the main thread :(
 - Moves aren't validated correctly when they don't succeed.
-- Can't attack other units
+
+## Images
+
+https://www.pexels.com/photo/galaxy-digital-wallpaper-957085/<a href='https://www.freepik.com/photos/background'>Background photo created by kjpargeter - www.freepik.com</a>

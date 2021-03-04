@@ -16,6 +16,7 @@ import UnitDetails from './components/UnitDetails.js';
 import Units from './components/Map/Units.js';
 import World from './components/World.js';
 import Yields from './components/Map/Yields.js';
+import MainMenu from './components/MainMenu.js';
 
 // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //  ! Break this down and use a front-end framework. !
@@ -28,7 +29,7 @@ try {
     const notificationArea = document.getElementById(
         'notification'
       ) as HTMLElement,
-      startButton = document.querySelector('button') as HTMLElement,
+      mainMenuElement = document.querySelector('#mainmenu') as HTMLElement,
       actionArea = document.getElementById('actions') as HTMLElement,
       gameArea = document.getElementById('game') as HTMLElement,
       mapWrapper = document.getElementById('map') as HTMLElement,
@@ -39,13 +40,7 @@ try {
       unitInfo = document.getElementById('unitInfo') as HTMLCanvasElement,
       notifications = new Notifications();
 
-    document.addEventListener('DOMContentLoaded', (): void => {
-      startButton.addEventListener('click', (): void => {
-        transport.send('start');
-
-        startButton.remove();
-      });
-    });
+    const mainMenu = new MainMenu(mainMenuElement);
 
     let globalNotificationTimer: number | undefined;
 
@@ -273,6 +268,7 @@ try {
           P: ['Pillage'],
           r: ['BuildRoad', 'BuildRailroad'],
           s: ['Sleep'],
+          u: ['Unload'],
           w: ['Wait'],
         },
         directionKeyMap: { [key: string]: string } = {

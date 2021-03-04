@@ -45,6 +45,10 @@ export class Map implements IMap {
     return this.#canvas;
   }
 
+  clear(): void {
+    this.context().clearRect(0, 0, this.canvas().width, this.canvas().height);
+  }
+
   context(): CanvasRenderingContext2D {
     return this.#context;
   }

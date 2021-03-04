@@ -1,0 +1,49 @@
+#actions {
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 100vh;
+  position: absolute;
+  right: 0;
+
+  .action {
+    margin: 1em;
+
+    button {
+      appearance: none;
+      border-radius: 50%;
+      background: #ccc none no-repeat center center;
+      box-shadow: 2px 2px 2px rgba(0, 0, 0, .4);
+      cursor: pointer;
+      height: 3em;
+      outline: none;
+      width: 3em;
+
+      &:active {
+        background-color: #aaa;
+        position: relative;
+        top: 2px;
+        left: 2px;
+      }
+
+      &:hover {
+        background-color: #eee;
+      }
+
+      &.chooseResearch,
+      &.cityBuild {
+        background-position: 0.5625em 0.5625em;
+        background-size: 16px;
+        image-rendering: pixelated;
+      }
+
+      &.chooseResearch {
+        background-image: url('../assets/city/bulb.png');
+      }
+
+      &.cityBuild {
+        background-image: url('../assets/city/production.png');
+      }
+    }
+  }
+}
