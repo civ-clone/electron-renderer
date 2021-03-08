@@ -75,7 +75,7 @@ export const a = (
 };
 export const h = (
   element: HTMLElement,
-  handlers: { [key: string]: () => void }
+  handlers: { [key: string]: (event: any) => void }
 ) => {
   Object.entries(handlers).forEach(([eventName, handler]): void =>
     element.addEventListener(eventName, handler)

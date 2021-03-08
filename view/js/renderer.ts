@@ -38,11 +38,10 @@ try {
       playerInfo = document.getElementById('playerDetails') as HTMLElement,
       minimap = document.getElementById('minimap') as HTMLCanvasElement,
       unitInfo = document.getElementById('unitInfo') as HTMLCanvasElement,
-      notifications = new Notifications();
+      notifications = new Notifications(),
+      mainMenu = new MainMenu(mainMenuElement);
 
-    const mainMenu = new MainMenu(mainMenuElement);
-
-    let globalNotificationTimer: number | undefined;
+    let globalNotificationTimer: number | undefined, lastUnit: Unit;
 
     transport.receive('notification', (data): void => {
       notificationArea.innerHTML = data;
@@ -66,7 +65,7 @@ try {
       mapPortal.width = (mapPortal.parentElement as HTMLElement).offsetWidth;
       mapPortal.height = (mapPortal.parentElement as HTMLElement).offsetHeight;
 
-      const world = new World(data.world ?? data.player.world);
+      const world = new World(data.player.world);
 
       let activeUnit: Unit | null = null,
         activeUnits: PlayerAction[] = [],
@@ -130,14 +129,19 @@ try {
         );
 
         // This prioritises units that are already on screen
-        const [activeUnitAction] = activeUnits.sort(
-          ({ value: unitA }, { value: unitB }): number =>
-            (portal.isVisible((unitB as Unit).tile.x, (unitB as Unit).tile.y)
-              ? 1
-              : 0) -
-            (portal.isVisible((unitA as Unit).tile.x, (unitA as Unit).tile.y)
-              ? 1
-              : 0)
+        const [
+          activeUnitAction,
+        ] = activeUnits.sort(({ value: unitA }, { value: unitB }): number =>
+          unitB === lastUnit
+            ? 1
+            : unitA === lastUnit
+            ? -1
+            : (portal.isVisible((unitB as Unit).tile.x, (unitB as Unit).tile.y)
+                ? 1
+                : 0) -
+              (portal.isVisible((unitA as Unit).tile.x, (unitA as Unit).tile.y)
+                ? 1
+                : 0)
         );
 
         activeUnit = activeUnitAction ? (activeUnitAction.value as Unit) : null;
@@ -149,6 +153,7 @@ try {
         unitDetails.build();
 
         if (activeUnit) {
+          lastUnit = activeUnit;
           unitsMap.setActiveUnit(activeUnit);
           activeUnitsMap.setActiveUnit(activeUnit);
 
@@ -260,6 +265,7 @@ try {
       const keyToActionsMap: {
           [key: string]: string[];
         } = {
+          ' ': ['NoOrders'],
           b: ['FoundCity'],
           D: ['Disband'],
           f: ['Fortify', 'BuildFortress'],

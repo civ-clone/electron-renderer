@@ -17,9 +17,8 @@ import Yields from './components/Map/Yields.js';
 import MainMenu from './components/MainMenu.js';
 try {
     ((transport) => {
-        const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimap = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications();
-        const mainMenu = new MainMenu(mainMenuElement);
-        let globalNotificationTimer;
+        const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimap = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications(), mainMenu = new MainMenu(mainMenuElement);
+        let globalNotificationTimer, lastUnit;
         transport.receive('notification', (data) => {
             notificationArea.innerHTML = data;
             if (globalNotificationTimer) {
@@ -31,12 +30,11 @@ try {
             }, 4000);
         });
         transport.receiveOnce('gameData', (objectMap) => {
-            var _a;
             const data = reconstituteData(objectMap);
             gameArea.classList.add('active');
             mapPortal.width = mapPortal.parentElement.offsetWidth;
             mapPortal.height = mapPortal.parentElement.offsetHeight;
-            const world = new World((_a = data.world) !== null && _a !== void 0 ? _a : data.player.world);
+            const world = new World(data.player.world);
             let activeUnit = null, activeUnits = [], shouldBuild = true;
             const intervalHandler = new IntervalHandler(), eventHandler = new EventHandler(), terrainMap = new Terrain(world), yieldsMap = new Yields(world), unitsMap = new Units(world), citiesMap = new Cities(world), activeUnitsMap = new ActiveUnit(world);
             yieldsMap.setVisible(false);
@@ -64,18 +62,23 @@ try {
                 playerDetails.build();
                 activeUnits = data.player.actions.filter((action) => action._ === 'ActiveUnit');
                 // This prioritises units that are already on screen
-                const [activeUnitAction] = activeUnits.sort(({ value: unitA }, { value: unitB }) => (portal.isVisible(unitB.tile.x, unitB.tile.y)
+                const [activeUnitAction,] = activeUnits.sort(({ value: unitA }, { value: unitB }) => unitB === lastUnit
                     ? 1
-                    : 0) -
-                    (portal.isVisible(unitA.tile.x, unitA.tile.y)
-                        ? 1
-                        : 0));
+                    : unitA === lastUnit
+                        ? -1
+                        : (portal.isVisible(unitB.tile.x, unitB.tile.y)
+                            ? 1
+                            : 0) -
+                            (portal.isVisible(unitA.tile.x, unitA.tile.y)
+                                ? 1
+                                : 0));
                 activeUnit = activeUnitAction ? activeUnitAction.value : null;
                 unitsMap.setActiveUnit(activeUnit);
                 activeUnitsMap.setActiveUnit(activeUnit);
                 const unitDetails = new UnitDetails(unitInfo, activeUnit);
                 unitDetails.build();
                 if (activeUnit) {
+                    lastUnit = activeUnit;
                     unitsMap.setActiveUnit(activeUnit);
                     activeUnitsMap.setActiveUnit(activeUnit);
                     if (!portal.isVisible(activeUnit.tile.x, activeUnit.tile.y)) {
@@ -150,6 +153,7 @@ try {
                 }
             });
             const keyToActionsMap = {
+                ' ': ['NoOrders'],
                 b: ['FoundCity'],
                 D: ['Disband'],
                 f: ['Fortify', 'BuildFortress'],

@@ -10,10 +10,7 @@ export class Cities extends Map implements ICities {
   #showNames: boolean = true;
   #showSize: boolean = true;
 
-  render(
-    tiles: Tile[] = this.world().tiles(),
-    activeUnit: Unit | null = null
-  ): void {
+  render(tiles: Tile[] = this.world().tiles()): void {
     this.clear();
 
     tiles.forEach(({ x, y }: Tile) => {

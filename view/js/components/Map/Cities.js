@@ -13,7 +13,7 @@ export class Cities extends Map {
         _showNames.set(this, true);
         _showSize.set(this, true);
     }
-    render(tiles = this.world().tiles(), activeUnit = null) {
+    render(tiles = this.world().tiles()) {
         this.clear();
         tiles.forEach(({ x, y }) => {
             const tile = this.world().get(x, y), size = this.tileSize(), offsetX = x * size, offsetY = y * size;

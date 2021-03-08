@@ -18,6 +18,6 @@ export declare const a: (
 export declare const h: (
   element: HTMLElement,
   handlers: {
-    [key: string]: () => void;
+    [key: string]: (event: any) => void;
   }
 ) => HTMLElement;

@@ -55,7 +55,9 @@ export class City {
                                 return;
                             }
                             transport.send('action', {
-                                name: 'CityBuild',
+                                name: build.building === null
+                                    ? 'CityBuild'
+                                    : 'ChangeProduction',
                                 id: build.id,
                                 chosen: selection ? selection : '@',
                             });

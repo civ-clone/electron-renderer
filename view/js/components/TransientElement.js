@@ -18,11 +18,17 @@ export class TransientElement extends Element {
     constructor(parent, element = e('div')) {
         super(element);
         _parent.set(this, void 0);
+        // capture keys in the notification window
+        this.element().addEventListener('keydown', (event) => {
+            event.stopPropagation();
+        });
+        this.element().setAttribute('tabindex', '0');
         __classPrivateFieldSet(this, _parent, parent);
     }
     display() {
         this.build();
         __classPrivateFieldGet(this, _parent).append(this.element());
+        this.element().focus();
     }
     parent() {
         return __classPrivateFieldGet(this, _parent);

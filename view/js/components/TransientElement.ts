@@ -12,6 +12,13 @@ export class TransientElement extends Element implements ITransientElement {
   constructor(parent: HTMLElement, element: HTMLElement = e('div')) {
     super(element);
 
+    // capture keys in the notification window
+    this.element().addEventListener('keydown', (event: KeyboardEvent) => {
+      event.stopPropagation();
+    });
+
+    this.element().setAttribute('tabindex', '0');
+
     this.#parent = parent;
   }
 
@@ -19,6 +26,8 @@ export class TransientElement extends Element implements ITransientElement {
     this.build();
 
     this.#parent.append(this.element());
+
+    this.element().focus();
   }
 
   parent(): HTMLElement {

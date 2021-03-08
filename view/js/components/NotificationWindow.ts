@@ -34,6 +34,12 @@ export class NotificationWindow
       ),
       this.#body instanceof Node ? this.#body : e('p', t(this.#body))
     );
+
+    this.element().addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        this.close();
+      }
+    });
   }
 
   close(): void {

@@ -26,6 +26,11 @@ export class NotificationWindow extends TransientElement {
         this.element().append(e('header', e('h3', t(__classPrivateFieldGet(this, _title)), h(e('button.close', t('Close')), {
             click: () => this.close(),
         }))), __classPrivateFieldGet(this, _body) instanceof Node ? __classPrivateFieldGet(this, _body) : e('p', t(__classPrivateFieldGet(this, _body))));
+        this.element().addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                this.close();
+            }
+        });
     }
     close() {
         this.element().remove();
