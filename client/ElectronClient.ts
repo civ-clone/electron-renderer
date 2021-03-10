@@ -8,7 +8,6 @@ import {
 import { ActiveUnit } from '@civ-clone/civ1-unit/PlayerActions';
 import Advance from '@civ-clone/core-science/Advance';
 import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch';
-import City from '@civ-clone/core-city/City';
 import {
   ChangeProduction,
   CityBuild,
@@ -23,7 +22,6 @@ import Tile from '@civ-clone/core-world/Tile';
 import Turn from '@civ-clone/core-turn-based-game/Turn';
 import Unit from '@civ-clone/core-unit/Unit';
 import UnitAction from '@civ-clone/core-unit/Action';
-import World from '@civ-clone/core-world/World';
 import Year from '@civ-clone/core-game-year/Year';
 import * as EventEmitter from 'events';
 import { instance as engineInstance } from '@civ-clone/core-engine/Engine';
@@ -31,12 +29,15 @@ import { instance as turnInstance } from '@civ-clone/core-turn-based-game/Turn';
 import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
 import { instance as cityRegistryInstance } from '@civ-clone/core-city/CityRegistry';
 import { instance as unitRegistryInstance } from '@civ-clone/core-unit/UnitRegistry';
+import { instance as playerResearchRegistryInstance } from '@civ-clone/core-science/PlayerResearchRegistry';
 import { instance as playerWorldRegistryInstance } from '@civ-clone/core-player-world/PlayerWorldRegistry';
+import { instance as playerTreasuryRegistryInstance } from '@civ-clone/core-treasury/PlayerTreasuryRegistry';
+import { instance as playerTradeRatesRegistryInstance } from '@civ-clone/core-trade-rate/PlayerTradeRatesRegistry';
+import { instance as playerGovernmentRegistryInstance } from '@civ-clone/core-government/PlayerGovernmentRegistry';
 
 export class ElectronClient extends Client implements IClient {
-  // #dataQueue: { unit?: Unit; city?: City; tile?: Tile }[] = [];
+  #dataQueue: Set<Tile> = new Set();
   #eventEmitter: EventEmitter;
-  #hasSentData: boolean = false;
   #sender: (channel: string, payload: any) => void;
   #receiver: (channel: string, handler: (...args: any[]) => void) => void;
 
@@ -55,127 +56,87 @@ export class ElectronClient extends Client implements IClient {
       this.#eventEmitter.emit('action', ...args);
     });
 
-    // engineInstance.on('player:turn-end', (player: Player) => {
-    //   if (player !== this.player()) {
-    //     this.sendGameData();
-    //   }
-    // });
-    //
-    // engineInstance.on('player:visibility-changed', (tile, player) => {
-    //   if (player !== this.player()) {
-    //     return;
-    //   }
-    //
-    //   this.#dataQueue.push({
-    //     tile,
-    //   });
-    // });
-    //
-    // ['unit:created', 'unit:destroyed'].forEach((event) => {
-    //   engineInstance.on(event, (unit) => {
-    //     const playerWorld = playerWorldRegistryInstance.getByPlayer(
-    //       this.player()
-    //     );
-    //
-    //     if (!playerWorld.includes(unit.tile())) {
-    //       return;
-    //     }
-    //
-    //     this.#dataQueue.push({
-    //       tile: unit.tile(),
-    //     });
-    //   });
-    // });
-    //
-    // ['unit:moved'].forEach((event) => {
-    //   engineInstance.on(event, (unit, action) => {
-    //     const playerWorld = playerWorldRegistryInstance.getByPlayer(
-    //       this.player()
-    //     );
-    //
-    //     // TODO: filter unit details here - EnemyUnitStack.fromUnits(...unitRegistry.getByTile(unit.tile())) ?
-    //     if (unit.player() !== this.player()) {
-    //       if (playerWorld.includes(action.from())) {
-    //         this.#dataQueue.push({
-    //           tile: action.from(),
-    //         });
-    //       }
-    //
-    //       if (playerWorld.includes(action.to())) {
-    //         this.#dataQueue.push({
-    //           tile: action.to(),
-    //         });
-    //       }
-    //
-    //       return;
-    //     }
-    //
-    //     this.#dataQueue.push({
-    //       tile: unit.tile(),
-    //       unit,
-    //     });
-    //
-    //     if (action.from() !== action.to()) {
-    //       this.#dataQueue.push({
-    //         tile: action.from(),
-    //       });
-    //     }
-    //   });
-    // });
-    //
-    // ['tile-improvement:built', 'tile-improvement:pillaged'].forEach((event) => {
-    //   engineInstance.on(event, (tile) => {
-    //     this.#dataQueue.push({
-    //       tile,
-    //     });
-    //   });
-    // });
-    //
-    // [
-    //   'city:created',
-    //   'city:destroyed',
-    //   'city:building-complete',
-    //   'city:grow',
-    //   'city:shrink',
-    // ].forEach((event) => {
-    //   engineInstance.on(event, (city) => {
-    //     const playerWorld = playerWorldRegistryInstance.getByPlayer(
-    //       this.player()
-    //     );
-    //
-    //     if (city.player() !== this.player()) {
-    //       if (event === 'city:created' || event === 'city:destroyed') {
-    //         if (playerWorld.includes(city.tile())) {
-    //           this.#dataQueue.push({
-    //             // TODO: filter details here - EnemyCity.fromCity(city) ?
-    //             city,
-    //             tile: city.tile(),
-    //           });
-    //         }
-    //       }
-    //
-    //       return;
-    //     }
-    //
-    //     this.#dataQueue.push({
-    //       city,
-    //     });
-    //   });
-    // });
-    //
-    // engineInstance.on('turn:start', () => {
-    //   cityRegistryInstance.getByPlayer(this.player()).forEach((city) => {
-    //     this.#dataQueue.push({
-    //       city,
-    //     });
-    //   });
-    //
-    //   unitRegistryInstance.getByPlayer(this.player()).forEach((unit) => {
-    //     this.#dataQueue.push({
-    //       unit,
-    //     });
-    //   });
-    // });
+    engineInstance.on('player:visibility-changed', (tile, player) => {
+      if (player !== this.player()) {
+        return;
+      }
+
+      this.#dataQueue.add(tile);
+    });
+
+    ['unit:created', 'unit:destroyed'].forEach((event) => {
+      engineInstance.on(event, (unit) => {
+        const playerWorld = playerWorldRegistryInstance.getByPlayer(
+          this.player()
+        );
+
+        if (!playerWorld.includes(unit.tile())) {
+          return;
+        }
+
+        this.#dataQueue.add(unit.tile());
+      });
+    });
+
+    ['unit:moved'].forEach((event) => {
+      engineInstance.on(event, (unit, action) => {
+        const playerWorld = playerWorldRegistryInstance.getByPlayer(
+          this.player()
+        );
+
+        // TODO: filter unit details here - EnemyUnitStack.fromUnits(...unitRegistry.getByTile(unit.tile())) ?
+        if (unit.player() !== this.player()) {
+          if (playerWorld.includes(action.from())) {
+            this.#dataQueue.add(action.from());
+          }
+
+          if (playerWorld.includes(action.to())) {
+            this.#dataQueue.add(action.to());
+          }
+
+          return;
+        }
+
+        this.#dataQueue.add(unit.tile());
+
+        if (action.from() !== action.to()) {
+          this.#dataQueue.add(action.from());
+        }
+      });
+    });
+
+    ['tile-improvement:built', 'tile-improvement:pillaged'].forEach((event) => {
+      engineInstance.on(event, (tile) => {
+        const playerWorld = playerWorldRegistryInstance.getByPlayer(
+          this.player()
+        );
+
+        if (playerWorld.includes(tile)) {
+          this.#dataQueue.add(tile);
+        }
+      });
+    });
+
+    [
+      'city:created',
+      'city:destroyed',
+    ].forEach((event) => {
+      engineInstance.on(event, (city) => {
+        const playerWorld = playerWorldRegistryInstance.getByPlayer(
+          this.player()
+        );
+
+        if (city.player() !== this.player()) {
+          if (event === 'city:created' || event === 'city:destroyed') {
+            if (playerWorld.includes(city.tile())) {
+              this.#dataQueue.add(city.tile());
+            }
+          }
+
+          return;
+        }
+      });
+    });
 
     engineInstance.on('city:building-complete', (cityBuild, build) => {
       if (cityBuild.city().player() !== this.player()) {
@@ -373,8 +334,7 @@ export class ElectronClient extends Client implements IClient {
     return false;
   }
 
-  private sendGameData(): void {
-    // if (!this.#hasSentData) {
+  private sendInitialData(): void {
     const rawData: {
       player: Player;
       turn: Turn;
@@ -388,48 +348,35 @@ export class ElectronClient extends Client implements IClient {
     const dataObject = new TransferObject(rawData);
 
     this.#sender('gameData', dataObject.toPlainObject());
+  }
 
-    this.#hasSentData = true;
+  private sendGameData(): void {
+    const actions = this.player().actions(),
+      patch: {
+        [key: string]: any;
+      } = {
+        player: {
+          actions: actions,
+          cities: cityRegistryInstance.getByPlayer(this.player()),
+          government: playerGovernmentRegistryInstance.getByPlayer(
+            this.player()
+          ),
+          mandatoryActions: actions.filter(
+            (action) => action instanceof MandatoryPlayerAction
+          ),
+          rates: playerTradeRatesRegistryInstance.getByPlayer(this.player()),
+          research: playerResearchRegistryInstance.getByPlayer(this.player()),
+          treasury: playerTreasuryRegistryInstance.getByPlayer(this.player()),
+          units: unitRegistryInstance.getByPlayer(this.player()),
+          world: {
+            tiles: [...this.#dataQueue],
+          },
+        },
+      };
 
-    return;
-    // }
+    this.#sender('gameDataPatch', new TransferObject(patch).toPlainObject());
 
-    // const actions = this.player().actions(),
-    //   patch: {
-    //     [key: string]: any;
-    //   } = {
-    //     player: {
-    //       actions: actions,
-    //       cities: {},
-    //       government: {},
-    //       mandatoryActions: actions.filter(
-    //         (action) => action instanceof MandatoryPlayerAction
-    //       ),
-    //       rates: {},
-    //       research: {},
-    //       treasury: {},
-    //       units: {},
-    //       world: {
-    //         tiles: {},
-    //       },
-    //     },
-    //   };
-    //
-    // this.#dataQueue.forEach(({ unit, city, tile }) => {
-    //   if (unit !== undefined) {
-    //     patch.player.units[unit.id()] = unit;
-    //   }
-    //
-    //   if (city !== undefined) {
-    //     patch.player.cities[city.id()] = city;
-    //   }
-    //
-    //   if (tile !== undefined) {
-    //     patch.player.world.tiles[tile.id()] = tile;
-    //   }
-    // });
-    //
-    // this.#sender('gameDataPatch', new TransferObject(patch).toPlainObject());
+    this.#dataQueue.clear();
   }
 
   private sendNotification(message: string): void {
@@ -440,7 +387,7 @@ export class ElectronClient extends Client implements IClient {
 
   takeTurn(): Promise<void> {
     return new Promise<void>((resolve, reject): void => {
-      this.sendGameData();
+      this.sendInitialData();
 
       const listener = (...args: any[]): void => {
         try {
@@ -450,7 +397,7 @@ export class ElectronClient extends Client implements IClient {
             resolve();
           }
 
-          this.sendGameData();
+          this.sendInitialData();
         } catch (e) {
           reject(e);
         }

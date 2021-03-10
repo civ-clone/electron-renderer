@@ -16,20 +16,17 @@ export class Game implements IGame {
   #window: BrowserWindow | undefined;
 
   constructor() {
-    this.#ready = app.whenReady().then((): void => {
-      this.createWindow();
-
-      this.sendData('notification', 'window loaded.');
-    });
+    this.#ready = app.whenReady().then((): void => this.createWindow());
 
     app.on('window-all-closed', (): void => app.quit());
 
     ipcMain.handle('start', () => {
-      this.sendData('notification', 'off we go!');
       this.bindEvents();
       this.configure();
       this.start();
     });
+
+    ipcMain.handle('quit', () => app.quit());
   }
 
   private createWindow(): void {
@@ -93,14 +90,12 @@ export class Game implements IGame {
 
   private configure(): void {
     // engine.setOption('debug', true);
-    // this.sendData('notification', 'debug enabled');
 
     engine.setOption('height', 60);
     engine.setOption('width', 80);
 
     // TODO: Determine number of players via UI
     engine.setOption('players', 5);
-    this.sendData('notification', '5 players');
   }
 
   private sendData(channel: string, payload: any): void {
@@ -113,8 +108,6 @@ export class Game implements IGame {
         new Array(engine.option('players'))
           .fill(0)
           .forEach((value: 0, i: number) => {
-            this.sendData('notification', `working on player ${i + 1}...`);
-
             const player = new Player(),
               // TODO: This is pretty basic.
               client =
@@ -143,8 +136,6 @@ export class Game implements IGame {
       });
 
       engine.start();
-
-      this.sendData('notification', 'started.');
     });
   }
 }

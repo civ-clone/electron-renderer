@@ -8,6 +8,7 @@ export declare class ElectronClient extends Client implements IClient {
     receiver: (channel: string, handler: (...args: any[]) => void) => void
   );
   handleAction(...args: any[]): boolean;
+  private sendInitialData;
   private sendGameData;
   private sendNotification;
   takeTurn(): Promise<void>;

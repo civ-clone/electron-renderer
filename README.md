@@ -26,6 +26,7 @@ I'm looking at adding the ability to add an asset pack and a mechanism for manag
 - No `GoTo`.
 - Some tile yields are wrong, currently building a city on `Plains`/`Horse` gives you three production and `Forest`/`Game` only yields one `Food`.
 - `ClearForest` is broken (and presumably `ClearSwamp`, `ClearJungle`, `PlantForest` too)
+- Some `Civilization`'s colours are terrible.
 
 ## Images
 

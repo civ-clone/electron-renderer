@@ -26,7 +26,7 @@ export class ActiveUnit extends Units implements IMap {
         image = this.replaceColors(
           this.getPreloadedImage(`units/${activeUnit._.toLowerCase()}`),
           // To come from theme manifest
-          ['#61e365', '#2c7900'],
+          ['#60E064', '#2C7800'],
           colors.value
         );
 

@@ -26,17 +26,14 @@ class Game {
     constructor() {
         _ready.set(this, void 0);
         _window.set(this, void 0);
-        __classPrivateFieldSet(this, _ready, electron_1.app.whenReady().then(() => {
-            this.createWindow();
-            this.sendData('notification', 'window loaded.');
-        }));
+        __classPrivateFieldSet(this, _ready, electron_1.app.whenReady().then(() => this.createWindow()));
         electron_1.app.on('window-all-closed', () => electron_1.app.quit());
         electron_1.ipcMain.handle('start', () => {
-            this.sendData('notification', 'off we go!');
             this.bindEvents();
             this.configure();
             this.start();
         });
+        electron_1.ipcMain.handle('quit', () => electron_1.app.quit());
     }
     createWindow() {
         __classPrivateFieldSet(this, _window, new electron_1.BrowserWindow({
@@ -65,12 +62,10 @@ class Game {
     }
     configure() {
         // engine.setOption('debug', true);
-        // this.sendData('notification', 'debug enabled');
         Engine_1.instance.setOption('height', 60);
         Engine_1.instance.setOption('width', 80);
         // TODO: Determine number of players via UI
         Engine_1.instance.setOption('players', 5);
-        this.sendData('notification', '5 players');
     }
     sendData(channel, payload) {
         __classPrivateFieldGet(this, _window).webContents.send(channel, payload);
@@ -81,7 +76,6 @@ class Game {
                 new Array(Engine_1.instance.option('players'))
                     .fill(0)
                     .forEach((value, i) => {
-                    this.sendData('notification', `working on player ${i + 1}...`);
                     const player = new Player_1.default(), 
                     // TODO: This is pretty basic.
                     client = i === 0
@@ -93,7 +87,6 @@ class Game {
                 });
             });
             Engine_1.instance.start();
-            this.sendData('notification', 'started.');
         });
     }
 }

@@ -26,7 +26,9 @@ export class Units extends Map {
                 (__classPrivateFieldGet(this, _activeUnit) !== null
                     ? __classPrivateFieldGet(this, _activeUnit).tile.id !== tile.id
                     : true)) {
-                const [unit] = tile.units.sort((a, b) => b.defence.value - a.defence.value), player = unit.player, civilization = player.civilization, [colors] = civilization.attributes.filter((attribute) => attribute.name === 'colors'), image = this.replaceColors(this.getPreloadedImage(`units/${unit._.toLowerCase()}`), ['#61e365', '#2c7900'], colors.value);
+                const [unit] = tile.units.sort((a, b) => b.defence.value - a.defence.value), player = unit.player, civilization = player.civilization, [colors] = civilization.attributes.filter((attribute) => attribute.name === 'colors'), image = this.replaceColors(this.getPreloadedImage(`units/${unit._.toLowerCase()}`), 
+                // To come from theme manifest
+                ['#60E064', '#2C7800'], colors.value);
                 if (tile.units.length > 1) {
                     this.putImage(image, offsetX - this.scale(), offsetY - this.scale());
                 }

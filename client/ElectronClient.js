@@ -12,7 +12,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     }
     return privateMap.get(receiver);
 };
-var _eventEmitter, _hasSentData, _sender, _receiver;
+var _dataQueue, _eventEmitter, _hasSentData, _sender, _receiver;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ElectronClient = void 0;
 const Client_1 = require("@civ-clone/core-civ-client/Client");
@@ -25,10 +25,17 @@ const EventEmitter = require("events");
 const Engine_1 = require("@civ-clone/core-engine/Engine");
 const Turn_1 = require("@civ-clone/core-turn-based-game/Turn");
 const Year_1 = require("@civ-clone/core-game-year/Year");
+const CityRegistry_1 = require("@civ-clone/core-city/CityRegistry");
+const UnitRegistry_1 = require("@civ-clone/core-unit/UnitRegistry");
+const PlayerResearchRegistry_1 = require("@civ-clone/core-science/PlayerResearchRegistry");
+const PlayerWorldRegistry_1 = require("@civ-clone/core-player-world/PlayerWorldRegistry");
+const PlayerTreasuryRegistry_1 = require("@civ-clone/core-treasury/PlayerTreasuryRegistry");
+const PlayerTradeRatesRegistry_1 = require("@civ-clone/core-trade-rate/PlayerTradeRatesRegistry");
+const PlayerGovernmentRegistry_1 = require("@civ-clone/core-government/PlayerGovernmentRegistry");
 class ElectronClient extends Client_1.Client {
     constructor(player, sender, receiver) {
         super(player);
-        // #dataQueue: { unit?: Unit; city?: City; tile?: Tile }[] = [];
+        _dataQueue.set(this, new Set());
         _eventEmitter.set(this, void 0);
         _hasSentData.set(this, false);
         _sender.set(this, void 0);
@@ -39,127 +46,67 @@ class ElectronClient extends Client_1.Client {
         __classPrivateFieldGet(this, _receiver).call(this, 'action', (...args) => {
             __classPrivateFieldGet(this, _eventEmitter).emit('action', ...args);
         });
-        // engineInstance.on('player:turn-end', (player: Player) => {
-        //   if (player !== this.player()) {
-        //     this.sendGameData();
-        //   }
-        // });
-        //
-        // engineInstance.on('player:visibility-changed', (tile, player) => {
-        //   if (player !== this.player()) {
-        //     return;
-        //   }
-        //
-        //   this.#dataQueue.push({
-        //     tile,
-        //   });
-        // });
-        //
-        // ['unit:created', 'unit:destroyed'].forEach((event) => {
-        //   engineInstance.on(event, (unit) => {
-        //     const playerWorld = playerWorldRegistryInstance.getByPlayer(
-        //       this.player()
-        //     );
-        //
-        //     if (!playerWorld.includes(unit.tile())) {
-        //       return;
-        //     }
-        //
-        //     this.#dataQueue.push({
-        //       tile: unit.tile(),
-        //     });
-        //   });
-        // });
-        //
-        // ['unit:moved'].forEach((event) => {
-        //   engineInstance.on(event, (unit, action) => {
-        //     const playerWorld = playerWorldRegistryInstance.getByPlayer(
-        //       this.player()
-        //     );
-        //
-        //     // TODO: filter unit details here - EnemyUnitStack.fromUnits(...unitRegistry.getByTile(unit.tile())) ?
-        //     if (unit.player() !== this.player()) {
-        //       if (playerWorld.includes(action.from())) {
-        //         this.#dataQueue.push({
-        //           tile: action.from(),
-        //         });
-        //       }
-        //
-        //       if (playerWorld.includes(action.to())) {
-        //         this.#dataQueue.push({
-        //           tile: action.to(),
-        //         });
-        //       }
-        //
-        //       return;
-        //     }
-        //
-        //     this.#dataQueue.push({
-        //       tile: unit.tile(),
-        //       unit,
-        //     });
-        //
-        //     if (action.from() !== action.to()) {
-        //       this.#dataQueue.push({
-        //         tile: action.from(),
-        //       });
-        //     }
-        //   });
-        // });
-        //
-        // ['tile-improvement:built', 'tile-improvement:pillaged'].forEach((event) => {
-        //   engineInstance.on(event, (tile) => {
-        //     this.#dataQueue.push({
-        //       tile,
-        //     });
-        //   });
-        // });
-        //
-        // [
-        //   'city:created',
-        //   'city:destroyed',
-        //   'city:building-complete',
-        //   'city:grow',
-        //   'city:shrink',
-        // ].forEach((event) => {
-        //   engineInstance.on(event, (city) => {
-        //     const playerWorld = playerWorldRegistryInstance.getByPlayer(
-        //       this.player()
-        //     );
-        //
-        //     if (city.player() !== this.player()) {
-        //       if (event === 'city:created' || event === 'city:destroyed') {
-        //         if (playerWorld.includes(city.tile())) {
-        //           this.#dataQueue.push({
-        //             // TODO: filter details here - EnemyCity.fromCity(city) ?
-        //             city,
-        //             tile: city.tile(),
-        //           });
-        //         }
-        //       }
-        //
-        //       return;
-        //     }
-        //
-        //     this.#dataQueue.push({
-        //       city,
-        //     });
-        //   });
-        // });
-        //
-        // engineInstance.on('turn:start', () => {
-        //   cityRegistryInstance.getByPlayer(this.player()).forEach((city) => {
-        //     this.#dataQueue.push({
-        //       city,
-        //     });
-        //   });
-        //
-        //   unitRegistryInstance.getByPlayer(this.player()).forEach((unit) => {
-        //     this.#dataQueue.push({
-        //       unit,
-        //     });
-        //   });
-        // });
+        Engine_1.instance.on('player:visibility-changed', (tile, player) => {
+            if (player !== this.player()) {
+                return;
+            }
+            __classPrivateFieldGet(this, _dataQueue).add(tile);
+        });
+        ['unit:created', 'unit:destroyed'].forEach((event) => {
+            Engine_1.instance.on(event, (unit) => {
+                const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
+                if (!playerWorld.includes(unit.tile())) {
+                    return;
+                }
+                __classPrivateFieldGet(this, _dataQueue).add(unit.tile());
+            });
+        });
+        ['unit:moved'].forEach((event) => {
+            Engine_1.instance.on(event, (unit, action) => {
+                const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
+                // TODO: filter unit details here - EnemyUnitStack.fromUnits(...unitRegistry.getByTile(unit.tile())) ?
+                if (unit.player() !== this.player()) {
+                    if (playerWorld.includes(action.from())) {
+                        __classPrivateFieldGet(this, _dataQueue).add(action.from());
+                    }
+                    if (playerWorld.includes(action.to())) {
+                        __classPrivateFieldGet(this, _dataQueue).add(action.to());
+                    }
+                    return;
+                }
+                __classPrivateFieldGet(this, _dataQueue).add(unit.tile());
+                if (action.from() !== action.to()) {
+                    __classPrivateFieldGet(this, _dataQueue).add(action.from());
+                }
+            });
+        });
+        ['tile-improvement:built', 'tile-improvement:pillaged'].forEach((event) => {
+            Engine_1.instance.on(event, (tile) => {
+                const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
+                if (playerWorld.includes(tile)) {
+                    __classPrivateFieldGet(this, _dataQueue).add(tile);
+                }
+            });
+        });
+        [
+            'city:created',
+            'city:destroyed',
+            'city:building-complete',
+            'city:grow',
+            'city:shrink',
+        ].forEach((event) => {
+            Engine_1.instance.on(event, (city) => {
+                const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
+                if (city.player() !== this.player()) {
+                    if (event === 'city:created' || event === 'city:destroyed') {
+                        if (playerWorld.includes(city.tile())) {
+                            __classPrivateFieldGet(this, _dataQueue).add(city.tile());
+                        }
+                    }
+                    return;
+                }
+            });
+        });
         Engine_1.instance.on('city:building-complete', (cityBuild, build) => {
             if (cityBuild.city().player() !== this.player()) {
                 return;
@@ -287,8 +234,7 @@ class ElectronClient extends Client_1.Client {
         console.log(`unhandled action: ${JSON.stringify(action)}`);
         return false;
     }
-    sendGameData() {
-        // if (!this.#hasSentData) {
+    sendInitialData() {
         const rawData = {
             player: this.player(),
             turn: Turn_1.instance,
@@ -296,45 +242,25 @@ class ElectronClient extends Client_1.Client {
         };
         const dataObject = new TransferObject_1.default(rawData);
         __classPrivateFieldGet(this, _sender).call(this, 'gameData', dataObject.toPlainObject());
-        __classPrivateFieldSet(this, _hasSentData, true);
-        return;
-        // }
-        // const actions = this.player().actions(),
-        //   patch: {
-        //     [key: string]: any;
-        //   } = {
-        //     player: {
-        //       actions: actions,
-        //       cities: {},
-        //       government: {},
-        //       mandatoryActions: actions.filter(
-        //         (action) => action instanceof MandatoryPlayerAction
-        //       ),
-        //       rates: {},
-        //       research: {},
-        //       treasury: {},
-        //       units: {},
-        //       world: {
-        //         tiles: {},
-        //       },
-        //     },
-        //   };
-        //
-        // this.#dataQueue.forEach(({ unit, city, tile }) => {
-        //   if (unit !== undefined) {
-        //     patch.player.units[unit.id()] = unit;
-        //   }
-        //
-        //   if (city !== undefined) {
-        //     patch.player.cities[city.id()] = city;
-        //   }
-        //
-        //   if (tile !== undefined) {
-        //     patch.player.world.tiles[tile.id()] = tile;
-        //   }
-        // });
-        //
-        // this.#sender('gameDataPatch', new TransferObject(patch).toPlainObject());
+    }
+    sendGameData() {
+        const actions = this.player().actions(), patch = {
+            player: {
+                actions: actions,
+                cities: CityRegistry_1.instance.getByPlayer(this.player()),
+                government: PlayerGovernmentRegistry_1.instance.getByPlayer(this.player()),
+                mandatoryActions: actions.filter((action) => action instanceof MandatoryPlayerAction_1.default),
+                rates: PlayerTradeRatesRegistry_1.instance.getByPlayer(this.player()),
+                research: PlayerResearchRegistry_1.instance.getByPlayer(this.player()),
+                treasury: PlayerTreasuryRegistry_1.instance.getByPlayer(this.player()),
+                units: UnitRegistry_1.instance.getByPlayer(this.player()),
+                world: {
+                    tiles: [...__classPrivateFieldGet(this, _dataQueue)],
+                },
+            },
+        };
+        __classPrivateFieldGet(this, _sender).call(this, 'gameDataPatch', new TransferObject_1.default(patch).toPlainObject());
+        __classPrivateFieldGet(this, _dataQueue).clear();
     }
     sendNotification(message) {
         __classPrivateFieldGet(this, _sender).call(this, 'gameNotification', {
@@ -343,14 +269,14 @@ class ElectronClient extends Client_1.Client {
     }
     takeTurn() {
         return new Promise((resolve, reject) => {
-            this.sendGameData();
+            this.sendInitialData();
             const listener = (...args) => {
                 try {
                     if (this.handleAction(...args)) {
                         __classPrivateFieldGet(this, _eventEmitter).off('action', listener);
                         resolve();
                     }
-                    this.sendGameData();
+                    this.sendInitialData();
                 }
                 catch (e) {
                     reject(e);
@@ -361,6 +287,6 @@ class ElectronClient extends Client_1.Client {
     }
 }
 exports.ElectronClient = ElectronClient;
-_eventEmitter = new WeakMap(), _hasSentData = new WeakMap(), _sender = new WeakMap(), _receiver = new WeakMap();
+_dataQueue = new WeakMap(), _eventEmitter = new WeakMap(), _hasSentData = new WeakMap(), _sender = new WeakMap(), _receiver = new WeakMap();
 exports.default = ElectronClient;
 //# sourceMappingURL=ElectronClient.js.map

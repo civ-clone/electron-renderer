@@ -29,7 +29,8 @@ export class Units extends Map implements IMap {
           ),
           image = this.replaceColors(
             this.getPreloadedImage(`units/${unit._.toLowerCase()}`),
-            ['#61e365', '#2c7900'],
+            // To come from theme manifest
+            ['#60E064', '#2C7800'],
             colors.value
           );
 
