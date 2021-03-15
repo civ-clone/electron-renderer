@@ -46,7 +46,7 @@ export class Terrain extends Map {
                     this.filterNeighbours(tile, (tile) => tile.terrain._ === 'River').forEach((direction) => this.drawImage(`terrain/river_mouth_${direction}`, x, y));
                 }
             }
-            const improvements = tile.improvements.reduce((state, improvement) => {
+            const improvements = Object.values(tile.improvements).reduce((state, improvement) => {
                 state[improvement._] = true;
                 return state;
             }, {
@@ -70,8 +70,8 @@ export class Terrain extends Map {
                     this.drawImage(`terrain/${tile.terrain._.toLowerCase()}`, x, y);
                 }
             }
-            if (tile.terrain.features.length) {
-                tile.terrain.features.forEach((feature) => this.drawImage(`terrain/${feature._.toLowerCase()}`, x, y));
+            if (Object.values(tile.terrain.features).length) {
+                Object.values(tile.terrain.features).forEach((feature) => this.drawImage(`terrain/${feature._.toLowerCase()}`, x, y));
             }
             ['Mine', 'Pollution'].forEach((improvementName) => {
                 if (improvements[improvementName]) {
@@ -79,7 +79,7 @@ export class Terrain extends Map {
                 }
             });
             if (improvements.Road) {
-                const neighbouringRoad = this.filterNeighbours(tile, (adjoiningTile) => adjoiningTile.improvements.some((improvement) => improvement._ === 'Road'), ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']), neighbouringRailroad = this.filterNeighbours(tile, (adjoiningTile) => adjoiningTile.improvements.some((improvement) => improvement._ === 'Railroad'), ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']);
+                const neighbouringRoad = this.filterNeighbours(tile, (adjoiningTile) => Object.values(adjoiningTile.improvements).some((improvement) => improvement._ === 'Road'), ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']), neighbouringRailroad = this.filterNeighbours(tile, (adjoiningTile) => Object.values(adjoiningTile.improvements).some((improvement) => improvement._ === 'Railroad'), ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']);
                 neighbouringRoad.forEach((direction) => {
                     if (!improvements.Railroad ||
                         !neighbouringRailroad.includes(direction)) {

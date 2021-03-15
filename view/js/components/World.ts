@@ -8,7 +8,7 @@ export class World {
   constructor(world: WorldData) {
     this.#height = world.height;
     this.#width = world.width;
-    this.#tiles = world.tiles || [];
+    this.#tiles = Object.values(world.tiles) || [];
   }
 
   get(x: number, y: number): Tile {

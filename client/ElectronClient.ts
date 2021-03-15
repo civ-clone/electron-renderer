@@ -1,43 +1,56 @@
-import { Client, IClient } from '@civ-clone/core-civ-client/Client';
-import {
-  Advance as FreeAdvance,
-  City as FreeCity,
-  Gold as FreeGold,
-  Unit as FreeUnit,
-} from '@civ-clone/civ1-goody-hut/GoodyHuts';
-import { ActiveUnit } from '@civ-clone/civ1-unit/PlayerActions';
-import Advance from '@civ-clone/core-science/Advance';
-import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch';
 import {
   ChangeProduction,
-  CityBuild,
+  CityBuild as CityBuildAction,
 } from '@civ-clone/core-city-build/PlayerActions';
+import { Client, IClient } from '@civ-clone/core-civ-client/Client';
+import { ActiveUnit } from '@civ-clone/civ1-unit/PlayerActions';
+import Advance from '@civ-clone/core-science/Advance';
+import BasicTile from './lib/BasicTile';
+import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch';
 import CityImprovement from '@civ-clone/core-city-improvement/CityImprovement';
+import DataObject from '@civ-clone/core-data-object/DataObject';
+import City from '@civ-clone/core-city/City';
+import EnemyCity from './lib/EnemyCity';
+import EnemyUnit from './lib/EnemyUnit';
+import EnemyPlayer from './lib/EnemyPlayer';
 import MandatoryPlayerAction from '@civ-clone/core-player/MandatoryPlayerAction';
+import { ObjectMap } from '@civ-clone/core-data-object/DataObject';
+import { PlainObject } from '@civ-clone/core-data-object/DataObject';
 import Player from '@civ-clone/core-player/Player';
 import PlayerAction from '@civ-clone/core-player/PlayerAction';
 import PlayerResearch from '@civ-clone/core-science/PlayerResearch';
-import TransferObject from './TransferObject';
 import Tile from '@civ-clone/core-world/Tile';
+import TransferObject from './TransferObject';
 import Turn from '@civ-clone/core-turn-based-game/Turn';
 import Unit from '@civ-clone/core-unit/Unit';
 import UnitAction from '@civ-clone/core-unit/Action';
 import Year from '@civ-clone/core-game-year/Year';
+import Yield from '@civ-clone/core-yield/Yield';
+import YieldValue from '@civ-clone/core-yield/YieldValue';
 import * as EventEmitter from 'events';
-import { instance as engineInstance } from '@civ-clone/core-engine/Engine';
-import { instance as turnInstance } from '@civ-clone/core-turn-based-game/Turn';
-import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
+import { diff } from 'deep-object-diff';
+import { instance as cityBuildRegistryInstance } from '@civ-clone/core-city-build/CityBuildRegistry';
+import { instance as cityGrowthRegistryInstance } from '@civ-clone/core-city-growth/CityGrowthRegistry';
 import { instance as cityRegistryInstance } from '@civ-clone/core-city/CityRegistry';
-import { instance as unitRegistryInstance } from '@civ-clone/core-unit/UnitRegistry';
+import { instance as engineInstance } from '@civ-clone/core-engine/Engine';
 import { instance as playerResearchRegistryInstance } from '@civ-clone/core-science/PlayerResearchRegistry';
-import { instance as playerWorldRegistryInstance } from '@civ-clone/core-player-world/PlayerWorldRegistry';
 import { instance as playerTreasuryRegistryInstance } from '@civ-clone/core-treasury/PlayerTreasuryRegistry';
-import { instance as playerTradeRatesRegistryInstance } from '@civ-clone/core-trade-rate/PlayerTradeRatesRegistry';
-import { instance as playerGovernmentRegistryInstance } from '@civ-clone/core-government/PlayerGovernmentRegistry';
+import { instance as playerWorldRegistryInstance } from '@civ-clone/core-player-world/PlayerWorldRegistry';
+import { instance as turnInstance } from '@civ-clone/core-turn-based-game/Turn';
+import { instance as unitRegistryInstance } from '@civ-clone/core-unit/UnitRegistry';
+import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
+import reconstituteData from '@civ-clone/core-data-object/lib/reconstituteData';
+
+declare type ObjectReference = {
+  '#ref': string;
+  [key: string]: any;
+};
 
 export class ElectronClient extends Client implements IClient {
-  #dataQueue: Set<Tile> = new Set();
   #eventEmitter: EventEmitter;
+  #gameData: { [key: string]: any } = {};
+  #patchData: { [key: string]: any } = {};
+  #previousData: ObjectMap = { hierarchy: {}, objects: {} };
   #sender: (channel: string, payload: any) => void;
   #receiver: (channel: string, handler: (...args: any[]) => void) => void;
 
@@ -56,16 +69,34 @@ export class ElectronClient extends Client implements IClient {
       this.#eventEmitter.emit('action', ...args);
     });
 
-    engineInstance.on('player:visibility-changed', (tile, player) => {
+    engineInstance.on('player:visibility-changed', (tile: Tile, player) => {
       if (player !== this.player()) {
         return;
       }
 
-      this.#dataQueue.add(tile);
+      const playerWorld = playerWorldRegistryInstance.getByPlayer(
+        this.player()
+      );
+
+      this.addPatchFor(tile as DataObject);
+
+      if (!this.#previousData.objects[playerWorld.id()]) {
+        this.addPatchFor(playerWorld as DataObject);
+      }
+
+      this.addPatch({
+        [playerWorld.id()]: {
+          tiles: {
+            [this.#previousData.objects[playerWorld.id()].tiles.length]: {
+              '#ref': tile.id(),
+            },
+          },
+        },
+      });
     });
 
     ['unit:created', 'unit:destroyed'].forEach((event) => {
-      engineInstance.on(event, (unit) => {
+      engineInstance.on(event, (unit: Unit) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
           this.player()
         );
@@ -73,34 +104,60 @@ export class ElectronClient extends Client implements IClient {
         if (!playerWorld.includes(unit.tile())) {
           return;
         }
+        console.log(event);
+        console.log(unit.id());
 
-        this.#dataQueue.add(unit.tile());
-      });
-    });
+        if (event === 'unit:created') {
+          this.addPatchFor(unit as DataObject);
 
-    ['unit:moved'].forEach((event) => {
-      engineInstance.on(event, (unit, action) => {
-        const playerWorld = playerWorldRegistryInstance.getByPlayer(
-          this.player()
-        );
-
-        // TODO: filter unit details here - EnemyUnitStack.fromUnits(...unitRegistry.getByTile(unit.tile())) ?
-        if (unit.player() !== this.player()) {
-          if (playerWorld.includes(action.from())) {
-            this.#dataQueue.add(action.from());
-          }
-
-          if (playerWorld.includes(action.to())) {
-            this.#dataQueue.add(action.to());
-          }
+          this.addPatch({
+            [unit.player().id()]: {
+              units: {
+                [unitRegistryInstance.getByPlayer(unit.player()).length]: {
+                  '#ref': unit.id(),
+                },
+              },
+            },
+          });
 
           return;
         }
 
-        this.#dataQueue.add(unit.tile());
+        // event === 'unit:destroyed'
+        // TODO: This will leave orphans (improvements, etc...)
+        //  have a new Worker spawned every turn (?) to return a list of orphaned keys to strip, asynchronously
+        this.addPatch({
+          [unit.id()]: undefined,
+        });
 
-        if (action.from() !== action.to()) {
-          this.#dataQueue.add(action.from());
+        this.addPatchData(
+          ...([unit.player().id(), unit.tile().id(), unit.city()?.id()].filter(
+            (id) => id !== null
+          ) as string[]).map((id) =>
+            this.removeFromCollection(id, unit as DataObject, 'units')
+          )
+        );
+      });
+    });
+
+    ['unit:moved'].forEach((event) => {
+      engineInstance.on(event, (unit: Unit, action: UnitAction) => {
+        const playerWorld = playerWorldRegistryInstance.getByPlayer(
+          this.player()
+        );
+
+        // Don't care about anything that's entirely outside our World
+        if (
+          !playerWorld.includes(action.from()) &&
+          !playerWorld.includes(action.to())
+        ) {
+          return;
+        }
+
+        this.addPatchFor(unit as DataObject);
+
+        if (action.to() !== action.from()) {
+          this.addPatchFor(action.from() as DataObject);
         }
       });
     });
@@ -111,30 +168,46 @@ export class ElectronClient extends Client implements IClient {
           this.player()
         );
 
-        if (playerWorld.includes(tile)) {
-          this.#dataQueue.add(tile);
+        if (!playerWorld.includes(tile)) {
+          return;
         }
+
+        this.addPatchFor(tile as DataObject);
       });
     });
 
-    [
-      'city:created',
-      'city:destroyed',
-    ].forEach((event) => {
+    ['city:created', 'city:destroyed'].forEach((event) => {
       engineInstance.on(event, (city) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
           this.player()
         );
 
-        if (city.player() !== this.player()) {
-          if (event === 'city:created' || event === 'city:destroyed') {
-            if (playerWorld.includes(city.tile())) {
-              this.#dataQueue.add(city.tile());
-            }
-          }
+        if (!playerWorld.includes(city.tile())) {
+          return;
+        }
+
+        this.addPatchFor(city as DataObject);
+
+        if (event === 'city:created') {
+          this.addPatch({
+            [city.player().id()]: {
+              cities: {
+                [cityRegistryInstance.getByPlayer(city.player())
+                  .length]: this.referenceTo(city),
+              },
+            },
+          });
 
           return;
         }
+
+        this.addPatch(
+          this.removeFromCollection(
+            this.player().id(),
+            city as DataObject,
+            'cities'
+          )
+        );
       });
     });
 
@@ -157,6 +230,36 @@ export class ElectronClient extends Client implements IClient {
 
       this.sendNotification(
         `You have discovered the secrets of ${advance.constructor.name}!`
+      );
+    });
+
+    const firstTurnHandler = (player: Player) => {
+      if (player !== this.player()) {
+        return;
+      }
+
+      this.sendInitialData();
+
+      engineInstance.off('player:turn-start', firstTurnHandler);
+    };
+
+    engineInstance.on('player:turn-start', firstTurnHandler);
+
+    engineInstance.on('turn:start', () => {
+      cityRegistryInstance
+        .getByPlayer(this.player())
+        .forEach((city) =>
+          this.addPatchFor(
+            cityBuildRegistryInstance.getByCity(city) as DataObject,
+            cityGrowthRegistryInstance.getByCity(city) as DataObject
+          )
+        );
+
+      this.addPatchFor(
+        playerResearchRegistryInstance.getByPlayer(player) as DataObject
+      );
+      this.addPatchFor(
+        playerTreasuryRegistryInstance.getByPlayer(player) as DataObject
       );
     });
 
@@ -275,7 +378,7 @@ export class ElectronClient extends Client implements IClient {
     }
 
     if (
-      playerAction instanceof CityBuild ||
+      playerAction instanceof CityBuildAction ||
       playerAction instanceof ChangeProduction
     ) {
       const cityBuild = playerAction.value(),
@@ -334,6 +437,46 @@ export class ElectronClient extends Client implements IClient {
     return false;
   }
 
+  private toPlainObjectFilter(entity: DataObject): any {
+    if (entity instanceof Player) {
+      if (entity === this.player()) {
+        return {
+          '#ref': this.player().id(),
+        };
+      }
+
+      return EnemyPlayer.get(entity);
+    }
+
+    if (entity instanceof Unit && entity.player() !== this.player()) {
+      return EnemyUnit.get(entity);
+    }
+
+    if (entity instanceof City && entity.player() !== this.player()) {
+      return EnemyCity.get(entity);
+    }
+
+    if (entity instanceof Tile) {
+      return BasicTile.get(entity, this.player());
+    }
+
+    // Simplifying Yields instead of having them as `DataObject`s with an `id`... Save data transfer!
+    //  Alternative is to create all the `Yield`s when the parent object is instantiated (`Tile`, `Unit`, etc) and have
+    //  them update when the values change... Feels like it would be nicer, but might be a little more tricky...
+    if (entity instanceof Yield) {
+      return {
+        _: entity.constructor.name,
+        value: entity.value(),
+        values: entity.values().map((yieldValue: YieldValue) => ({
+          provider: yieldValue.provider(),
+          value: yieldValue.value(),
+        })),
+      };
+    }
+
+    return entity;
+  }
+
   private sendInitialData(): void {
     const rawData: {
       player: Player;
@@ -345,38 +488,70 @@ export class ElectronClient extends Client implements IClient {
       year: yearInstance,
     };
 
-    const dataObject = new TransferObject(rawData);
+    const dataObject = new TransferObject(rawData).toPlainObject((entity) => {
+      if (entity === this.player()) {
+        return this.player();
+      }
 
-    this.#sender('gameData', dataObject.toPlainObject());
+      return this.toPlainObjectFilter(entity);
+    });
+
+    this.#sender('initialData', dataObject);
+
+    // console.log(dataObject);
+    this.#previousData = dataObject;
+    this.#gameData = reconstituteData(dataObject);
   }
 
   private sendGameData(): void {
-    const actions = this.player().actions(),
-      patch: {
-        [key: string]: any;
-      } = {
-        player: {
-          actions: actions,
-          cities: cityRegistryInstance.getByPlayer(this.player()),
-          government: playerGovernmentRegistryInstance.getByPlayer(
-            this.player()
-          ),
-          mandatoryActions: actions.filter(
-            (action) => action instanceof MandatoryPlayerAction
-          ),
-          rates: playerTradeRatesRegistryInstance.getByPlayer(this.player()),
-          research: playerResearchRegistryInstance.getByPlayer(this.player()),
-          treasury: playerTreasuryRegistryInstance.getByPlayer(this.player()),
-          units: unitRegistryInstance.getByPlayer(this.player()),
-          world: {
-            tiles: [...this.#dataQueue],
+    const actions = this.player().actions();
+
+    this.addPatch({
+      [this.player().id()]: {
+        actions: [],
+        mandatoryActions: [],
+      },
+    });
+
+    actions.forEach((action, index) => {
+      const { objects } = action.toPlainObject((entity) =>
+        this.toPlainObjectFilter(entity)
+      );
+
+      this.addPatch(objects);
+      this.addPatch({
+        [this.player().id()]: {
+          actions: {
+            [index]: this.referenceTo(action as DataObject),
           },
         },
-      };
+      });
+    });
 
-    this.#sender('gameDataPatch', new TransferObject(patch).toPlainObject());
+    this.addPatch({
+      [this.player().id()]: {
+        mandatoryActions: actions
+          .filter((action) => action instanceof MandatoryPlayerAction)
+          .map((action) => this.referenceTo(action as DataObject)),
+      },
+    });
 
-    this.#dataQueue.clear();
+    // const data = new TransferObject(this.#gameData).toPlainObject((entity) =>
+    //     this.toPlainObjectFilter(entity)
+    //   ),
+    //   dataDiff = diff(this.#previousData, data);
+
+    // console.log(this.#previousData);
+    // console.log(data.constructor.name);
+    // console.log(dataDiff);
+
+    this.#sender('gameDataPatch', this.#patchData);
+
+    this.#patchData = {};
+    // this.#patchData = [];
+
+    // this.#previousData = data;
+    // this.#gameData = reconstituteData(data);
   }
 
   private sendNotification(message: string): void {
@@ -385,9 +560,10 @@ export class ElectronClient extends Client implements IClient {
     });
   }
 
+  // Called externally
   takeTurn(): Promise<void> {
     return new Promise<void>((resolve, reject): void => {
-      this.sendInitialData();
+      this.sendGameData();
 
       const listener = (...args: any[]): void => {
         try {
@@ -397,7 +573,7 @@ export class ElectronClient extends Client implements IClient {
             resolve();
           }
 
-          this.sendInitialData();
+          this.sendGameData();
         } catch (e) {
           reject(e);
         }
@@ -405,6 +581,128 @@ export class ElectronClient extends Client implements IClient {
 
       this.#eventEmitter.on('action', listener);
     });
+  }
+
+  private addPatch(...patches: { [key: string]: any }[]): void {
+    patches.forEach((patch) => {
+      this.addPatchData(patch);
+
+      this.applyPatch(patch);
+    });
+  }
+
+  private addPatchFor(...dataObjects: DataObject[]): void {
+    dataObjects.forEach((data) => {
+      const { objects } = data.toPlainObject((entity) =>
+        this.toPlainObjectFilter(entity)
+      );
+
+      Object.entries(objects)
+        .filter(([key, value]): boolean => {
+          if (key === 'player') {
+            console.log('player');
+            console.log(value);
+          }
+
+          if (key === this.player().id()) {
+            console.log('player id');
+            console.log(value);
+          }
+
+          if (value['#ref'] === this.player().id()) {
+            console.log('player ref');
+            console.log(value);
+          }
+
+          return true;
+        })
+        .forEach(([key, value]): void => {
+          if (value && value['#ref']) {
+            return this.addPatch({
+              [key]: value,
+            });
+          }
+
+          if (key === this.player().id()) {
+            console.log('PROBLEM');
+          }
+
+          return this.addPatch({
+            // [key]: diff(this.#previousData.objects[key], value),
+            [key]: value,
+          });
+        });
+    });
+  }
+
+  private addPatchData(...patches: { [key: string]: any }[]): void {
+    patches.forEach((patch) => this.applyPatch(patch, this.#patchData));
+  }
+
+  private applyPatch(
+    patch: { [key: string]: any },
+    to: { [key: string]: any } = this.#previousData.objects
+  ): void {
+    Object.entries(patch).forEach(([key, value]) => {
+      if (value === undefined) {
+        delete to[key];
+
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        to[key] = value;
+
+        return;
+      }
+
+      if (
+        to[key] !== null &&
+        typeof to[key] === 'object' &&
+        value !== null &&
+        typeof value === 'object'
+      ) {
+        return this.applyPatch(value, to[key]);
+      }
+
+      to[key] = value;
+    });
+  }
+
+  private referenceTo(data: DataObject): ObjectReference {
+    return {
+      '#ref': data.id(),
+    };
+  }
+
+  private removeFromCollection(
+    parentId: string,
+    entity: DataObject,
+    key: string
+  ): PlainObject {
+    const parentObject = this.#previousData.objects[parentId];
+
+    if (!parentObject) {
+      return {};
+    }
+
+    const current = parentObject[key] ?? [];
+
+    if (parentObject[key] === undefined) {
+      console.log('missing data for ' + key);
+      console.log(parentObject);
+    }
+
+    this.#previousData.objects[parentId][key] = current.filter(
+      (objectReference: ObjectReference): boolean =>
+        objectReference['#ref'] !== entity.id()
+    );
+
+    return {
+      [parentId]: {
+        [key]: this.#previousData.objects[parentId][key],
+      },
+    };
   }
 }
 

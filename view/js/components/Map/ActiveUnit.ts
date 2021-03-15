@@ -17,10 +17,10 @@ export class ActiveUnit extends Units implements IMap {
       offsetX = x * size,
       offsetY = y * size;
 
-    if (tile.units.length > 0) {
+    if (Object.values(tile.units).length > 0) {
       const player = activeUnit.player,
         civilization = player.civilization,
-        [colors] = civilization.attributes.filter(
+        [colors] = Object.values(civilization.attributes).filter(
           (attribute) => attribute.name === 'colors'
         ),
         image = this.replaceColors(
@@ -30,7 +30,7 @@ export class ActiveUnit extends Units implements IMap {
           colors.value
         );
 
-      if (tile.units.length > 1) {
+      if (Object.values(tile.units).length > 1) {
         this.putImage(image, offsetX - this.scale(), offsetY - this.scale());
       }
 

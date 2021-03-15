@@ -23,11 +23,11 @@ export class Cities extends Map implements ICities {
         const city = tile.city,
           player = city.player,
           civilization = player.civilization,
-          [colors] = civilization.attributes.filter(
+          [colors] = Object.values(civilization.attributes).filter(
             (attribute) => attribute.name === 'colors'
           );
 
-        if (tile.units.length > 0) {
+        if (Object.values(tile.units).length > 0) {
           this.context().fillStyle = '#000';
           this.context().fillRect(offsetX, offsetY, size, size);
         }

@@ -10,7 +10,7 @@ export class Yields extends Map {
         size = this.tileSize(),
         offsetX = x * size,
         offsetY = y * size,
-        total = tile.yields.reduce(
+        total = Object.values(tile.yields).reduce(
           (total, tileYield) => total + tileYield.value,
           0
         );
@@ -25,7 +25,7 @@ export class Yields extends Map {
           [offsetX + size / 2, offsetY + size / 2],
         ];
 
-        tile.yields.forEach((tileYield) => {
+        Object.values(tile.yields).forEach((tileYield) => {
           for (let n = 0; n < tileYield.value; n++) {
             this.putImage(
               this.getPreloadedImage(`city/${tileYield._.toLowerCase()}`),
@@ -47,7 +47,7 @@ export class Yields extends Map {
           [offsetX + (size / 3) * 2, offsetY + size / 2],
         ];
 
-        tile.yields.forEach((tileYield) => {
+        Object.values(tile.yields).forEach((tileYield) => {
           for (let n = 0; n < tileYield.value; n++) {
             this.putImage(
               this.getPreloadedImage(`city/${tileYield._.toLowerCase()}`),
@@ -72,7 +72,7 @@ export class Yields extends Map {
           [offsetX + (size / 4) * 3, offsetY + size / 2],
         ];
 
-        tile.yields.forEach((tileYield) => {
+        Object.values(tile.yields).forEach((tileYield) => {
           for (let n = 0; n < tileYield.value; n++) {
             this.putImage(
               this.getPreloadedImage(`city/${tileYield._.toLowerCase()}`),
@@ -98,7 +98,7 @@ export class Yields extends Map {
           [offsetX + (size / 5) * 4, offsetY + size / 2],
         ];
 
-        tile.yields.forEach((tileYield) => {
+        Object.values(tile.yields).forEach((tileYield) => {
           for (let n = 0; n < tileYield.value; n++) {
             this.putImage(
               this.getPreloadedImage(`city/${tileYield._.toLowerCase()}`),
@@ -126,7 +126,7 @@ export class Yields extends Map {
           [offsetX + (size / 6) * 5, offsetY + size / 2],
         ];
 
-        tile.yields.forEach((tileYield) => {
+        Object.values(tile.yields).forEach((tileYield) => {
           for (let n = 0; n < tileYield.value; n++) {
             this.putImage(
               this.getPreloadedImage(`city/${tileYield._.toLowerCase()}`),

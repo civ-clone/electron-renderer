@@ -19,7 +19,7 @@ export class World {
         _width.set(this, void 0);
         __classPrivateFieldSet(this, _height, world.height);
         __classPrivateFieldSet(this, _width, world.width);
-        __classPrivateFieldSet(this, _tiles, world.tiles || []);
+        __classPrivateFieldSet(this, _tiles, Object.values(world.tiles) || []);
     }
     get(x, y) {
         while (x < 0) {

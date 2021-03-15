@@ -30,12 +30,12 @@ export interface City extends EntityInstance {
   name: string;
   build: CityBuild;
   growth: CityGrowth;
-  improvements: EntityInstance[];
+  improvements: { [key: string]: EntityInstance };
   player: Player;
   tile: Tile;
-  tiles: Tile[];
-  tilesWorked: Tile[];
-  yields: Yield[];
+  tiles: { [key: string]: Tile };
+  tilesWorked: { [key: string]: Tile };
+  yields: { [key: string]: Yield };
 }
 
 export interface CityGrowth extends EntityInstance {
@@ -58,7 +58,7 @@ export interface Attribute extends EntityInstance {
 }
 
 export interface Civilization extends EntityInstance {
-  attributes: Attribute[];
+  attributes: { [key: string]: Attribute };
   leader: Leader;
 }
 
@@ -67,14 +67,14 @@ export interface Leader extends EntityInstance {
 }
 
 export interface Player extends EntityInstance {
-  actions: PlayerAction[];
+  actions: { [key: string]: PlayerAction };
   civilization: Civilization;
-  cities: City[];
+  cities: { [key: string]: City };
   government: PlayerGovernment;
-  mandatoryActions: PlayerAction[];
+  mandatoryActions: { [key: string]: PlayerAction };
   research: PlayerResearch;
   treasury: Yield;
-  units: Unit[];
+  units: { [key: string]: Unit };
   world: World;
 }
 
@@ -88,27 +88,27 @@ export interface PlayerGovernment extends EntityInstance {
 
 export interface PlayerResearch extends EntityInstance {
   available: Entity[];
-  complete: EntityInstance[];
+  complete: { [key: string]: EntityInstance };
   cost: Yield;
   progress: Yield;
   researching: Entity | null;
 }
 
 export interface Unit extends EntityInstance {
-  actions: UnitAction[];
+  actions: { [key: string]: UnitAction };
   actionsForNeighbours: {
-    [key: string]: UnitAction[];
+    [key: string]: { [key: string]: UnitAction };
   };
   attack: Yield;
   defence: Yield;
-  improvements: EntityInstance[];
+  improvements: { [key: string]: EntityInstance };
   movement: Yield;
   moves: Yield;
   player: Player;
   status: EntityInstance;
   tile: Tile;
   visibility: Yield;
-  yields: Yield[];
+  yields: { [key: string]: Yield };
 }
 
 export interface UnitAction extends EntityInstance {
@@ -117,26 +117,26 @@ export interface UnitAction extends EntityInstance {
 }
 
 export interface Terrain extends EntityInstance {
-  features: EntityInstance[];
+  features: { [key: string]: EntityInstance };
 }
 
 export interface Tile extends EntityInstance {
   city: City | null;
   goodyHut: EntityInstance;
-  improvements: EntityInstance[];
+  improvements: { [key: string]: EntityInstance };
   isCoast: boolean;
   isLand: boolean;
   isWater: boolean;
   terrain: Terrain;
-  units: Unit[];
+  units: { [key: string]: Unit };
   x: number;
   y: number;
-  yields: Yield[];
+  yields: { [key: string]: Yield };
 }
 
 export interface World extends EntityInstance {
   height: number;
-  tiles: Tile[];
+  tiles: { [key: string]: Tile };
   width: number;
 }
 

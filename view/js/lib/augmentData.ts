@@ -4,6 +4,12 @@ export const augmentData = (
   seenObjects: any[] = []
 ): void => {
   Object.entries(patch).forEach(([key, value]) => {
+    if ((value && (value['#delete'] ?? false)) === true) {
+      delete store[key];
+
+      return;
+    }
+
     if (
       key in store &&
       !Array.isArray(value) &&
@@ -13,12 +19,12 @@ export const augmentData = (
       value !== null &&
       !seenObjects.includes(value)
     ) {
+      seenObjects.push(value);
+
       augmentData(store[key], value, seenObjects);
 
       return;
     }
-
-    seenObjects.push(value);
 
     store[key] = value;
   });

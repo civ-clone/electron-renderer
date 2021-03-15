@@ -32,16 +32,16 @@ export class City {
         mapCanvas.height = terrainMap.tileSize() * 5;
         mapCanvas.width = terrainMap.tileSize() * 5;
         map.build();
-        terrainMap.render(__classPrivateFieldGet(this, _city).tiles);
+        terrainMap.render(Object.values(__classPrivateFieldGet(this, _city).tiles));
         cityMap.setShowNames(false);
-        cityMap.render(__classPrivateFieldGet(this, _city).tiles);
-        yieldMap.render(__classPrivateFieldGet(this, _city).tilesWorked);
+        cityMap.render(Object.values(__classPrivateFieldGet(this, _city).tiles));
+        yieldMap.render(Object.values(__classPrivateFieldGet(this, _city).tilesWorked));
         map.setCenter(__classPrivateFieldGet(this, _city).tile.x, __classPrivateFieldGet(this, _city).tile.y);
         __classPrivateFieldGet(this, _element).append(e('header', e('h2', t(__classPrivateFieldGet(this, _city).name)), h(e('button.close', t('Close')), {
             click: () => {
                 __classPrivateFieldGet(this, _element).remove();
             },
-        })), e('div.yields', ...__classPrivateFieldGet(this, _city).yields.map((cityYield) => e(`div.${cityYield._.toLowerCase()}`, e('div', t(cityYield._)), e('div', t(cityYield.value.toString()))))), e('div.map', mapCanvas), e('div.build', e('header', t(`Building ${build.building ? build.building._ : 'nothing'}`)), build.building
+        })), e('div.yields', ...Object.values(__classPrivateFieldGet(this, _city).yields).map((cityYield) => e(`div.${cityYield._.toLowerCase()}`, e('div', t(cityYield._)), e('div', t(cityYield.value.toString()))))), e('div.map', mapCanvas), e('div.build', e('header', t(`Building ${build.building ? build.building._ : 'nothing'}`)), build.building
             ? e('p', t(`Progress ${build.progress.value} / ${build.cost.value}`))
             : t(''), h(e('button', t(build.building ? 'Change' : 'Choose')), {
             click: () => {
@@ -67,7 +67,7 @@ export class City {
                 ]);
                 chooseWindow.display();
             },
-        })), e('div.growth', e('header', t(growth.size.toString())), e('p', t(`Growth ${growth.progress.value} / ${growth.cost.value}`))), e('div.improvements', e('header', t('Improvements')), e('ul', ...__classPrivateFieldGet(this, _city).improvements.map((improvement) => e('li', t(improvement._))))));
+        })), e('div.growth', e('header', t(growth.size.toString())), e('p', t(`Growth ${growth.progress.value} / ${growth.cost.value}`))), e('div.improvements', e('header', t('Improvements')), e('ul', ...Object.values(__classPrivateFieldGet(this, _city).improvements).map((improvement) => e('li', t(improvement._))))));
     }
     element() {
         return __classPrivateFieldGet(this, _element);

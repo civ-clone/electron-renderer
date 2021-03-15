@@ -1,25 +1,13 @@
 import DataObject from '@civ-clone/core-data-object/DataObject';
-import Player from '@civ-clone/core-player/Player';
 
 export class TransferObject extends DataObject {
-  // #player: Player;
-  //
-  // constructor(player: Player) {
-  //   super();
-  //
-  //   this.#player = player;
-  //
-  //   this.addKey('player');
-  // }
-  //
-  // player() {
-  //   return this.#player;
-  // }
-
-  constructor(data: Object) {
+  constructor(data: { [key: string]: any }) {
     super();
 
-    Object.assign(this, data);
+    // if `id` exists, skip it, as it'll break stuff
+    const { id, ...rest } = data;
+
+    Object.assign(this, rest);
 
     // @ts-ignore
     this.addKey(...Object.keys(data));

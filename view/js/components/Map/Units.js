@@ -22,18 +22,18 @@ export class Units extends Map {
         this.clear();
         tiles.forEach(({ x, y }) => {
             const tile = this.world().get(x, y), size = this.tileSize(), offsetX = x * size, offsetY = y * size;
-            if (tile.units.length > 0 &&
+            if (Object.values(tile.units).length > 0 &&
                 (__classPrivateFieldGet(this, _activeUnit) !== null
                     ? __classPrivateFieldGet(this, _activeUnit).tile.id !== tile.id
                     : true)) {
-                const [unit] = tile.units.sort((a, b) => b.defence.value - a.defence.value), player = unit.player, civilization = player.civilization, [colors] = civilization.attributes.filter((attribute) => attribute.name === 'colors'), image = this.replaceColors(this.getPreloadedImage(`units/${unit._.toLowerCase()}`), 
+                const [unit] = Object.values(tile.units).sort((a, b) => b.defence.value - a.defence.value), player = unit.player, civilization = player.civilization, [colors] = Object.values(civilization.attributes).filter((attribute) => attribute.name === 'colors'), image = this.replaceColors(this.getPreloadedImage(`units/${unit._.toLowerCase()}`), 
                 // To come from theme manifest
                 ['#60E064', '#2C7800'], colors.value);
-                if (tile.units.length > 1) {
+                if (Object.values(tile.units).length > 1) {
                     this.putImage(image, offsetX - this.scale(), offsetY - this.scale());
                 }
                 this.putImage(image, offsetX, offsetY);
-                if (unit.improvements.some((improvement) => improvement._ === 'Fortified')) {
+                if (Object.values(unit.improvements).some((improvement) => improvement._ === 'Fortified')) {
                     this.drawImage('map/fortify', x, y);
                 }
             }

@@ -48,7 +48,7 @@ export class UnitDetails extends Element {
       e(
         'p',
         t(
-          `${this.#activeUnit.improvements
+          `${Object.values(this.#activeUnit.improvements)
             .map((improvement) => improvement._)
             .join(', ')}`
         )
@@ -56,7 +56,7 @@ export class UnitDetails extends Element {
       e(
         'p',
         t(
-          `${this.#activeUnit.tile.units
+          `${Object.values(this.#activeUnit.tile.units)
             .filter((unit) => unit !== this.#activeUnit)
             .map((unit) => unit._)
             .join(', ')}`

@@ -35,10 +35,10 @@ export class City {
 
     map.build();
 
-    terrainMap.render(this.#city.tiles);
+    terrainMap.render(Object.values(this.#city.tiles));
     cityMap.setShowNames(false);
-    cityMap.render(this.#city.tiles);
-    yieldMap.render(this.#city.tilesWorked);
+    cityMap.render(Object.values(this.#city.tiles));
+    yieldMap.render(Object.values(this.#city.tilesWorked));
     map.setCenter(this.#city.tile.x, this.#city.tile.y);
 
     this.#element.append(
@@ -53,7 +53,7 @@ export class City {
       ),
       e(
         'div.yields',
-        ...this.#city.yields.map((cityYield) =>
+        ...Object.values(this.#city.yields).map((cityYield) =>
           e(
             `div.${cityYield._.toLowerCase()}`,
             e('div', t(cityYield._)),
@@ -115,7 +115,7 @@ export class City {
         e('header', t('Improvements')),
         e(
           'ul',
-          ...this.#city.improvements.map((improvement) =>
+          ...Object.values(this.#city.improvements).map((improvement) =>
             e('li', t(improvement._))
           )
         )

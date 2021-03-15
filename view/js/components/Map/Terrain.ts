@@ -123,7 +123,7 @@ export class Terrain extends Map implements IMap {
         Pollution: boolean;
       };
 
-      const improvements = tile.improvements.reduce(
+      const improvements = Object.values(tile.improvements).reduce(
         (
           state: ImprovementLookup,
           improvement: EntityInstance
@@ -165,8 +165,8 @@ export class Terrain extends Map implements IMap {
         }
       }
 
-      if (tile.terrain.features.length) {
-        tile.terrain.features.forEach((feature) =>
+      if (Object.values(tile.terrain.features).length) {
+        Object.values(tile.terrain.features).forEach((feature) =>
           this.drawImage(`terrain/${feature._.toLowerCase()}`, x, y)
         );
       }
@@ -181,7 +181,7 @@ export class Terrain extends Map implements IMap {
         const neighbouringRoad = this.filterNeighbours(
             tile,
             (adjoiningTile: Tile): boolean =>
-              adjoiningTile.improvements.some(
+              Object.values(adjoiningTile.improvements).some(
                 (improvement: EntityInstance): boolean =>
                   improvement._ === 'Road'
               ),
@@ -190,7 +190,7 @@ export class Terrain extends Map implements IMap {
           neighbouringRailroad = this.filterNeighbours(
             tile,
             (adjoiningTile: Tile): boolean =>
-              adjoiningTile.improvements.some(
+              Object.values(adjoiningTile.improvements).some(
                 (improvement: EntityInstance): boolean =>
                   improvement._ === 'Railroad'
               ),

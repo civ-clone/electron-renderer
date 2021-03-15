@@ -1,4 +1,4 @@
-import { reconstituteData } from './lib/reconstituteData.js';
+import { reconstituteData, } from './lib/reconstituteData.js';
 import Actions from './components/Actions.js';
 import ActiveUnit from './components/Map/ActiveUnit.js';
 import Cities from './components/Map/Cities.js';
@@ -15,10 +15,11 @@ import Units from './components/Map/Units.js';
 import World from './components/World.js';
 import Yields from './components/Map/Yields.js';
 import MainMenu from './components/MainMenu.js';
+import applyPatch from './lib/applyPatch.js';
 try {
     ((transport) => {
         const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimap = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications(), mainMenu = new MainMenu(mainMenuElement);
-        let globalNotificationTimer, lastUnit;
+        let globalNotificationTimer, lastUnit, objectMap = { hierarchy: {}, objects: {} };
         transport.receive('notification', (data) => {
             notificationArea.innerHTML = data;
             if (globalNotificationTimer) {
@@ -29,7 +30,8 @@ try {
                 notificationArea.innerText = '';
             }, 4000);
         });
-        transport.receiveOnce('gameData', (objectMap) => {
+        transport.receiveOnce('initialData', (initialData) => {
+            objectMap = initialData;
             const data = reconstituteData(objectMap);
             gameArea.classList.add('active');
             mapPortal.width = mapPortal.parentElement.offsetWidth;
@@ -51,27 +53,23 @@ try {
                 mapPortal.width = mapPortal.parentElement.offsetWidth;
                 mapPortal.height = mapPortal.parentElement.offsetHeight;
             });
-            const handler = (objectMap) => {
-                const data = reconstituteData(objectMap);
-                const actions = new Actions(data.player.mandatoryActions, actionArea);
+            const handler = (data) => {
+                const actions = new Actions(Object.values(data.player.mandatoryActions), actionArea);
                 gameArea.append(actions.element());
-                world.setTileData(data.player.world.tiles);
+                world.setTileData(Object.values(data.player.world.tiles));
                 const gameDetails = new GameDetails(gameInfo, data.turn, data.year);
                 gameDetails.build();
                 const playerDetails = new PlayerDetails(playerInfo, data.player);
                 playerDetails.build();
-                activeUnits = data.player.actions.filter((action) => action._ === 'ActiveUnit');
+                activeUnits = Object.values(data.player.actions).filter((action) => action._ === 'ActiveUnit');
                 // This prioritises units that are already on screen
-                const [activeUnitAction,] = activeUnits.sort(({ value: unitA }, { value: unitB }) => unitB === lastUnit
-                    ? 1
-                    : unitA === lastUnit
-                        ? -1
-                        : (portal.isVisible(unitB.tile.x, unitB.tile.y)
+                const [activeUnitAction] = activeUnits.sort(({ value: unitA }, { value: unitB }) => (unitB === lastUnit ? 1 : 0) - (unitA === lastUnit ? 1 : 0) ||
+                    (portal.isVisible(unitB.tile.x, unitB.tile.y)
+                        ? 1
+                        : 0) -
+                        (portal.isVisible(unitA.tile.x, unitA.tile.y)
                             ? 1
-                            : 0) -
-                            (portal.isVisible(unitA.tile.x, unitA.tile.y)
-                                ? 1
-                                : 0));
+                            : 0));
                 activeUnit = activeUnitAction ? activeUnitAction.value : null;
                 unitsMap.setActiveUnit(activeUnit);
                 activeUnitsMap.setActiveUnit(activeUnit);
@@ -95,14 +93,30 @@ try {
                 portal.build();
                 portal.render();
                 // TODO: make this an option
-                if (data.player.mandatoryActions.length === 0) {
+                if (Object.values(data.player.mandatoryActions).length === 0) {
                     transport.send('action', {
                         name: 'EndOfTurn',
                     });
                 }
             };
-            handler(objectMap);
-            transport.receive('gameData', handler);
+            handler(data);
+            // transport.receive('gameData', (objectMap) => {
+            //   const data = reconstituteData(objectMap) as GameData;
+            //
+            //   handler(data);
+            // });
+            //
+            transport.receive('gameDataPatch', (objectMapPatch) => {
+                applyPatch(objectMapPatch, objectMap.objects);
+                // const patchData = reconstituteData(objectMap);
+                const data = reconstituteData(objectMap);
+                //
+                // data.player.actions = {};
+                // data.player.mandatoryActions = {};
+                //
+                // augmentData(data, patchData);
+                handler(data);
+            });
             transport.receive('gameNotification', (data) => {
                 notifications.receive(data);
             });
@@ -179,7 +193,7 @@ try {
                     if (event.key in keyToActionsMap) {
                         const actions = [...keyToActionsMap[event.key]];
                         while (actions.length) {
-                            const actionName = actions.shift(), [unitAction] = activeUnit.actions.filter((action) => action._ === actionName);
+                            const actionName = actions.shift(), [unitAction] = Object.values(activeUnit.actions).filter((action) => action._ === actionName);
                             if (unitAction) {
                                 transport.send('action', {
                                     name: 'ActiveUnit',
@@ -194,7 +208,7 @@ try {
                         }
                     }
                     if (event.key in directionKeyMap) {
-                        const [unitAction] = activeUnit.actionsForNeighbours[directionKeyMap[event.key]];
+                        const [unitAction] = Object.values(activeUnit.actionsForNeighbours[directionKeyMap[event.key]]);
                         if (unitAction) {
                             transport.send('action', {
                                 name: 'ActiveUnit',
@@ -239,7 +253,8 @@ try {
         sendingData: false,
         receive(channel, handler) {
             transport.receive(channel, (...args) => {
-                if (channel === 'gameData' && this.sendingData) {
+                if ((channel === 'gameData' || channel === 'gameDataPatch') &&
+                    this.sendingData) {
                     this.sendingData = false;
                 }
                 handler(...args);

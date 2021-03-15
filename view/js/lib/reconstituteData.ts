@@ -25,11 +25,27 @@ export const reconstituteData = ({
     seenObjects.push(value);
 
     if (Array.isArray(value)) {
-      return value.map((value) => getReferences(value));
+      if (value.length === 0) {
+        return [];
+      }
+
+      const newValues = value.map((value) => getReferences(value));
+
+      value.splice(0, value.length, ...newValues);
+
+      // if (Object.prototype.hasOwnProperty.call(value[0], 'id')) {
+      //   return value.reduce((object: { [key: string]: any }, value: any) => {
+      //     object[value.id] = getReferences(value);
+      //
+      //     return object;
+      //   }, {});
+      // }
+
+      return value;
     }
 
     if (value && value['#ref']) {
-      return getReferences(objects[value['#ref']]);
+      Object.assign(value, getReferences(objects[value['#ref']]));
     }
 
     if (value instanceof Object) {

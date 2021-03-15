@@ -1,6 +1,10 @@
 import { GameData, ITransport, PlayerAction, Unit } from './types';
 import { e, t } from './lib/html.js';
-import { reconstituteData, ObjectMap } from './lib/reconstituteData.js';
+import {
+  reconstituteData,
+  ObjectMap,
+  PlainObject,
+} from './lib/reconstituteData.js';
 import Actions from './components/Actions.js';
 import ActiveUnit from './components/Map/ActiveUnit.js';
 import Cities from './components/Map/Cities.js';
@@ -17,6 +21,8 @@ import Units from './components/Map/Units.js';
 import World from './components/World.js';
 import Yields from './components/Map/Yields.js';
 import MainMenu from './components/MainMenu.js';
+import augmentData from './lib/augmentData.js';
+import applyPatch from './lib/applyPatch.js';
 
 // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //  ! Break this down and use a front-end framework. !
@@ -41,7 +47,9 @@ try {
       notifications = new Notifications(),
       mainMenu = new MainMenu(mainMenuElement);
 
-    let globalNotificationTimer: number | undefined, lastUnit: Unit;
+    let globalNotificationTimer: number | undefined,
+      lastUnit: Unit,
+      objectMap: ObjectMap = { hierarchy: {}, objects: {} };
 
     transport.receive('notification', (data): void => {
       notificationArea.innerHTML = data;
@@ -57,7 +65,9 @@ try {
       }, 4000);
     });
 
-    transport.receiveOnce('gameData', (objectMap: ObjectMap) => {
+    transport.receiveOnce('initialData', (initialData: ObjectMap) => {
+      objectMap = initialData;
+
       const data: GameData = reconstituteData(objectMap) as GameData;
 
       gameArea.classList.add('active');
@@ -108,13 +118,14 @@ try {
         mapPortal.height = (mapPortal.parentElement as HTMLElement).offsetHeight;
       });
 
-      const handler = (objectMap: ObjectMap): void => {
-        const data: GameData = reconstituteData(objectMap) as GameData;
-
-        const actions = new Actions(data.player.mandatoryActions, actionArea);
+      const handler = (data: GameData): void => {
+        const actions = new Actions(
+          Object.values(data.player.mandatoryActions),
+          actionArea
+        );
         gameArea.append(actions.element());
 
-        world.setTileData(data.player.world.tiles);
+        world.setTileData(Object.values(data.player.world.tiles));
 
         const gameDetails = new GameDetails(gameInfo, data.turn, data.year);
 
@@ -124,21 +135,17 @@ try {
 
         playerDetails.build();
 
-        activeUnits = data.player.actions.filter(
+        activeUnits = Object.values(data.player.actions).filter(
           (action: PlayerAction): boolean => action._ === 'ActiveUnit'
         );
 
         // This prioritises units that are already on screen
-        const [
-          activeUnitAction,
-        ] = activeUnits.sort(({ value: unitA }, { value: unitB }): number =>
-          unitB === lastUnit
-            ? 1
-            : unitA === lastUnit
-            ? -1
-            : (portal.isVisible((unitB as Unit).tile.x, (unitB as Unit).tile.y)
-                ? 1
-                : 0) -
+        const [activeUnitAction] = activeUnits.sort(
+          ({ value: unitA }, { value: unitB }): number =>
+            (unitB === lastUnit ? 1 : 0) - (unitA === lastUnit ? 1 : 0) ||
+            (portal.isVisible((unitB as Unit).tile.x, (unitB as Unit).tile.y)
+              ? 1
+              : 0) -
               (portal.isVisible((unitA as Unit).tile.x, (unitA as Unit).tile.y)
                 ? 1
                 : 0)
@@ -186,16 +193,34 @@ try {
         portal.render();
 
         // TODO: make this an option
-        if (data.player.mandatoryActions.length === 0) {
+        if (Object.values(data.player.mandatoryActions).length === 0) {
           transport.send('action', {
             name: 'EndOfTurn',
           });
         }
       };
 
-      handler(objectMap);
+      handler(data);
 
-      transport.receive('gameData', handler);
+      // transport.receive('gameData', (objectMap) => {
+      //   const data = reconstituteData(objectMap) as GameData;
+      //
+      //   handler(data);
+      // });
+      //
+      transport.receive('gameDataPatch', (objectMapPatch: ObjectMap): void => {
+        applyPatch(objectMapPatch, objectMap.objects);
+
+        // const patchData = reconstituteData(objectMap);
+        const data = reconstituteData(objectMap) as GameData;
+        //
+        // data.player.actions = {};
+        // data.player.mandatoryActions = {};
+        //
+        // augmentData(data, patchData);
+
+        handler(data);
+      });
 
       transport.receive('gameNotification', (data): void => {
         notifications.receive(data);
@@ -295,7 +320,7 @@ try {
 
             while (actions.length) {
               const actionName = actions.shift(),
-                [unitAction] = activeUnit.actions.filter(
+                [unitAction] = Object.values(activeUnit.actions).filter(
                   (action): boolean => action._ === actionName
                 );
 
@@ -316,9 +341,9 @@ try {
           }
 
           if (event.key in directionKeyMap) {
-            const [unitAction] = activeUnit.actionsForNeighbours[
-              directionKeyMap[event.key]
-            ];
+            const [unitAction] = Object.values(
+              activeUnit.actionsForNeighbours[directionKeyMap[event.key]]
+            );
 
             if (unitAction) {
               transport.send('action', {
@@ -378,7 +403,10 @@ try {
     sendingData: false,
     receive(channel: string, handler: (...args: any[]) => void): void {
       transport.receive(channel, (...args: any) => {
-        if (channel === 'gameData' && this.sendingData) {
+        if (
+          (channel === 'gameData' || channel === 'gameDataPatch') &&
+          this.sendingData
+        ) {
           this.sendingData = false;
         }
 

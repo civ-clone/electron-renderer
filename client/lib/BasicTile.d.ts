@@ -1,0 +1,31 @@
+import City from '@civ-clone/core-city/City';
+import DataObject from '@civ-clone/core-data-object/DataObject';
+import EnemyCity from './EnemyCity';
+import EnemyUnit from './EnemyUnit';
+import { EntityInstance } from '../../view/js/types';
+import Player from '@civ-clone/core-player/Player';
+import Terrain from '@civ-clone/core-terrain/Terrain';
+import Tile from '@civ-clone/core-world/Tile';
+import TileImprovement from '@civ-clone/core-tile-improvement/TileImprovement';
+import Unit from '@civ-clone/core-unit/Unit';
+import UnknownUnit from './UnknownUnit';
+import Yield from '@civ-clone/core-yield/Yield';
+export declare class BasicTile extends DataObject {
+    #private;
+    static tileMap: Map<Tile, BasicTile>;
+    private constructor();
+    static get(tile: Tile, player: Player): BasicTile;
+    city(): City | EnemyCity | null;
+    goodyHut(): EntityInstance | null;
+    id(): string;
+    improvements(): TileImprovement[];
+    isCoast(): boolean;
+    isLand(): boolean;
+    isWater(): boolean;
+    terrain(): Terrain;
+    units(): Unit[] | (EnemyUnit | UnknownUnit)[];
+    x(): number;
+    y(): number;
+    yields(player?: Player): Yield[];
+}
+export default BasicTile;

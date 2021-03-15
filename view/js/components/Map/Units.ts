@@ -14,17 +14,17 @@ export class Units extends Map implements IMap {
         offsetY = y * size;
 
       if (
-        tile.units.length > 0 &&
+        Object.values(tile.units).length > 0 &&
         (this.#activeUnit !== null
           ? this.#activeUnit.tile.id !== tile.id
           : true)
       ) {
-        const [unit] = tile.units.sort(
+        const [unit] = Object.values(tile.units).sort(
             (a: Unit, b: Unit): number => b.defence.value - a.defence.value
           ),
           player = unit.player,
           civilization = player.civilization,
-          [colors] = civilization.attributes.filter(
+          [colors] = Object.values(civilization.attributes).filter(
             (attribute) => attribute.name === 'colors'
           ),
           image = this.replaceColors(
@@ -34,14 +34,16 @@ export class Units extends Map implements IMap {
             colors.value
           );
 
-        if (tile.units.length > 1) {
+        if (Object.values(tile.units).length > 1) {
           this.putImage(image, offsetX - this.scale(), offsetY - this.scale());
         }
 
         this.putImage(image, offsetX, offsetY);
 
         if (
-          unit.improvements.some((improvement) => improvement._ === 'Fortified')
+          Object.values(unit.improvements).some(
+            (improvement) => improvement._ === 'Fortified'
+          )
         ) {
           this.drawImage('map/fortify', x, y);
         }

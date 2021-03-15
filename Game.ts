@@ -114,7 +114,7 @@ export class Game implements IGame {
                 i === 0
                   ? new ElectronClient(
                       player,
-                      (channel: string, payload: TransferObject) =>
+                      (channel: string, payload: any) =>
                         this.sendData(channel, payload),
                       (
                         channel: string,

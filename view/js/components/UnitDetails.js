@@ -26,9 +26,9 @@ export class UnitDetails extends Element {
         if (__classPrivateFieldGet(this, _activeUnit) === null) {
             return;
         }
-        this.element().append(e('p', t(`${__classPrivateFieldGet(this, _activeUnit)._} (${__classPrivateFieldGet(this, _activeUnit).tile.x}, ${__classPrivateFieldGet(this, _activeUnit).tile.y})`)), e('p', t(`${__classPrivateFieldGet(this, _activeUnit).moves.value} / ${__classPrivateFieldGet(this, _activeUnit).movement.value} moves`)), e('p', t(`A: ${__classPrivateFieldGet(this, _activeUnit).attack.value} / D: ${__classPrivateFieldGet(this, _activeUnit).defence.value} / V: ${__classPrivateFieldGet(this, _activeUnit).visibility.value}`)), e('p', t(`${__classPrivateFieldGet(this, _activeUnit).improvements
+        this.element().append(e('p', t(`${__classPrivateFieldGet(this, _activeUnit)._} (${__classPrivateFieldGet(this, _activeUnit).tile.x}, ${__classPrivateFieldGet(this, _activeUnit).tile.y})`)), e('p', t(`${__classPrivateFieldGet(this, _activeUnit).moves.value} / ${__classPrivateFieldGet(this, _activeUnit).movement.value} moves`)), e('p', t(`A: ${__classPrivateFieldGet(this, _activeUnit).attack.value} / D: ${__classPrivateFieldGet(this, _activeUnit).defence.value} / V: ${__classPrivateFieldGet(this, _activeUnit).visibility.value}`)), e('p', t(`${Object.values(__classPrivateFieldGet(this, _activeUnit).improvements)
             .map((improvement) => improvement._)
-            .join(', ')}`)), e('p', t(`${__classPrivateFieldGet(this, _activeUnit).tile.units
+            .join(', ')}`)), e('p', t(`${Object.values(__classPrivateFieldGet(this, _activeUnit).tile.units)
             .filter((unit) => unit !== __classPrivateFieldGet(this, _activeUnit))
             .map((unit) => unit._)
             .join(', ')}`)));

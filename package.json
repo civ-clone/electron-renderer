@@ -54,6 +54,7 @@
     "@civ-clone/simple-ai-client": "github:civ-clone/simple-ai-client",
     "@civ-clone/simple-world-generator": "github:civ-clone/simple-world-generator",
     "@civ-clone/simple-world-path": "github:civ-clone/simple-world-path",
+    "deep-object-diff": "^1.1.0",
     "electron": "^10.1.3"
   }
 }

@@ -18,8 +18,8 @@ export class Cities extends Map {
         tiles.forEach(({ x, y }) => {
             const tile = this.world().get(x, y), size = this.tileSize(), offsetX = x * size, offsetY = y * size;
             if (tile.city) {
-                const city = tile.city, player = city.player, civilization = player.civilization, [colors] = civilization.attributes.filter((attribute) => attribute.name === 'colors');
-                if (tile.units.length > 0) {
+                const city = tile.city, player = city.player, civilization = player.civilization, [colors] = Object.values(civilization.attributes).filter((attribute) => attribute.name === 'colors');
+                if (Object.values(tile.units).length > 0) {
                     this.context().fillStyle = '#000';
                     this.context().fillRect(offsetX, offsetY, size, size);
                 }
