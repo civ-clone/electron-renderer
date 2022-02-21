@@ -2,7 +2,6 @@ import { e } from '../lib/html.js';
 
 export interface IElement {
   build(): void;
-  clear(): void;
   element(): HTMLElement;
 }
 
@@ -15,14 +14,14 @@ export class Element implements IElement {
 
   build(): void {}
 
-  clear(): void {
+  element(): HTMLElement {
+    return this.#element;
+  }
+
+  protected empty(): void {
     while (this.#element.firstChild !== null) {
       this.#element.firstChild.remove();
     }
-  }
-
-  element(): HTMLElement {
-    return this.#element;
   }
 }
 

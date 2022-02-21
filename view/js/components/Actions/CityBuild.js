@@ -1,33 +1,13 @@
-import { e, h } from '../../lib/html.js';
+import { e } from '../../lib/html.js';
 import Action from './Action.js';
-import SelectionWindow from '../SelectionWindow.js';
+import CityBuildSelectionWindow from '../CityBuildSelectionWindow.js';
 export class CityBuild extends Action {
+    activate() {
+        new CityBuildSelectionWindow(this.value(), () => this.complete());
+    }
     build() {
         const cityBuild = this.value();
-        this.element().append(h(e('button.cityBuild'), {
-            click: () => {
-                const chooseWindow = new SelectionWindow(`What do you want to build in ${cityBuild.city.name}?`, this.value().available.map((advance) => ({
-                    value: advance._,
-                })), [
-                    {
-                        label: 'OK',
-                        handler: (selection) => {
-                            if (!selection) {
-                                return;
-                            }
-                            transport.send('action', {
-                                name: 'CityBuild',
-                                id: this.value().id,
-                                chosen: selection ? selection : '@',
-                            });
-                            chooseWindow.close();
-                            this.complete();
-                        },
-                    },
-                ]);
-                chooseWindow.display();
-            },
-        }));
+        this.element().append(e(`button.cityBuild[title="What would you like to build in ${cityBuild.city.name}?"]`));
     }
     value() {
         return super.value();

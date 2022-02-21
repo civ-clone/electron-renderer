@@ -62,7 +62,7 @@ try {
                 playerDetails.build();
                 activeUnits = data.player.actions.filter((action) => action._ === 'ActiveUnit');
                 // This prioritises units that are already on screen
-                const [activeUnitAction,] = activeUnits.sort(({ value: unitA }, { value: unitB }) => unitB === lastUnit
+                const [activeUnitAction] = activeUnits.sort(({ value: unitA }, { value: unitB }) => unitB === lastUnit
                     ? 1
                     : unitA === lastUnit
                         ? -1
@@ -90,6 +90,10 @@ try {
                 const minimapContext = minimap.getContext('2d');
                 minimap.height =
                     terrainMap.canvas().height * (190 / terrainMap.canvas().width);
+                minimap.addEventListener('click', (event) => {
+                    const x = event.offsetX - minimap.offsetLeft, y = event.offsetY - minimap.offsetTop, tileX = Math.floor((x / minimap.offsetWidth) * world.width()), tileY = Math.floor((y / minimap.offsetHeight) * world.height());
+                    portal.setCenter(tileX, tileY);
+                });
                 minimapContext.drawImage(terrainMap.canvas(), 0, 0, 190, minimap.height);
                 // ensure UI looks responsive
                 portal.build();
@@ -157,7 +161,7 @@ try {
                 b: ['FoundCity'],
                 D: ['Disband'],
                 f: ['Fortify', 'BuildFortress'],
-                i: ['BuildIrrigation', 'ClearForest'],
+                i: ['BuildIrrigation', 'ClearForest', 'ClearSwamp', 'ClearJungle'],
                 m: ['BuildMine', 'PlantForest'],
                 P: ['Pillage'],
                 r: ['BuildRoad', 'BuildRailroad'],
@@ -174,6 +178,7 @@ try {
                 ArrowLeft: 'w',
                 Home: 'nw',
             };
+            let lastKey = '';
             eventHandler.on('keydown', (event) => {
                 if (activeUnit) {
                     if (event.key in keyToActionsMap) {
@@ -216,6 +221,12 @@ try {
                     event.preventDefault();
                     return;
                 }
+                if (event.key === 'Tab') {
+                    const bottomAction = actionArea.querySelector('div.action:last-child button');
+                    if (bottomAction !== null) {
+                        bottomAction.focus();
+                    }
+                }
                 if (event.key === 'c') {
                     if (activeUnit) {
                         portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
@@ -232,6 +243,10 @@ try {
                     yieldsMap.setVisible(!yieldsMap.isVisible());
                     portal.render();
                 }
+                if (lastKey === '%' && event.key === '^') {
+                    transport.send('cheat', 'RevealMap');
+                }
+                lastKey = event.key;
             });
             document.addEventListener('keydown', (event) => eventHandler.handle('keydown', event));
         });

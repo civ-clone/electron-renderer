@@ -1,3 +1,7 @@
+import {
+  AdditionalDataRegistry,
+  instance as additionalDataRegistryInstance,
+} from '@civ-clone/core-data-object/AdditionalDataRegistry';
 import { Client, IClient } from '@civ-clone/core-civ-client/Client';
 import {
   Advance as FreeAdvance,
@@ -13,6 +17,7 @@ import {
   CityBuild,
 } from '@civ-clone/core-city-build/PlayerActions';
 import CityImprovement from '@civ-clone/core-city-improvement/CityImprovement';
+import GoodyHut from '@civ-clone/core-goody-hut/GoodyHut';
 import MandatoryPlayerAction from '@civ-clone/core-player/MandatoryPlayerAction';
 import Player from '@civ-clone/core-player/Player';
 import PlayerAction from '@civ-clone/core-player/PlayerAction';
@@ -22,6 +27,9 @@ import Tile from '@civ-clone/core-world/Tile';
 import Turn from '@civ-clone/core-turn-based-game/Turn';
 import Unit from '@civ-clone/core-unit/Unit';
 import UnitAction from '@civ-clone/core-unit/Action';
+import UnknownCity from '../UnknownObjects/City';
+import UnknownPlayer from '../UnknownObjects/Player';
+import UnknownUnit from '../UnknownObjects/Unit';
 import Year from '@civ-clone/core-game-year/Year';
 import * as EventEmitter from 'events';
 import { instance as engineInstance } from '@civ-clone/core-engine/Engine';
@@ -34,6 +42,7 @@ import { instance as playerWorldRegistryInstance } from '@civ-clone/core-player-
 import { instance as playerTreasuryRegistryInstance } from '@civ-clone/core-treasury/PlayerTreasuryRegistry';
 import { instance as playerTradeRatesRegistryInstance } from '@civ-clone/core-trade-rate/PlayerTradeRatesRegistry';
 import { instance as playerGovernmentRegistryInstance } from '@civ-clone/core-government/PlayerGovernmentRegistry';
+import City from '@civ-clone/core-city/City';
 
 export class ElectronClient extends Client implements IClient {
   #dataQueue: Set<Tile> = new Set();
@@ -54,6 +63,21 @@ export class ElectronClient extends Client implements IClient {
 
     this.#receiver('action', (...args): void => {
       this.#eventEmitter.emit('action', ...args);
+    });
+
+    this.#receiver('cheat', (code: string): void => {
+      if (code === 'RevealMap') {
+        const playerWorld = playerWorldRegistryInstance.getByPlayer(
+          this.player()
+        );
+
+        // A bit nasty... I wonder how slow this data transfer will be...
+        playerWorld
+          .entries()[0]
+          .map()
+          .entries()
+          .forEach((tile) => playerWorld.register(tile));
+      }
     });
 
     engineInstance.on('player:visibility-changed', (tile, player) => {
@@ -117,10 +141,7 @@ export class ElectronClient extends Client implements IClient {
       });
     });
 
-    [
-      'city:created',
-      'city:destroyed',
-    ].forEach((event) => {
+    ['city:created', 'city:destroyed'].forEach((event) => {
       engineInstance.on(event, (city) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
           this.player()
@@ -160,43 +181,51 @@ export class ElectronClient extends Client implements IClient {
       );
     });
 
-    // TODO: need to realise the Action so it can be relayed to the player - maybe these need to be calculated when the
-    //  hut is instantiated...
-    // engineInstance.on('goody-hut:discovered', (goodyHut, unit) => {
-    //   if (unit.player() !== this.player()) {
-    //     return;
-    //   }
-    //
-    //   if (goodyHut instanceof FreeAdvance) {
-    //     this.sendNotification(
-    //       'You have discovered scrolls of ancient wisdom...'
-    //     );
-    //
-    //     return;
-    //   }
-    //
-    //   if (goodyHut instanceof FreeCity) {
-    //     this.sendNotification('You have discovered an advanced tribe...');
-    //
-    //     return;
-    //   }
-    //
-    //   if (goodyHut instanceof FreeGold) {
-    //     this.sendNotification('You have discovered valuable treasure...');
-    //
-    //     return;
-    //   }
-    //
-    //   if (goodyHut instanceof FreeUnit) {
-    //     this.sendNotification(
-    //       'You have discovered a tribe of skilled mercenaries...'
-    //     );
-    //
-    //     return;
-    //   }
-    //
-    //   this.sendNotification(goodyHut.constructor.name);
-    // });
+    engineInstance.on(
+      'goody-hut:action-performed',
+      (goodyHut: GoodyHut, action) => {
+        const tile = goodyHut.tile(),
+          units = unitRegistryInstance.getByTile(tile);
+
+        if (!units.some((unit: Unit) => unit.player() === this.player())) {
+          return;
+        }
+
+        if (action instanceof FreeAdvance) {
+          this.sendNotification(
+            'You have discovered scrolls of ancient wisdom...'
+          );
+
+          return;
+        }
+
+        if (action instanceof FreeCity) {
+          this.sendNotification('You have discovered an advanced tribe...');
+
+          return;
+        }
+
+        if (action instanceof FreeGold) {
+          this.sendNotification('You have discovered valuable treasure...');
+
+          return;
+        }
+
+        if (action instanceof FreeUnit) {
+          this.sendNotification(
+            'You have discovered a friendly tribe of skilled mercenaries...'
+          );
+
+          return;
+        }
+      }
+    );
+
+    engineInstance.on('goody-hut:discovered', (goodyHut, unit) => {
+      if (unit.player() !== this.player()) {
+        return;
+      }
+    });
   }
 
   handleAction(...args: any[]): boolean {
@@ -347,7 +376,24 @@ export class ElectronClient extends Client implements IClient {
 
     const dataObject = new TransferObject(rawData);
 
-    this.#sender('gameData', dataObject.toPlainObject());
+    this.#sender(
+      'gameData',
+      dataObject.toPlainObject((object) => {
+        if (object instanceof Player && object !== this.player()) {
+          return UnknownPlayer.fromPlayer(object);
+        }
+
+        if (object instanceof Unit && object.player() !== this.player()) {
+          return UnknownUnit.fromUnit(object);
+        }
+
+        if (object instanceof City && object.player() !== this.player()) {
+          return UnknownCity.fromCity(object);
+        }
+
+        return object;
+      })
+    );
   }
 
   private sendGameData(): void {

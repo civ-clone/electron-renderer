@@ -1,32 +1,27 @@
 import Action from './Action.js';
-import { e, h } from '../../lib/html.js';
+import { e } from '../../lib/html.js';
 import SelectionWindow from '../SelectionWindow.js';
 export class ChooseResearch extends Action {
+    activate() {
+        const chooseWindow = new SelectionWindow('Choose research', this.value().available.map((advance) => ({
+            value: advance._,
+        })), (selection) => {
+            if (!selection) {
+                return;
+            }
+            transport.send('action', {
+                name: 'ChooseResearch',
+                id: this.value().id,
+                chosen: selection ? selection : '@',
+            });
+            this.complete();
+            chooseWindow.close();
+        }, 'Which advance would you like to research next?', {
+            displayAll: true,
+        });
+    }
     build() {
-        this.element().append(h(e('button.chooseResearch'), {
-            click: () => {
-                const chooseWindow = new SelectionWindow('Choose research', this.value().available.map((advance) => ({
-                    value: advance._,
-                })), [
-                    {
-                        label: 'OK',
-                        handler: (selection) => {
-                            if (!selection) {
-                                return;
-                            }
-                            transport.send('action', {
-                                name: 'ChooseResearch',
-                                id: this.value().id,
-                                chosen: selection ? selection : '@',
-                            });
-                            chooseWindow.close();
-                            this.complete();
-                        },
-                    },
-                ]);
-                chooseWindow.display();
-            },
-        }));
+        this.element().append(e('button.chooseResearch[title="Choose research"]'));
     }
     value() {
         return super.value();

@@ -20,7 +20,7 @@ export class Units extends Map implements IMap {
           : true)
       ) {
         const [unit] = tile.units.sort(
-            (a: Unit, b: Unit): number => b.defence.value - a.defence.value
+            (a: Unit, b: Unit): number => b.defence?.value - a.defence?.value
           ),
           player = unit.player,
           civilization = player.civilization,
@@ -41,7 +41,9 @@ export class Units extends Map implements IMap {
         this.putImage(image, offsetX, offsetY);
 
         if (
-          unit.improvements.some((improvement) => improvement._ === 'Fortified')
+          unit.improvements?.some(
+            (improvement) => improvement._ === 'Fortified'
+          )
         ) {
           this.drawImage('map/fortify', x, y);
         }

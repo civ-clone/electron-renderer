@@ -1,51 +1,38 @@
-import { e, h, t } from '../lib/html.js';
-import TransientElement, { ITransientElement } from './TransientElement.js';
+import { Window, IWindow, WindowOptions } from './Window.js';
 
-export interface INotificationWindow extends ITransientElement {}
+export interface INotificationWindow extends IWindow {}
 
-export class NotificationWindow
-  extends TransientElement
-  implements INotificationWindow {
-  #body: string | Node;
-  #title: string;
+const notificationQueue: NotificationWindow[] = [];
 
-  constructor(
-    title: string,
-    body: string | Node,
-    parent: HTMLElement = document.body
-  ) {
-    super(parent, e('div.notificationWindow'));
+export class NotificationWindow extends Window implements INotificationWindow {
+  constructor(title: string, body: string | Node, options: WindowOptions = {}) {
+    super(title, body, options);
 
-    this.#body = body;
-    this.#title = title;
-  }
+    this.element().classList.add('notificationWindow');
 
-  build(): void {
-    this.element().append(
-      e(
-        'header',
-        e(
-          'h3',
-          t(this.#title),
-          h(e('button.close', t('Close')), {
-            click: () => this.close(),
-          })
-        )
-      ),
-      this.#body instanceof Node ? this.#body : e('p', t(this.#body))
-    );
-
-    this.element().addEventListener('keydown', (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+    this.element().addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
         this.close();
+
+        event.stopPropagation();
       }
     });
   }
 
-  close(): void {
-    this.element().remove();
+  display(focus = true): void {
+    if (document.querySelector('div.notificationWindow')) {
+      notificationQueue.push(this);
 
-    this.element().dispatchEvent(new CustomEvent('close'));
+      return;
+    }
+
+    super.display();
+
+    if (!focus) {
+      return;
+    }
+
+    this.element().focus();
   }
 }
 

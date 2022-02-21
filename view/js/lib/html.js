@@ -1,6 +1,9 @@
 export const parseSelector = (selector) => {
-    let element = 'div', classes = [], attributes = {};
-    const parts = selector.split(/(?=[.#\[])/);
+    const classes = [], attributes = {}, strings = [];
+    let element = 'div';
+    const parts = selector
+        .replace(/(?!<\\)(["']).+?(?!<\\)(\1)/g, (string) => 'string$' + (strings.push(string.slice(1, -1)) - 1))
+        .split(/(?=[.#[])/);
     parts.forEach((part) => {
         var _a;
         if (!part.match(/^[.#\[]/)) {
@@ -18,7 +21,7 @@ export const parseSelector = (selector) => {
         if (part[0] === '[') {
             const match = part.match(/\[([^=]+)(=(["']?)(.+?)\3)?]/);
             if (match !== null) {
-                attributes[match[1]] = (_a = match[4]) !== null && _a !== void 0 ? _a : '';
+                attributes[match[1]] = ((_a = match[4]) !== null && _a !== void 0 ? _a : '').replace(/string\$(\d+)/, (match, id) => strings[id]);
             }
             return;
         }
@@ -26,11 +29,15 @@ export const parseSelector = (selector) => {
     return [element, classes, attributes];
 };
 export const t = (string) => document.createTextNode(string);
-export const e = (tagName, ...nodes) => {
-    const [element, classes, attributes] = parseSelector(tagName), e = document.createElement(element);
-    e.classList.add(...classes);
-    Object.entries(attributes).forEach(([key, value]) => e.setAttribute(key, value));
-    e.append(...nodes);
+export const e = (selector, ...nodes) => {
+    const [element, classes, attributes] = parseSelector(selector), e = document.createElement(element);
+    if (classes.length) {
+        e.classList.add(...classes);
+    }
+    a(e, attributes);
+    if (nodes.length) {
+        e.append(...nodes);
+    }
     return e;
 };
 export const a = (element, attributes) => {

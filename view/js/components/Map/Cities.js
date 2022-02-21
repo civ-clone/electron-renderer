@@ -1,17 +1,16 @@
-var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-        throw new TypeError("attempted to set private field on non-instance");
-    }
-    privateMap.set(receiver, value);
-    return value;
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var _showNames, _showSize;
+var _Cities_showNames, _Cities_showSize;
 import { Map } from '../Map.js';
 export class Cities extends Map {
     constructor() {
         super(...arguments);
-        _showNames.set(this, true);
-        _showSize.set(this, true);
+        _Cities_showNames.set(this, true);
+        _Cities_showSize.set(this, true);
     }
     render(tiles = this.world().tiles()) {
         this.clear();
@@ -41,12 +40,12 @@ export class Cities extends Map {
         });
     }
     setShowSize(showSize) {
-        __classPrivateFieldSet(this, _showSize, showSize);
+        __classPrivateFieldSet(this, _Cities_showSize, showSize, "f");
     }
     setShowNames(showNames) {
-        __classPrivateFieldSet(this, _showNames, showNames);
+        __classPrivateFieldSet(this, _Cities_showNames, showNames, "f");
     }
 }
-_showNames = new WeakMap(), _showSize = new WeakMap();
+_Cities_showNames = new WeakMap(), _Cities_showSize = new WeakMap();
 export default Cities;
 //# sourceMappingURL=Cities.js.map

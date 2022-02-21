@@ -1,30 +1,29 @@
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-        throw new TypeError("attempted to get private field on non-instance");
-    }
-    return privateMap.get(receiver);
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _stack;
+var _EventHandler_stack;
 export class EventHandler {
     constructor() {
-        _stack.set(this, {});
+        _EventHandler_stack.set(this, {});
     }
     handle(event, ...args) {
-        (__classPrivateFieldGet(this, _stack)[event] || []).forEach((item) => item(...args));
+        (__classPrivateFieldGet(this, _EventHandler_stack, "f")[event] || []).forEach((item) => item(...args));
     }
     off(event, handler) {
         if (!handler) {
-            __classPrivateFieldGet(this, _stack)[event] = [];
+            __classPrivateFieldGet(this, _EventHandler_stack, "f")[event] = [];
         }
-        __classPrivateFieldGet(this, _stack)[event] = (__classPrivateFieldGet(this, _stack)[event] || []).filter((item) => item !== handler);
+        __classPrivateFieldGet(this, _EventHandler_stack, "f")[event] = (__classPrivateFieldGet(this, _EventHandler_stack, "f")[event] || []).filter((item) => item !== handler);
     }
     on(event, handler) {
-        if (!__classPrivateFieldGet(this, _stack)[event]) {
-            __classPrivateFieldGet(this, _stack)[event] = [];
+        if (!__classPrivateFieldGet(this, _EventHandler_stack, "f")[event]) {
+            __classPrivateFieldGet(this, _EventHandler_stack, "f")[event] = [];
         }
-        __classPrivateFieldGet(this, _stack)[event].push(handler);
+        __classPrivateFieldGet(this, _EventHandler_stack, "f")[event].push(handler);
     }
 }
-_stack = new WeakMap();
+_EventHandler_stack = new WeakMap();
 export default EventHandler;
 //# sourceMappingURL=EventHandler.js.map

@@ -35,12 +35,12 @@ export class Notifications {
     const notificationWindow = new NotificationWindow(
       notification.title ?? 'Notification',
       notification.message,
-      this.#container
+      {
+        parent: this.#container,
+      }
     );
 
     notificationWindow.element().addEventListener('close', () => this.check());
-
-    notificationWindow.display();
   }
 }
 

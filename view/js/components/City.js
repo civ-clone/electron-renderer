@@ -1,78 +1,43 @@
-var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-        throw new TypeError("attempted to set private field on non-instance");
-    }
-    privateMap.set(receiver, value);
-    return value;
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-        throw new TypeError("attempted to get private field on non-instance");
-    }
-    return privateMap.get(receiver);
-};
-var _city, _element;
+var _City_city;
 import { e, h, t } from '../lib/html.js';
+import Cities from './Map/Cities.js';
+import CityBuildSelectionWindow from './CityBuildSelectionWindow.js';
 import Portal from './Portal.js';
 import Terrain from './Map/Terrain.js';
+import Window from './Window.js';
 import World from './World.js';
 import Yields from './Map/Yields.js';
-import Cities from './Map/Cities.js';
-import SelectionWindow from './SelectionWindow.js';
-export class City {
-    constructor(city, element = e('div.city')) {
-        _city.set(this, void 0);
-        _element.set(this, void 0);
-        __classPrivateFieldSet(this, _city, city);
-        __classPrivateFieldSet(this, _element, element);
-        this.build();
-    }
-    build() {
-        const mapCanvas = e('canvas'), build = __classPrivateFieldGet(this, _city).build, growth = __classPrivateFieldGet(this, _city).growth, world = new World(__classPrivateFieldGet(this, _city).player.world), terrainMap = new Terrain(world), cityMap = new Cities(world), yieldMap = new Yields(world), map = new Portal(world, mapCanvas, terrainMap, cityMap, yieldMap);
-        mapCanvas.height = terrainMap.tileSize() * 5;
-        mapCanvas.width = terrainMap.tileSize() * 5;
-        map.build();
-        terrainMap.render(__classPrivateFieldGet(this, _city).tiles);
-        cityMap.setShowNames(false);
-        cityMap.render(__classPrivateFieldGet(this, _city).tiles);
-        yieldMap.render(__classPrivateFieldGet(this, _city).tilesWorked);
-        map.setCenter(__classPrivateFieldGet(this, _city).tile.x, __classPrivateFieldGet(this, _city).tile.y);
-        __classPrivateFieldGet(this, _element).append(e('header', e('h2', t(__classPrivateFieldGet(this, _city).name)), h(e('button.close', t('Close')), {
-            click: () => {
-                __classPrivateFieldGet(this, _element).remove();
-            },
-        })), e('div.yields', ...__classPrivateFieldGet(this, _city).yields.map((cityYield) => e(`div.${cityYield._.toLowerCase()}`, e('div', t(cityYield._)), e('div', t(cityYield.value.toString()))))), e('div.map', mapCanvas), e('div.build', e('header', t(`Building ${build.building ? build.building._ : 'nothing'}`)), build.building
-            ? e('p', t(`Progress ${build.progress.value} / ${build.cost.value}`))
-            : t(''), h(e('button', t(build.building ? 'Change' : 'Choose')), {
-            click: () => {
-                const chooseWindow = new SelectionWindow(`What do you want to build in ${build.city.name}?`, build.available.map((advance) => ({
-                    value: advance._,
-                })), [
-                    {
-                        label: 'OK',
-                        handler: (selection) => {
-                            if (!selection) {
-                                return;
-                            }
-                            transport.send('action', {
-                                name: build.building === null
-                                    ? 'CityBuild'
-                                    : 'ChangeProduction',
-                                id: build.id,
-                                chosen: selection ? selection : '@',
-                            });
-                            chooseWindow.close();
-                        },
-                    },
-                ]);
-                chooseWindow.display();
-            },
-        })), e('div.growth', e('header', t(growth.size.toString())), e('p', t(`Growth ${growth.progress.value} / ${growth.cost.value}`))), e('div.improvements', e('header', t('Improvements')), e('ul', ...__classPrivateFieldGet(this, _city).improvements.map((improvement) => e('li', t(improvement._))))));
-    }
-    element() {
-        return __classPrivateFieldGet(this, _element);
+const buildDetails = (city) => {
+    const mapCanvas = e('canvas'), build = city.build, growth = city.growth, world = new World(city.player.world), terrainMap = new Terrain(world), cityMap = new Cities(world), yieldMap = new Yields(world), map = new Portal(world, mapCanvas, terrainMap, cityMap, yieldMap);
+    mapCanvas.height = terrainMap.tileSize() * 5;
+    mapCanvas.width = terrainMap.tileSize() * 5;
+    map.build();
+    terrainMap.render(city.tiles);
+    cityMap.setShowNames(false);
+    cityMap.render(city.tiles);
+    yieldMap.render(city.tilesWorked);
+    map.setCenter(city.tile.x, city.tile.y);
+    return e('div', e('div.yields', ...city.yields.map((cityYield) => e(`div.${cityYield._.toLowerCase()}`, e('div', t(cityYield._)), e('div', t(cityYield.value.toString()))))), e('div.map', mapCanvas), e('div.build', e('header', t(`Building ${build.building ? build.building._ : 'nothing'}`)), build.building
+        ? e('p', t(`Progress ${build.progress.value} / ${build.cost.value}`))
+        : t(''), h(e('button', t(build.building ? 'Change' : 'Choose')), {
+        click: () => new CityBuildSelectionWindow(build),
+    })), e('div.growth', e('header', t(growth.size.toString())), e('p', t(`Growth ${growth.progress.value} / ${growth.cost.value}`))), e('div.improvements', e('header', t('Improvements')), e('ul', ...city.improvements.map((improvement) => e('li', t(improvement._))))));
+};
+export class City extends Window {
+    constructor(city) {
+        super(city.name, buildDetails(city), {
+            size: 'maximised',
+        });
+        _City_city.set(this, void 0);
+        __classPrivateFieldSet(this, _City_city, city, "f");
     }
 }
-_city = new WeakMap(), _element = new WeakMap();
+_City_city = new WeakMap();
 export default City;
 //# sourceMappingURL=City.js.map

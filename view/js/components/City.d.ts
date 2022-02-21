@@ -1,8 +1,7 @@
 import { City as CityData } from '../types';
-export declare class City {
-    #private;
-    constructor(city: CityData, element?: HTMLElement);
-    build(): void;
-    element(): HTMLElement;
+import Window from './Window.js';
+export declare class City extends Window {
+  #private;
+  constructor(city: CityData);
 }
 export default City;

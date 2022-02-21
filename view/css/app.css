@@ -3,13 +3,15 @@ body {
   color: #edc;
   cursor: url("../assets/cursor/torch.png"), default;
   font-family: sans-serif;
-  margin: 0; }
+  margin: 0;
+}
 
 #preload {
   height: 0;
   position: absolute;
   width: 0;
-  overflow: hidden; }
+  overflow: hidden;
+}
 
 #actions {
   bottom: 0;
@@ -17,33 +19,47 @@ body {
   flex-direction: column;
   max-height: 100vh;
   position: absolute;
-  right: 0; }
-  #actions .action {
-    margin: 1em; }
-    #actions .action button {
-      appearance: none;
-      border-radius: 50%;
-      background: #ccc none no-repeat center center;
-      box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.4);
-      cursor: pointer;
-      height: 3em;
-      outline: none;
-      width: 3em; }
-      #actions .action button:active {
-        background-color: #aaa;
-        position: relative;
-        top: 2px;
-        left: 2px; }
-      #actions .action button:hover {
-        background-color: #eee; }
-      #actions .action button.chooseResearch, #actions .action button.cityBuild {
-        background-position: 0.5625em 0.5625em;
-        background-size: 16px;
-        image-rendering: pixelated; }
-      #actions .action button.chooseResearch {
-        background-image: url("../assets/city/bulb.png"); }
-      #actions .action button.cityBuild {
-        background-image: url("../assets/city/production.png"); }
+  right: 0;
+}
+#actions .action {
+  margin: 1em;
+}
+#actions .action button {
+  appearance: none;
+  border-radius: 50%;
+  background: #ccc none no-repeat center center;
+  box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  height: 3em;
+  outline: none;
+  width: 3em;
+}
+#actions .action button:active {
+  background-color: #aaa;
+  position: relative;
+  top: 2px;
+  left: 2px;
+}
+#actions .action button:hover {
+  background-color: #eee;
+}
+#actions .action button.chooseResearch, #actions .action button.cityBuild {
+  background-position: 0.5625em 0.5625em;
+  background-size: 16px;
+  image-rendering: pixelated;
+}
+#actions .action button.chooseResearch {
+  background-image: url("../assets/city/bulb.png");
+}
+#actions .action button.chooseResearch:focus, #actions .action button.chooseResearch:focus-visible {
+  border-color: #25e0e8;
+}
+#actions .action button.cityBuild {
+  background-image: url("../assets/city/production.png");
+}
+#actions .action button.cityBuild:focus, #actions .action button.cityBuild:focus-visible {
+  border-color: #e8e8e8;
+}
 
 .city {
   background: #cce;
@@ -53,7 +69,8 @@ body {
   overflow: auto;
   position: absolute;
   top: 0;
-  width: 100vw; }
+  width: 100vw;
+}
 
 #game {
   align-items: stretch;
@@ -65,10 +82,20 @@ body {
   position: absolute;
   top: 0;
   transition: opacity 2s;
-  width: 100vw; }
-  #game.active {
-    opacity: 1;
-    pointer-events: all; }
+  width: 100vw;
+}
+#game.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.feather {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 #mainmenu {
   background: url("../img/main-menu-bg.jpg") no-repeat center center;
@@ -78,79 +105,129 @@ body {
   justify-content: center;
   opacity: 0;
   transition: opacity 2s;
-  width: 100vw; }
-  #mainmenu.active {
-    opacity: 1; }
-    #mainmenu.active nav {
-      opacity: 1; }
-  #mainmenu nav {
-    bottom: 5em;
-    max-width: 20em;
-    opacity: 0;
-    position: absolute;
-    transition: opacity 1.5s .5s; }
-    #mainmenu nav button {
-      appearance: none;
-      background: none;
-      border: 0;
-      color: #fff;
-      cursor: pointer;
-      font-weight: bold;
-      outline: 0;
-      padding: .5em;
-      text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
-      width: 100%; }
+  width: 100vw;
+}
+#mainmenu.active {
+  opacity: 1;
+}
+#mainmenu.active nav {
+  opacity: 1;
+}
+#mainmenu nav {
+  bottom: 5em;
+  max-width: 20em;
+  opacity: 0;
+  position: absolute;
+  transition: opacity 1.5s 0.5s;
+}
+#mainmenu nav button {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  font-weight: bold;
+  outline: 0;
+  padding: 0.5em;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+  width: 100%;
+}
 
 #map {
   flex-grow: 1;
-  max-height: 100vh; }
-  #map canvas {
-    height: 100%;
-    width: 100%; }
+  max-height: 100vh;
+}
+#map canvas {
+  height: 100%;
+  width: 100%;
+}
 
 #notification {
   background: rgba(0, 0, 0, 0.2);
-  border-top-left-radius: .5rem;
+  border-top-left-radius: 0.5rem;
   bottom: 0;
-  padding: .5rem;
+  padding: 0.5rem;
   position: fixed;
-  right: 0; }
-  #notification:empty {
-    display: none; }
+  right: 0;
+}
+#notification:empty {
+  display: none;
+}
 
-.notificationWindow {
-  background: #edc;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  color: #123;
-  box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.6);
-  left: calc(50% - 20em);
-  max-height: 60%;
+.selectionWindow select {
+  background: transparent;
+  border: 0;
+  margin: 1em;
   outline: 0;
-  position: fixed;
-  top: 20%;
-  width: 40em; }
-  .notificationWindow header {
-    background: #38e;
-    color: #edc;
-    font-weight: bold;
-    padding: .5em;
-    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6); }
-    .notificationWindow header h3 {
-      margin: 0; }
-  .notificationWindow p {
-    overflow-y: auto;
-    margin: 0;
-    padding: 1em .5em;
-    max-height: 20em; }
-  .notificationWindow button {
-    margin: 1em .5em; }
+  overflow: hidden;
+  width: calc(100% - 2em);
+}
 
 #sidebar {
   background: #8a8a8e;
   box-sizing: border-box;
   flex-grow: 0;
-  padding: .5em;
-  width: 12.5em; }
-  #sidebar #minimap {
-    background: #000; }
+  padding: 0.5em;
+  width: 12.5em;
+}
+#sidebar #minimap {
+  background: #000;
+}
+
+.window {
+  background: #edc;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  color: #123;
+  box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.6);
+  outline: 0;
+  overflow: auto;
+  position: fixed;
+}
+.window.position-auto {
+  left: calc(50% - 20em);
+  top: 20%;
+}
+.window.size-auto {
+  max-height: 60%;
+  width: 40em;
+}
+.window.maximised {
+  border: 0;
+  height: 100%;
+  left: 0;
+  max-height: none;
+  top: 0;
+  width: 100%;
+}
+.window header {
+  background: #38e;
+  color: #edc;
+  display: flex;
+  font-weight: bold;
+  padding: 0.5em;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6);
+}
+.window header h3 {
+  flex-grow: 1;
+  margin: 0;
+}
+.window header button {
+  font-size: 0;
+  padding: 0;
+}
+.window header button img {
+  height: 1rem;
+  width: 1.125rem;
+}
+.window p {
+  overflow-y: auto;
+  margin: 0;
+  padding: 1em 0.5em;
+  max-height: 20em;
+}
+.window :not(header) button {
+  margin: 1em 0.5em;
+}
+
+/*# sourceMappingURL=app.css.map */

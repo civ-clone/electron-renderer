@@ -14,7 +14,7 @@ export class GameDetails extends Element {
   }
 
   build(): void {
-    this.clear();
+    this.empty();
 
     this.element().append(
       e(

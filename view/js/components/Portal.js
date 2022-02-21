@@ -1,46 +1,44 @@
-var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-        throw new TypeError("attempted to set private field on non-instance");
-    }
-    privateMap.set(receiver, value);
-    return value;
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-        throw new TypeError("attempted to get private field on non-instance");
-    }
-    return privateMap.get(receiver);
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _canvas, _center, _context, _layers, _world;
+var _Portal_canvas, _Portal_center, _Portal_context, _Portal_layers, _Portal_world;
 import { e } from '../lib/html.js';
 export class Portal {
     constructor(world, canvas = e('canvas'), ...layers) {
-        _canvas.set(this, void 0);
-        _center.set(this, { x: 0, y: 0 });
-        _context.set(this, void 0);
-        _layers.set(this, []);
-        _world.set(this, void 0);
-        __classPrivateFieldSet(this, _world, world);
-        __classPrivateFieldSet(this, _canvas, canvas);
-        __classPrivateFieldGet(this, _layers).push(...layers);
-        __classPrivateFieldSet(this, _context, canvas.getContext('2d'));
+        _Portal_canvas.set(this, void 0);
+        _Portal_center.set(this, { x: 0, y: 0 });
+        _Portal_context.set(this, void 0);
+        _Portal_layers.set(this, []);
+        _Portal_world.set(this, void 0);
+        __classPrivateFieldSet(this, _Portal_world, world, "f");
+        __classPrivateFieldSet(this, _Portal_canvas, canvas, "f");
+        __classPrivateFieldGet(this, _Portal_layers, "f").push(...layers);
+        __classPrivateFieldSet(this, _Portal_context, canvas.getContext('2d'), "f");
         this.build();
     }
     build() {
-        __classPrivateFieldGet(this, _layers).forEach((layer) => layer.render());
+        __classPrivateFieldGet(this, _Portal_layers, "f").forEach((layer) => layer.render());
     }
     center() {
-        return __classPrivateFieldGet(this, _center);
+        return __classPrivateFieldGet(this, _Portal_center, "f");
     }
     isVisible(x, y) {
-        const xRange = Math.floor(__classPrivateFieldGet(this, _canvas).width / __classPrivateFieldGet(this, _layers)[0].tileSize() / 2), yRange = Math.floor(__classPrivateFieldGet(this, _canvas).height / __classPrivateFieldGet(this, _layers)[0].tileSize() / 2);
-        return (x < __classPrivateFieldGet(this, _center).x + xRange &&
-            x > __classPrivateFieldGet(this, _center).x - xRange &&
-            y < __classPrivateFieldGet(this, _center).y + yRange &&
-            y > __classPrivateFieldGet(this, _center).y - yRange);
+        const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / 2), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / 2);
+        return (x < __classPrivateFieldGet(this, _Portal_center, "f").x + xRange &&
+            x > __classPrivateFieldGet(this, _Portal_center, "f").x - xRange &&
+            y < __classPrivateFieldGet(this, _Portal_center, "f").y + yRange &&
+            y > __classPrivateFieldGet(this, _Portal_center, "f").y - yRange);
     }
     render() {
-        const tileSize = __classPrivateFieldGet(this, _layers)[0].tileSize(), layerWidth = __classPrivateFieldGet(this, _world).width() * tileSize, centerX = __classPrivateFieldGet(this, _center).x * tileSize + Math.trunc(tileSize / 2), portalCenterX = Math.trunc(__classPrivateFieldGet(this, _canvas).width / 2), layerHeight = __classPrivateFieldGet(this, _world).height() * tileSize, centerY = __classPrivateFieldGet(this, _center).y * tileSize + Math.trunc(tileSize / 2), portalCenterY = Math.trunc(__classPrivateFieldGet(this, _canvas).height / 2);
+        const tileSize = __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize(), layerWidth = __classPrivateFieldGet(this, _Portal_world, "f").width() * tileSize, centerX = __classPrivateFieldGet(this, _Portal_center, "f").x * tileSize + Math.trunc(tileSize / 2), portalCenterX = Math.trunc(__classPrivateFieldGet(this, _Portal_canvas, "f").width / 2), layerHeight = __classPrivateFieldGet(this, _Portal_world, "f").height() * tileSize, centerY = __classPrivateFieldGet(this, _Portal_center, "f").y * tileSize + Math.trunc(tileSize / 2), portalCenterY = Math.trunc(__classPrivateFieldGet(this, _Portal_canvas, "f").height / 2);
         let startX = portalCenterX - centerX, endX = portalCenterX + layerWidth, startY = portalCenterY - centerY, endY = portalCenterY + layerHeight;
         while (startX > 0) {
             startX -= layerWidth;
@@ -48,32 +46,32 @@ export class Portal {
         while (startY > 0) {
             startY -= layerHeight;
         }
-        while (endX < __classPrivateFieldGet(this, _canvas).width) {
+        while (endX < __classPrivateFieldGet(this, _Portal_canvas, "f").width) {
             endX += layerWidth;
         }
-        while (endY < __classPrivateFieldGet(this, _canvas).height) {
+        while (endY < __classPrivateFieldGet(this, _Portal_canvas, "f").height) {
             endY += layerHeight;
         }
-        __classPrivateFieldGet(this, _context).fillStyle = '#000';
-        __classPrivateFieldGet(this, _context).fillRect(0, 0, __classPrivateFieldGet(this, _world).width() * tileSize, __classPrivateFieldGet(this, _world).height() * tileSize);
+        __classPrivateFieldGet(this, _Portal_context, "f").fillStyle = '#000';
+        __classPrivateFieldGet(this, _Portal_context, "f").fillRect(0, 0, __classPrivateFieldGet(this, _Portal_world, "f").width() * tileSize, __classPrivateFieldGet(this, _Portal_world, "f").height() * tileSize);
         for (let x = startX; x < endX; x += layerWidth) {
             for (let y = startY; y < endY; y += layerHeight) {
-                __classPrivateFieldGet(this, _layers).forEach((layer) => {
+                __classPrivateFieldGet(this, _Portal_layers, "f").forEach((layer) => {
                     if (!layer.isVisible()) {
                         return;
                     }
                     const canvas = layer.canvas();
-                    __classPrivateFieldGet(this, _context).drawImage(canvas, x, y, canvas.width, canvas.height);
+                    __classPrivateFieldGet(this, _Portal_context, "f").drawImage(canvas, x, y, canvas.width, canvas.height);
                 });
             }
         }
     }
     setCenter(x, y) {
-        __classPrivateFieldGet(this, _center).x = x;
-        __classPrivateFieldGet(this, _center).y = y;
+        __classPrivateFieldGet(this, _Portal_center, "f").x = x;
+        __classPrivateFieldGet(this, _Portal_center, "f").y = y;
         this.render();
     }
 }
-_canvas = new WeakMap(), _center = new WeakMap(), _context = new WeakMap(), _layers = new WeakMap(), _world = new WeakMap();
+_Portal_canvas = new WeakMap(), _Portal_center = new WeakMap(), _Portal_context = new WeakMap(), _Portal_layers = new WeakMap(), _Portal_world = new WeakMap();
 export default Portal;
 //# sourceMappingURL=Portal.js.map

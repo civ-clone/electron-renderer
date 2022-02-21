@@ -1,5 +1,4 @@
 import { GameData, ITransport, PlayerAction, Unit } from './types';
-import { e, t } from './lib/html.js';
 import { reconstituteData, ObjectMap } from './lib/reconstituteData.js';
 import Actions from './components/Actions.js';
 import ActiveUnit from './components/Map/ActiveUnit.js';
@@ -19,7 +18,7 @@ import Yields from './components/Map/Yields.js';
 import MainMenu from './components/MainMenu.js';
 
 // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//  ! Break this down and use a front-end framework. !
+//  ! Break this down and use a front-end framework? !
 //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 declare var transport: ITransport;
@@ -105,7 +104,9 @@ try {
 
       window.addEventListener('resize', () => {
         mapPortal.width = (mapPortal.parentElement as HTMLElement).offsetWidth;
-        mapPortal.height = (mapPortal.parentElement as HTMLElement).offsetHeight;
+        mapPortal.height = (
+          mapPortal.parentElement as HTMLElement
+        ).offsetHeight;
       });
 
       const handler = (objectMap: ObjectMap): void => {
@@ -129,19 +130,24 @@ try {
         );
 
         // This prioritises units that are already on screen
-        const [
-          activeUnitAction,
-        ] = activeUnits.sort(({ value: unitA }, { value: unitB }): number =>
-          unitB === lastUnit
-            ? 1
-            : unitA === lastUnit
-            ? -1
-            : (portal.isVisible((unitB as Unit).tile.x, (unitB as Unit).tile.y)
-                ? 1
-                : 0) -
-              (portal.isVisible((unitA as Unit).tile.x, (unitA as Unit).tile.y)
-                ? 1
-                : 0)
+        const [activeUnitAction] = activeUnits.sort(
+          ({ value: unitA }, { value: unitB }): number =>
+            unitB === lastUnit
+              ? 1
+              : unitA === lastUnit
+              ? -1
+              : (portal.isVisible(
+                  (unitB as Unit).tile.x,
+                  (unitB as Unit).tile.y
+                )
+                  ? 1
+                  : 0) -
+                (portal.isVisible(
+                  (unitA as Unit).tile.x,
+                  (unitA as Unit).tile.y
+                )
+                  ? 1
+                  : 0)
         );
 
         activeUnit = activeUnitAction ? (activeUnitAction.value as Unit) : null;
@@ -172,6 +178,15 @@ try {
 
         minimap.height =
           terrainMap.canvas().height * (190 / terrainMap.canvas().width);
+
+        minimap.addEventListener('click', (event) => {
+          const x = event.offsetX - minimap.offsetLeft,
+            y = event.offsetY - minimap.offsetTop,
+            tileX = Math.ceil((x / minimap.offsetWidth) * world.width()),
+            tileY = Math.ceil((y / minimap.offsetHeight) * world.height());
+
+          portal.setCenter(tileX, tileY);
+        });
 
         minimapContext.drawImage(
           terrainMap.canvas(),
@@ -269,7 +284,7 @@ try {
           b: ['FoundCity'],
           D: ['Disband'],
           f: ['Fortify', 'BuildFortress'],
-          i: ['BuildIrrigation', 'ClearForest'],
+          i: ['BuildIrrigation', 'ClearForest', 'ClearSwamp', 'ClearJungle'],
           m: ['BuildMine', 'PlantForest'],
           P: ['Pillage'],
           r: ['BuildRoad', 'BuildRailroad'],
@@ -287,6 +302,8 @@ try {
           ArrowLeft: 'w',
           Home: 'nw',
         };
+
+      let lastKey = '';
 
       eventHandler.on('keydown', (event) => {
         if (activeUnit) {
@@ -316,9 +333,8 @@ try {
           }
 
           if (event.key in directionKeyMap) {
-            const [unitAction] = activeUnit.actionsForNeighbours[
-              directionKeyMap[event.key]
-            ];
+            const [unitAction] =
+              activeUnit.actionsForNeighbours[directionKeyMap[event.key]];
 
             if (unitAction) {
               transport.send('action', {
@@ -347,6 +363,16 @@ try {
           return;
         }
 
+        if (event.key === 'Tab') {
+          const bottomAction = actionArea.querySelector(
+            'div.action:last-child button'
+          ) as HTMLButtonElement | null;
+
+          if (bottomAction !== null) {
+            bottomAction.focus();
+          }
+        }
+
         if (event.key === 'c') {
           if (activeUnit) {
             portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
@@ -368,6 +394,12 @@ try {
 
           portal.render();
         }
+
+        if (lastKey === '%' && event.key === '^') {
+          transport.send('cheat', 'RevealMap');
+        }
+
+        lastKey = event.key;
       });
 
       document.addEventListener('keydown', (event) =>

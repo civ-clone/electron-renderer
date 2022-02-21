@@ -35,7 +35,7 @@ export class Game implements IGame {
       height: 600,
       webPreferences: {
         contextIsolation: true,
-        enableRemoteModule: false,
+        // enableRemoteModule: false,
         preload: `${__dirname}/view/js/preload.js`,
       },
     });
@@ -134,6 +134,9 @@ export class Game implements IGame {
             this.sendData('notification', `generating world...`);
           });
       });
+
+      engine.setOption('height', 50);
+      engine.setOption('width', 80);
 
       engine.start();
     });

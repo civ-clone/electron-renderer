@@ -39,10 +39,20 @@
 
       &.chooseResearch {
         background-image: url('../assets/city/bulb.png');
+
+        &:focus,
+        &:focus-visible {
+          border-color: #25e0e8;
+        }
       }
 
       &.cityBuild {
         background-image: url('../assets/city/production.png');
+
+        &:focus,
+        &:focus-visible {
+          border-color: #e8e8e8;
+        }
       }
     }
   }

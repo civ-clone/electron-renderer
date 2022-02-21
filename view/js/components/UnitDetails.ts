@@ -14,7 +14,7 @@ export class UnitDetails extends Element {
   }
 
   build(): void {
-    this.clear();
+    this.empty();
 
     if (this.#activeUnit === null) {
       return;

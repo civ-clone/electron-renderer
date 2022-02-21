@@ -2,6 +2,7 @@ import { CityBuild, PlayerAction, PlayerResearch, Unit } from '../../types';
 import { e } from '../../lib/html.js';
 
 export interface IAction {
+  activate(): void;
   build(): void;
   complete(): void;
   element(): HTMLElement;
@@ -16,8 +17,14 @@ export class Action implements IAction {
     this.#action = action;
     this.#element = e('div.action');
 
+    this.#element.addEventListener('keydown', (event) =>
+      event.stopPropagation()
+    );
+
     this.build();
   }
+
+  public activate(): void {}
 
   build(): void {}
 

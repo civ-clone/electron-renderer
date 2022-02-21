@@ -12,7 +12,7 @@ export class PlayerDetails extends Element {
   }
 
   build(): void {
-    this.clear();
+    this.empty();
 
     const { civilization, treasury, research } = this.#player;
 

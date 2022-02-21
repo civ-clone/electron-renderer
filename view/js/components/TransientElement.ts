@@ -22,15 +22,13 @@ export class TransientElement extends Element implements ITransientElement {
     this.#parent = parent;
   }
 
-  display(): void {
+  public display(): void {
     this.build();
 
     this.#parent.append(this.element());
-
-    this.element().focus();
   }
 
-  parent(): HTMLElement {
+  public parent(): HTMLElement {
     return this.#parent;
   }
 }

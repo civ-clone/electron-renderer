@@ -1,18 +1,16 @@
 "use strict";
-var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, privateMap, value) {
-    if (!privateMap.has(receiver)) {
-        throw new TypeError("attempted to set private field on non-instance");
-    }
-    privateMap.set(receiver, value);
-    return value;
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, privateMap) {
-    if (!privateMap.has(receiver)) {
-        throw new TypeError("attempted to get private field on non-instance");
-    }
-    return privateMap.get(receiver);
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _ready, _window;
+var _Game_ready, _Game_window;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Game = void 0;
 const electron_1 = require("electron");
@@ -24,9 +22,9 @@ const PlayerRegistry_1 = require("@civ-clone/core-player/PlayerRegistry");
 const ClientRegistry_1 = require("@civ-clone/core-client/ClientRegistry");
 class Game {
     constructor() {
-        _ready.set(this, void 0);
-        _window.set(this, void 0);
-        __classPrivateFieldSet(this, _ready, electron_1.app.whenReady().then(() => this.createWindow()));
+        _Game_ready.set(this, void 0);
+        _Game_window.set(this, void 0);
+        __classPrivateFieldSet(this, _Game_ready, electron_1.app.whenReady().then(() => this.createWindow()), "f");
         electron_1.app.on('window-all-closed', () => electron_1.app.quit());
         electron_1.ipcMain.handle('start', () => {
             this.bindEvents();
@@ -36,16 +34,16 @@ class Game {
         electron_1.ipcMain.handle('quit', () => electron_1.app.quit());
     }
     createWindow() {
-        __classPrivateFieldSet(this, _window, new electron_1.BrowserWindow({
+        __classPrivateFieldSet(this, _Game_window, new electron_1.BrowserWindow({
             width: 800,
             height: 600,
             webPreferences: {
                 contextIsolation: true,
-                enableRemoteModule: false,
+                // enableRemoteModule: false,
                 preload: `${__dirname}/view/js/preload.js`,
             },
-        }));
-        __classPrivateFieldGet(this, _window).loadURL(`file://${__dirname}/view/html/index.html`);
+        }), "f");
+        __classPrivateFieldGet(this, _Game_window, "f").loadURL(`file://${__dirname}/view/html/index.html`);
         // this.#window.webContents.openDevTools();
     }
     bindEvents() {
@@ -68,10 +66,10 @@ class Game {
         Engine_1.instance.setOption('players', 5);
     }
     sendData(channel, payload) {
-        __classPrivateFieldGet(this, _window).webContents.send(channel, payload);
+        __classPrivateFieldGet(this, _Game_window, "f").webContents.send(channel, payload);
     }
     start() {
-        __classPrivateFieldGet(this, _ready).then(() => {
+        __classPrivateFieldGet(this, _Game_ready, "f").then(() => {
             Engine_1.instance.on('engine:start', () => {
                 new Array(Engine_1.instance.option('players'))
                     .fill(0)
@@ -86,11 +84,13 @@ class Game {
                     this.sendData('notification', `generating world...`);
                 });
             });
+            Engine_1.instance.setOption('height', 50);
+            Engine_1.instance.setOption('width', 80);
             Engine_1.instance.start();
         });
     }
 }
 exports.Game = Game;
-_ready = new WeakMap(), _window = new WeakMap();
+_Game_ready = new WeakMap(), _Game_window = new WeakMap();
 exports.default = Game;
 //# sourceMappingURL=Game.js.map

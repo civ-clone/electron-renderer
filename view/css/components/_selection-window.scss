@@ -1,0 +1,10 @@
+.selectionWindow {
+  select {
+    background: transparent;
+    border: 0;
+    margin: 1em;
+    outline: 0;
+    overflow: hidden;
+    width: calc(100% - 2em);
+  }
+}

@@ -7,13 +7,20 @@ export const parseSelector = (
     [key: string]: string;
   }
 ] => {
-  let element = 'div',
-    classes: string[] = [],
+  const classes: string[] = [],
     attributes: {
       [key: string]: string;
-    } = {};
+    } = {},
+    strings: string[] = [];
 
-  const parts = selector.split(/(?=[.#\[])/);
+  let element = 'div';
+
+  const parts = selector
+    .replace(
+      /(?!<\\)(["']).+?(?!<\\)(\1)/g,
+      (string) => 'string$' + (strings.push(string.slice(1, -1)) - 1)
+    )
+    .split(/(?=[.#[])/);
 
   parts.forEach((part) => {
     if (!part.match(/^[.#\[]/)) {
@@ -38,7 +45,10 @@ export const parseSelector = (
       const match = part.match(/\[([^=]+)(=(["']?)(.+?)\3)?]/);
 
       if (match !== null) {
-        attributes[match[1]] = match[4] ?? '';
+        attributes[match[1]] = (match[4] ?? '').replace(
+          /string\$(\d+)/,
+          (match, id) => strings[id]
+        );
       }
 
       return;
@@ -48,21 +58,25 @@ export const parseSelector = (
   return [element, classes, attributes];
 };
 
-export const t = (string: string) => document.createTextNode(string);
-export const e = (tagName: string, ...nodes: Node[]) => {
-  const [element, classes, attributes] = parseSelector(tagName),
+export const t = (string: string): Text => document.createTextNode(string);
+
+export const e = (selector: string, ...nodes: Node[]): HTMLElement => {
+  const [element, classes, attributes] = parseSelector(selector),
     e = document.createElement(element);
 
-  e.classList.add(...classes);
+  if (classes.length) {
+    e.classList.add(...classes);
+  }
 
-  Object.entries(attributes).forEach(([key, value]) =>
-    e.setAttribute(key, value)
-  );
+  a(e, attributes);
 
-  e.append(...nodes);
+  if (nodes.length) {
+    e.append(...nodes);
+  }
 
   return e;
 };
+
 export const a = (
   element: HTMLElement,
   attributes: { [key: string]: string }
@@ -73,10 +87,11 @@ export const a = (
 
   return element;
 };
-export const h = (
-  element: HTMLElement,
+
+export const h = <T extends HTMLElement>(
+  element: T,
   handlers: { [key: string]: (event: any) => void }
-) => {
+): T => {
   Object.entries(handlers).forEach(([eventName, handler]): void =>
     element.addEventListener(eventName, handler)
   );

@@ -1,7 +1,8 @@
-import Action from './Action.js';
 import { CityBuild as CityBuildObject } from '../../types';
+import Action from './Action.js';
 export declare class CityBuild extends Action {
-    build(): void;
-    value(): CityBuildObject;
+  activate(): void;
+  build(): void;
+  value(): CityBuildObject;
 }
 export default CityBuild;
