@@ -9,7 +9,7 @@ export declare class ElectronClient extends Client implements IClient {
   );
   handleAction(...args: any[]): boolean;
   private sendInitialData;
-  private sendGameData;
+  private sendPatchData;
   private sendNotification;
   takeTurn(): Promise<void>;
 }

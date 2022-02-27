@@ -1,9 +1,6 @@
 import { e } from '../lib/html.js';
-import { Tile, Unit } from '../types';
+import { NeighbourDirection, Tile, Unit } from '../types';
 import World from './World.js';
-
-export type Adjacent = 'n' | 'e' | 's' | 'w';
-export type Neighbouring = Adjacent | 'ne' | 'se' | 'sw' | 'nw';
 
 export interface IMap {
   context(): CanvasRenderingContext2D;
@@ -53,8 +50,18 @@ export class Map implements IMap {
     return this.#context;
   }
 
-  render(...args: any[]): void {
-    throw new TypeError('Map#render must be overridden.');
+  render(tiles: Tile[] = this.world().tiles()): void {
+    this.clear();
+
+    tiles.forEach(({ x, y }: Tile) => this.renderTile(this.world().get(x, y)));
+  }
+
+  renderTile({ x, y }: Tile): void {
+    const size = this.tileSize(),
+      offsetX = x * size,
+      offsetY = y * size;
+
+    this.context().clearRect(offsetX, offsetY, size, size);
   }
 
   scale(): number {
@@ -63,6 +70,12 @@ export class Map implements IMap {
 
   tileSize(): number {
     return this.#tileSize * this.#scale;
+  }
+
+  update(tilesToUpdate: Tile[]): void {
+    tilesToUpdate.forEach(({ x, y }: Tile) =>
+      this.renderTile(this.world().get(x, y))
+    );
   }
 
   world(): World {
@@ -86,9 +99,9 @@ export class Map implements IMap {
   protected filterNeighbours(
     tile: Tile,
     filter: (tile: Tile) => boolean,
-    directions: Neighbouring[] = ['n', 'e', 's', 'w']
-  ): Neighbouring[] {
-    return directions.filter((direction: Neighbouring): boolean =>
+    directions: NeighbourDirection[] = ['n', 'e', 's', 'w']
+  ): NeighbourDirection[] {
+    return directions.filter((direction: NeighbourDirection): boolean =>
       filter(this.#world.getNeighbour(tile, direction))
     );
   }

@@ -60,6 +60,9 @@ body {
 #actions .action button.cityBuild:focus, #actions .action button.cityBuild:focus-visible {
   border-color: #e8e8e8;
 }
+#actions .action button.endTurn:focus, #actions .action button.endTurn:focus-visible {
+  border-color: #daa520;
+}
 
 .city {
   background: #cce;

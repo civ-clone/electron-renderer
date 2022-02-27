@@ -1,5 +1,6 @@
 import { e } from '../lib/html.js';
 import Map from './Map.js';
+import { Tile } from '../types';
 import World from './World.js';
 
 export type Coordinate = {
@@ -8,7 +9,7 @@ export type Coordinate = {
 };
 
 export interface IPortal {
-  build(): void;
+  build(updatedTiles: Tile[]): void;
   isVisible(x: number, y: number): boolean;
   render(): void;
   setCenter(x: number, y: number): void;
@@ -31,19 +32,31 @@ export class Portal implements IPortal {
     this.#layers.push(...layers);
 
     this.#context = canvas.getContext('2d') as CanvasRenderingContext2D;
-
-    this.build();
   }
 
-  build(): void {
-    this.#layers.forEach((layer: Map) => layer.render());
+  build(updatedTiles: Tile[]): void {
+    this.#layers.forEach((layer: Map) => layer.update(updatedTiles));
   }
 
   center(): Coordinate {
     return this.#center;
   }
 
+  visibleRange(): { x: number; y: number }[] {
+    // TODO: replace `2` with the scale
+    const xRange = Math.floor(
+        this.#canvas.width / this.#layers[0].tileSize() / 2
+      ),
+      yRange = Math.floor(this.#canvas.height / this.#layers[0].tileSize() / 2);
+
+    return [
+      { x: this.#center.x - xRange, y: this.#center.y - yRange },
+      { x: this.#center.x + xRange, y: this.#center.y + yRange },
+    ];
+  }
+
   isVisible(x: number, y: number): boolean {
+    // TODO: replace `2` with the scale
     const xRange = Math.floor(
         this.#canvas.width / this.#layers[0].tileSize() / 2
       ),
@@ -58,6 +71,7 @@ export class Portal implements IPortal {
   }
 
   render(): void {
+    // TODO: replace `2` with the scale
     const tileSize = this.#layers[0].tileSize(),
       layerWidth = this.#world.width() * tileSize,
       centerX = this.#center.x * tileSize + Math.trunc(tileSize / 2),

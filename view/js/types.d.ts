@@ -18,6 +18,10 @@ export interface ITransport {
   send(channel: string, payload?: any): void;
 }
 
+export type PlainObject = {
+  [key: string]: any;
+};
+
 export interface Entity {
   _: string;
 }
@@ -100,6 +104,7 @@ export interface Unit extends EntityInstance {
     [key: string]: UnitAction[];
   };
   attack: Yield;
+  city: City;
   defence: Yield;
   improvements: EntityInstance[];
   movement: Yield;
@@ -134,6 +139,9 @@ export interface Tile extends EntityInstance {
   yields: Yield[];
 }
 
+export type AdjacentNeighbour = 'n' | 'e' | 's' | 'w';
+export type NeighbourDirection = AdjacentNeighbour | 'ne' | 'se' | 'sw' | 'nw';
+
 export interface World extends EntityInstance {
   height: number;
   tiles: Tile[];
@@ -153,3 +161,15 @@ export interface GameData extends EntityInstance {
 export interface Notification {
   message: string;
 }
+
+type DataPatchType = 'add' | 'remove' | 'update';
+
+type DataPatchContents = {
+  type: DataPatchType;
+  index?: string | null;
+  value?: ObjectMap | PlainObject;
+};
+
+export type DataPatch = {
+  [id: string]: DataPatchContents;
+};

@@ -32,8 +32,9 @@ export class SelectionWindow extends NotificationWindow {
         this.element().classList.add('selectionWindow');
     }
     display() {
-        super.display(false);
-        this.element().querySelector('select').focus();
+        return super
+            .display(false)
+            .then(() => this.element().querySelector('select').focus());
     }
 }
 export default SelectionWindow;

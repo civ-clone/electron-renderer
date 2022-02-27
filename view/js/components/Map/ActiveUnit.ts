@@ -37,6 +37,10 @@ export class ActiveUnit extends Units implements IMap {
       this.putImage(image, offsetX, offsetY);
     }
   }
+
+  update(): void {
+    this.render();
+  }
 }
 
 export default ActiveUnit;

@@ -1,7 +1,5 @@
-import { Tile, Unit } from '../types';
+import { NeighbourDirection, Tile, Unit } from '../types';
 import World from './World.js';
-export declare type Adjacent = 'n' | 'e' | 's' | 'w';
-export declare type Neighbouring = Adjacent | 'ne' | 'se' | 'sw' | 'nw';
 export interface IMap {
   context(): CanvasRenderingContext2D;
   render(...args: any[]): void;
@@ -20,9 +18,11 @@ export declare class Map implements IMap {
   canvas(): HTMLCanvasElement;
   clear(): void;
   context(): CanvasRenderingContext2D;
-  render(...args: any[]): void;
+  render(tiles?: Tile[]): void;
+  renderTile({ x, y }: Tile): void;
   scale(): number;
   tileSize(): number;
+  update(tilesToUpdate: Tile[]): void;
   world(): World;
   protected drawImage(
     path: string,
@@ -33,8 +33,8 @@ export declare class Map implements IMap {
   protected filterNeighbours(
     tile: Tile,
     filter: (tile: Tile) => boolean,
-    directions?: Neighbouring[]
-  ): Neighbouring[];
+    directions?: NeighbourDirection[]
+  ): NeighbourDirection[];
   protected getPreloadedImage(path: string): CanvasImageSource;
   protected putImage(
     image: CanvasImageSource,

@@ -11,16 +11,28 @@ export class NotificationWindow extends Window {
             }
         });
     }
+    close() {
+        super.close();
+        if (notificationQueue.length) {
+            const [notification, focus, resolve] = notificationQueue.shift();
+            notification.display(focus);
+            resolve();
+        }
+    }
     display(focus = true) {
-        if (document.querySelector('div.notificationWindow')) {
-            notificationQueue.push(this);
-            return;
-        }
-        super.display();
-        if (!focus) {
-            return;
-        }
-        this.element().focus();
+        return new Promise((resolve) => {
+            if (document.querySelector('div.notificationWindow')) {
+                notificationQueue.push([this, focus, resolve]);
+                return;
+            }
+            super.display();
+            if (!focus) {
+                resolve();
+                return;
+            }
+            this.element().focus();
+            resolve();
+        });
     }
 }
 export default NotificationWindow;

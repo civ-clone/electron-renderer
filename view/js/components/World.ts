@@ -1,4 +1,4 @@
-import { Tile, World as WorldData } from '../types';
+import { NeighbourDirection, Tile, World as WorldData } from '../types';
 
 export class World {
   #tiles: Tile[];
@@ -39,10 +39,7 @@ export class World {
     );
   }
 
-  getNeighbour(
-    tile: Tile,
-    direction: 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
-  ): Tile {
+  getNeighbour(tile: Tile, direction: NeighbourDirection): Tile {
     if (direction === 'n') {
       return this.get(tile.x, tile.y - 1);
     }

@@ -7,6 +7,7 @@ export declare class Game implements IGame {
   private createWindow;
   private bindEvents;
   private configure;
+  private receiveData;
   private sendData;
   start(): void;
 }

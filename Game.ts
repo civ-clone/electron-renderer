@@ -2,10 +2,10 @@ import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
 import ElectronClient from './client/ElectronClient';
 import Player from '@civ-clone/core-player/Player';
 import SimpleAIClient from '@civ-clone/simple-ai-client/SimpleAIClient';
+import TransferObject from './client/TransferObject';
+import { instance as clientRegistryInstance } from '@civ-clone/core-client/ClientRegistry';
 import { instance as engine } from '@civ-clone/core-engine/Engine';
 import { instance as playerRegistryInstance } from '@civ-clone/core-player/PlayerRegistry';
-import { instance as clientRegistryInstance } from '@civ-clone/core-client/ClientRegistry';
-import TransferObject from './client/TransferObject';
 
 export interface IGame {
   start(): void;
@@ -98,6 +98,15 @@ export class Game implements IGame {
     engine.setOption('players', 5);
   }
 
+  private receiveData(
+    channel: string,
+    handler: (...args: any[]) => void
+  ): void {
+    ipcMain.handle(channel, (event: IpcMainInvokeEvent, ...args: any[]): void =>
+      handler(...args)
+    );
+  }
+
   private sendData(channel: string, payload: any): void {
     (this.#window as BrowserWindow).webContents.send(channel, payload);
   }
@@ -119,12 +128,7 @@ export class Game implements IGame {
                       (
                         channel: string,
                         handler: (...args: any[]) => void
-                      ): void =>
-                        ipcMain.handle(
-                          channel,
-                          (event: IpcMainInvokeEvent, ...args: any[]): void =>
-                            handler(...args)
-                        )
+                      ): void => this.receiveData(channel, handler)
                     )
                   : new SimpleAIClient(player);
 

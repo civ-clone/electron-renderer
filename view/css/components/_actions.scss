@@ -54,6 +54,13 @@
           border-color: #e8e8e8;
         }
       }
+
+      &.endTurn {
+        &:focus,
+        &:focus-visible {
+          border-color: #daa520;
+        }
+      }
     }
   }
 }

@@ -22,15 +22,23 @@ export class Portal {
         __classPrivateFieldSet(this, _Portal_canvas, canvas, "f");
         __classPrivateFieldGet(this, _Portal_layers, "f").push(...layers);
         __classPrivateFieldSet(this, _Portal_context, canvas.getContext('2d'), "f");
-        this.build();
     }
-    build() {
-        __classPrivateFieldGet(this, _Portal_layers, "f").forEach((layer) => layer.render());
+    build(updatedTiles) {
+        __classPrivateFieldGet(this, _Portal_layers, "f").forEach((layer) => layer.update(updatedTiles));
     }
     center() {
         return __classPrivateFieldGet(this, _Portal_center, "f");
     }
+    visibleRange() {
+        // TODO: replace `2` with the scale
+        const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / 2), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / 2);
+        return [
+            { x: __classPrivateFieldGet(this, _Portal_center, "f").x - xRange, y: __classPrivateFieldGet(this, _Portal_center, "f").y - yRange },
+            { x: __classPrivateFieldGet(this, _Portal_center, "f").x + xRange, y: __classPrivateFieldGet(this, _Portal_center, "f").y + yRange },
+        ];
+    }
     isVisible(x, y) {
+        // TODO: replace `2` with the scale
         const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / 2), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / 2);
         return (x < __classPrivateFieldGet(this, _Portal_center, "f").x + xRange &&
             x > __classPrivateFieldGet(this, _Portal_center, "f").x - xRange &&
@@ -38,6 +46,7 @@ export class Portal {
             y > __classPrivateFieldGet(this, _Portal_center, "f").y - yRange);
     }
     render() {
+        // TODO: replace `2` with the scale
         const tileSize = __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize(), layerWidth = __classPrivateFieldGet(this, _Portal_world, "f").width() * tileSize, centerX = __classPrivateFieldGet(this, _Portal_center, "f").x * tileSize + Math.trunc(tileSize / 2), portalCenterX = Math.trunc(__classPrivateFieldGet(this, _Portal_canvas, "f").width / 2), layerHeight = __classPrivateFieldGet(this, _Portal_world, "f").height() * tileSize, centerY = __classPrivateFieldGet(this, _Portal_center, "f").y * tileSize + Math.trunc(tileSize / 2), portalCenterY = Math.trunc(__classPrivateFieldGet(this, _Portal_canvas, "f").height / 2);
         let startX = portalCenterX - centerX, endX = portalCenterX + layerWidth, startY = portalCenterY - centerY, endY = portalCenterY + layerHeight;
         while (startX > 0) {

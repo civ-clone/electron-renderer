@@ -75,10 +75,12 @@ export class SelectionWindow extends NotificationWindow {
     this.element().classList.add('selectionWindow');
   }
 
-  display(): void {
-    super.display(false);
-
-    (this.element().querySelector('select') as HTMLElement).focus();
+  display(): Promise<void> {
+    return super
+      .display(false)
+      .then(() =>
+        (this.element().querySelector('select') as HTMLElement).focus()
+      );
   }
 }
 

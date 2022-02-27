@@ -2,7 +2,11 @@ import { Window, IWindow, WindowOptions } from './Window.js';
 
 export interface INotificationWindow extends IWindow {}
 
-const notificationQueue: NotificationWindow[] = [];
+const notificationQueue: [
+  NotificationWindow,
+  boolean,
+  (...args: any[]) => void
+][] = [];
 
 export class NotificationWindow extends Window implements INotificationWindow {
   constructor(title: string, body: string | Node, options: WindowOptions = {}) {
@@ -19,20 +23,38 @@ export class NotificationWindow extends Window implements INotificationWindow {
     });
   }
 
-  display(focus = true): void {
-    if (document.querySelector('div.notificationWindow')) {
-      notificationQueue.push(this);
+  close(): void {
+    super.close();
 
-      return;
+    if (notificationQueue.length) {
+      const [notification, focus, resolve] = notificationQueue.shift()!;
+
+      notification.display(focus);
+
+      resolve();
     }
+  }
 
-    super.display();
+  display(focus = true): Promise<void> {
+    return new Promise((resolve) => {
+      if (document.querySelector('div.notificationWindow')) {
+        notificationQueue.push([this, focus, resolve]);
 
-    if (!focus) {
-      return;
-    }
+        return;
+      }
 
-    this.element().focus();
+      super.display();
+
+      if (!focus) {
+        resolve();
+
+        return;
+      }
+
+      this.element().focus();
+
+      resolve();
+    });
   }
 }
 

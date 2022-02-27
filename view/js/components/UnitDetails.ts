@@ -29,6 +29,7 @@ export class UnitDetails extends Element {
           })`
         )
       ),
+      e('p', t(this.#activeUnit.city?.name ?? 'NONE')),
       e(
         'p',
         t(

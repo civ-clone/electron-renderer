@@ -3,8 +3,12 @@ import SelectionWindow from './SelectionWindow.js';
 
 declare var transport: ITransport;
 
+type onCompleteHandler = (hasSelected: boolean, ...args: any[]) => void;
+
 export class CityBuildSelectionWindow extends SelectionWindow {
-  constructor(cityBuild: CityBuild, onComplete: () => void = () => {}) {
+  private onComplete: onCompleteHandler;
+
+  constructor(cityBuild: CityBuild, onComplete: onCompleteHandler = () => {}) {
     super(
       `What would you like to build in ${cityBuild.city.name}?`,
       cityBuild.available.map((advance) => ({
@@ -21,15 +25,21 @@ export class CityBuildSelectionWindow extends SelectionWindow {
           chosen: selection ? selection : '@',
         });
 
-        this.close();
-
-        onComplete();
+        this.close(true);
       },
       null,
       {
         displayAll: true,
       }
     );
+
+    this.onComplete = onComplete;
+  }
+
+  close(hasSelected: boolean = false): void {
+    super.close();
+
+    this.onComplete(hasSelected);
   }
 }
 

@@ -17,9 +17,9 @@ const electron_1 = require("electron");
 const ElectronClient_1 = require("./client/ElectronClient");
 const Player_1 = require("@civ-clone/core-player/Player");
 const SimpleAIClient_1 = require("@civ-clone/simple-ai-client/SimpleAIClient");
+const ClientRegistry_1 = require("@civ-clone/core-client/ClientRegistry");
 const Engine_1 = require("@civ-clone/core-engine/Engine");
 const PlayerRegistry_1 = require("@civ-clone/core-player/PlayerRegistry");
-const ClientRegistry_1 = require("@civ-clone/core-client/ClientRegistry");
 class Game {
     constructor() {
         _Game_ready.set(this, void 0);
@@ -65,6 +65,9 @@ class Game {
         // TODO: Determine number of players via UI
         Engine_1.instance.setOption('players', 5);
     }
+    receiveData(channel, handler) {
+        electron_1.ipcMain.handle(channel, (event, ...args) => handler(...args));
+    }
     sendData(channel, payload) {
         __classPrivateFieldGet(this, _Game_window, "f").webContents.send(channel, payload);
     }
@@ -77,7 +80,7 @@ class Game {
                     const player = new Player_1.default(), 
                     // TODO: This is pretty basic.
                     client = i === 0
-                        ? new ElectronClient_1.default(player, (channel, payload) => this.sendData(channel, payload), (channel, handler) => electron_1.ipcMain.handle(channel, (event, ...args) => handler(...args)))
+                        ? new ElectronClient_1.default(player, (channel, payload) => this.sendData(channel, payload), (channel, handler) => this.receiveData(channel, handler))
                         : new SimpleAIClient_1.default(player);
                     PlayerRegistry_1.instance.register(player);
                     ClientRegistry_1.instance.register(client);

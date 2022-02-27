@@ -12,11 +12,15 @@ export class CityBuildSelectionWindow extends SelectionWindow {
                 id: cityBuild.id,
                 chosen: selection ? selection : '@',
             });
-            this.close();
-            onComplete();
+            this.close(true);
         }, null, {
             displayAll: true,
         });
+        this.onComplete = onComplete;
+    }
+    close(hasSelected = false) {
+        super.close();
+        this.onComplete(hasSelected);
     }
 }
 export default CityBuildSelectionWindow;

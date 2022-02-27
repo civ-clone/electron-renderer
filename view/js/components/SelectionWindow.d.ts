@@ -15,6 +15,6 @@ export declare class SelectionWindow extends NotificationWindow {
     body?: string | Node | null,
     options?: SelectionWindowOptions
   );
-  display(): void;
+  display(): Promise<void>;
 }
 export default SelectionWindow;

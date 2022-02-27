@@ -8,8 +8,8 @@ export declare type ObjectMap = {
   hierarchy: PlainObject;
   objects: ObjectStore;
 };
-export declare const reconstituteData: ({
-  hierarchy,
-  objects,
-}: ObjectMap) => PlainObject;
+export declare const reconstituteData: (
+  { hierarchy, objects }: ObjectMap,
+  orphanIds?: string[] | null
+) => PlainObject;
 export default reconstituteData;

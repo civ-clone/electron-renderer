@@ -11,31 +11,53 @@ export type ObjectMap = {
   objects: ObjectStore;
 };
 
-export const reconstituteData = ({
-  hierarchy,
-  objects,
-}: ObjectMap): PlainObject => {
-  const seenObjects: PlainObject[] = [];
+export const reconstituteData = (
+  { hierarchy, objects }: ObjectMap,
+  orphanIds: string[] | null = null
+): PlainObject => {
+  const seenObjects: Map<PlainObject, PlainObject> = new Map();
+
+  if (orphanIds) {
+    Object.keys(objects).forEach((id) => orphanIds.push(id));
+  }
 
   const getReferences = (value: any): PlainObject => {
-    if (seenObjects.includes(value)) {
-      return value;
+    if (seenObjects.has(value)) {
+      return seenObjects.get(value)!;
     }
 
-    seenObjects.push(value);
-
     if (Array.isArray(value)) {
-      return value.map((value) => getReferences(value));
+      const updated: any[] = [];
+
+      seenObjects.set(value, updated);
+
+      value.forEach((value) => updated.push(getReferences(value)));
+
+      return updated;
     }
 
     if (value && value['#ref']) {
-      return getReferences(objects[value['#ref']]);
+      if (orphanIds) {
+        orphanIds.splice(orphanIds.indexOf(value['#ref']), 1);
+      }
+
+      const updated = getReferences(objects[value['#ref']]);
+
+      seenObjects.set(value, updated);
+
+      return updated;
     }
 
     if (value instanceof Object) {
+      const updated: PlainObject = {};
+
+      seenObjects.set(value, updated);
+
       Object.entries(value).forEach(([key, childValue]) => {
-        value[key] = getReferences(childValue);
+        updated[key] = getReferences(childValue);
       });
+
+      return updated;
     }
 
     return value;

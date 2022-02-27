@@ -17,6 +17,9 @@ export class ActiveUnit extends Units {
             this.putImage(image, offsetX, offsetY);
         }
     }
+    update() {
+        this.render();
+    }
 }
 export default ActiveUnit;
 //# sourceMappingURL=ActiveUnit.js.map

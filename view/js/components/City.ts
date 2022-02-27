@@ -2,29 +2,49 @@ import { City as CityData, CityBuild, CityGrowth } from '../types';
 import { e, h, t } from '../lib/html.js';
 import Cities from './Map/Cities.js';
 import CityBuildSelectionWindow from './CityBuildSelectionWindow.js';
+import Feature from './Map/Feature.js';
+import Fog from './Map/Fog.js';
+import Improvements from './Map/Improvements.js';
+import Irrigation from './Map/Irrigation.js';
+import Land from './Map/Land.js';
 import Portal from './Portal.js';
 import Terrain from './Map/Terrain.js';
 import Window from './Window.js';
 import World from './World.js';
 import Yields from './Map/Yields.js';
 
-const buildDetails = (city: CityData) => {
+const buildDetails = (city: CityData, chooseProduction: () => void) => {
   const mapCanvas = e('canvas') as HTMLCanvasElement,
     build: CityBuild = city.build,
     growth: CityGrowth = city.growth,
     world = new World(city.player.world),
+    landMap = new Land(world),
+    irrigationMap = new Irrigation(world),
     terrainMap = new Terrain(world),
+    improvementsMap = new Improvements(world),
+    featureMap = new Feature(world),
+    fogMap = new Fog(world),
     cityMap = new Cities(world),
     yieldMap = new Yields(world),
-    map = new Portal(world, mapCanvas, terrainMap, cityMap, yieldMap);
+    map = new Portal(
+      world,
+      mapCanvas,
+      landMap,
+      irrigationMap,
+      terrainMap,
+      improvementsMap,
+      featureMap,
+      fogMap,
+      cityMap,
+      yieldMap
+    );
 
   mapCanvas.height = terrainMap.tileSize() * 5;
   mapCanvas.width = terrainMap.tileSize() * 5;
 
-  map.build();
+  map.build(city.tiles);
 
   terrainMap.render(city.tiles);
-  cityMap.setShowNames(false);
   cityMap.render(city.tiles);
   yieldMap.render(city.tilesWorked);
   map.setCenter(city.tile.x, city.tile.y);
@@ -52,7 +72,7 @@ const buildDetails = (city: CityData) => {
         ? e('p', t(`Progress ${build.progress.value} / ${build.cost.value}`))
         : t(''),
       h(e('button', t(build.building ? 'Change' : 'Choose')), {
-        click: () => new CityBuildSelectionWindow(build),
+        click: () => chooseProduction(),
       })
     ),
     e(
@@ -75,11 +95,31 @@ export class City extends Window {
   #city: CityData;
 
   constructor(city: CityData) {
-    super(city.name, buildDetails(city), {
-      size: 'maximised',
-    });
+    super(
+      city.name,
+      buildDetails(city, () => this.changeProduction()),
+      {
+        size: 'maximised',
+      }
+    );
 
     this.#city = city;
+
+    this.element().addEventListener('keydown', (event) => {
+      if (['c', 'C'].includes(event.key)) {
+        this.changeProduction();
+      }
+
+      if (event.key === 'Enter') {
+        this.close();
+      }
+    });
+  }
+
+  changeProduction(): void {
+    new CityBuildSelectionWindow(this.#city.build, () =>
+      this.element().focus()
+    );
   }
 }
 

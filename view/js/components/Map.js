@@ -39,14 +39,22 @@ export class Map {
     context() {
         return __classPrivateFieldGet(this, _Map_context, "f");
     }
-    render(...args) {
-        throw new TypeError('Map#render must be overridden.');
+    render(tiles = this.world().tiles()) {
+        this.clear();
+        tiles.forEach(({ x, y }) => this.renderTile(this.world().get(x, y)));
+    }
+    renderTile({ x, y }) {
+        const size = this.tileSize(), offsetX = x * size, offsetY = y * size;
+        this.context().clearRect(offsetX, offsetY, size, size);
     }
     scale() {
         return __classPrivateFieldGet(this, _Map_scale, "f");
     }
     tileSize() {
         return __classPrivateFieldGet(this, _Map_tileSize, "f") * __classPrivateFieldGet(this, _Map_scale, "f");
+    }
+    update(tilesToUpdate) {
+        tilesToUpdate.forEach(({ x, y }) => this.renderTile(this.world().get(x, y)));
     }
     world() {
         return __classPrivateFieldGet(this, _Map_world, "f");

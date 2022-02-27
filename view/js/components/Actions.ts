@@ -3,6 +3,7 @@ import { e, h } from '../lib/html.js';
 import Action from './Actions/Action.js';
 import ChooseResearch from './Actions/ChooseResearch.js';
 import CityBuild from './Actions/CityBuild.js';
+import EndTurn from './Actions/EndTurn.js';
 import { PlayerAction } from '../types';
 
 export interface IActions extends IElement {}
@@ -20,6 +21,10 @@ export class Actions extends Element implements IActions {
       let actionInstance: Action;
 
       switch (action._) {
+        // This is handled separately so no need to worry.
+        case 'ActiveUnit':
+          return;
+
         case 'ChooseResearch':
           actionInstance = new ChooseResearch(action);
 
@@ -30,9 +35,10 @@ export class Actions extends Element implements IActions {
 
           break;
 
-        // This is handled separately so no need to worry.
-        case 'ActiveUnit':
-          return;
+        case 'EndTurn':
+          actionInstance = new EndTurn(action);
+
+          break;
 
         default:
           console.log('need to handle ' + action._);

@@ -5,6 +5,7 @@ export declare class NotificationWindow
   implements INotificationWindow
 {
   constructor(title: string, body: string | Node, options?: WindowOptions);
-  display(focus?: boolean): void;
+  close(): void;
+  display(focus?: boolean): Promise<void>;
 }
 export default NotificationWindow;

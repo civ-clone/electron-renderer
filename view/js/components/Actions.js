@@ -8,6 +8,7 @@ import { Element } from './Element.js';
 import { e, h } from '../lib/html.js';
 import ChooseResearch from './Actions/ChooseResearch.js';
 import CityBuild from './Actions/CityBuild.js';
+import EndTurn from './Actions/EndTurn.js';
 export class Actions extends Element {
     constructor(actions, container = e('div.actions')) {
         super(container);
@@ -15,15 +16,18 @@ export class Actions extends Element {
         actions.forEach((action) => {
             let actionInstance;
             switch (action._) {
+                // This is handled separately so no need to worry.
+                case 'ActiveUnit':
+                    return;
                 case 'ChooseResearch':
                     actionInstance = new ChooseResearch(action);
                     break;
                 case 'CityBuild':
                     actionInstance = new CityBuild(action);
                     break;
-                // This is handled separately so no need to worry.
-                case 'ActiveUnit':
-                    return;
+                case 'EndTurn':
+                    actionInstance = new EndTurn(action);
+                    break;
                 default:
                     console.log('need to handle ' + action._);
                     return;
