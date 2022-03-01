@@ -35,13 +35,17 @@ import UnknownCity from '../UnknownObjects/City';
 import UnknownPlayer from '../UnknownObjects/Player';
 import UnknownUnit from '../UnknownObjects/Unit';
 import Year from '@civ-clone/core-game-year/Year';
+import { instance as advanceRegistryInstance } from '@civ-clone/core-science/AdvanceRegistry';
 import { instance as cityRegistryInstance } from '@civ-clone/core-city/CityRegistry';
 import { instance as engineInstance } from '@civ-clone/core-engine/Engine';
+import { instance as playerResearchRegistryInstance } from '@civ-clone/core-science/PlayerResearchRegistry';
+import { instance as playerTreasuryRegistryInstance } from '@civ-clone/core-treasury/PlayerTreasuryRegistry';
 import { instance as playerWorldRegistryInstance } from '@civ-clone/core-player-world/PlayerWorldRegistry';
 import { instance as turnInstance } from '@civ-clone/core-turn-based-game/Turn';
 import { instance as unitRegistryInstance } from '@civ-clone/core-unit/UnitRegistry';
 import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
 import * as EventEmitter from 'events';
+import CompleteProduction from '@civ-clone/civ1-treasury/PlayerActions/CompleteProduction';
 
 // const referenceObject = <T extends DataObject = DataObject>(object: T) => ({
 const referenceObject = (object: { id(): string }) => ({
@@ -125,35 +129,66 @@ export class ElectronClient extends Client implements IClient {
       this.#eventEmitter.emit('action', ...args);
     });
 
-    this.#receiver('cheat', (code: string): void => {
-      if (code === 'RevealMap') {
-        const playerWorld = playerWorldRegistryInstance.getByPlayer(
-          this.player()
-        );
+    // TODO: These could be `HiddenAction`s. Need to add a `perform` method to actions too...
+    this.#receiver(
+      'cheat',
+      ({ name, value }: { name: string; value: any }): void => {
+        if (name === 'RevealMap') {
+          const playerWorld = playerWorldRegistryInstance.getByPlayer(
+            this.player()
+          );
 
-        // A bit nasty... I wonder how slow this data transfer will be...
-        const [tile] = playerWorld.entries();
+          // A bit nasty... I wonder how slow this data transfer will be...
+          const [tile] = playerWorld.entries();
 
-        tile
-          .map()
-          .entries()
-          .forEach((tile) => {
-            if (playerWorld.includes(tile)) {
-              return;
-            }
+          tile
+            .map()
+            .entries()
+            .forEach((tile) => {
+              if (playerWorld.includes(tile)) {
+                return;
+              }
 
-            playerWorld.register(tile);
+              playerWorld.register(tile);
 
-            this.#dataQueue.add(
-              playerWorld.id(),
-              () => tile.toPlainObject(this.#dataFilter()),
-              `entries[${playerWorld.entries().indexOf(tile)}]`
+              this.#dataQueue.add(
+                playerWorld.id(),
+                () => tile.toPlainObject(this.#dataFilter()),
+                `entries[${playerWorld.entries().indexOf(tile)}]`
+              );
+            });
+        }
+
+        if (name === 'GrantAdvance') {
+          const [Advance] = advanceRegistryInstance.filter(
+              (Advance) => Advance.name === value
+            ),
+            playerResearch = playerResearchRegistryInstance.getByPlayer(
+              this.player()
             );
-          });
-      }
 
-      this.sendPatchData();
-    });
+          if (!Advance) {
+            return;
+          }
+
+          if (playerResearch.completed(Advance)) {
+            return;
+          }
+
+          playerResearch.addAdvance(Advance);
+        }
+
+        if (name === 'GrantGold') {
+          const playerTreasury = playerTreasuryRegistryInstance.getByPlayer(
+            this.player()
+          );
+
+          playerTreasury.add(value);
+        }
+
+        this.sendPatchData();
+      }
+    );
 
     engineInstance.on('player:visibility-changed', (tile, player) => {
       if (player !== this.player()) {
@@ -574,6 +609,17 @@ export class ElectronClient extends Client implements IClient {
       }
 
       playerResearch.research(ChosenAdvance);
+
+      return false;
+    }
+
+    if (playerAction instanceof CompleteProduction) {
+      const city = playerAction.value(),
+        playerTreasury = playerTreasuryRegistryInstance.getByPlayer(
+          this.player()
+        );
+
+      playerTreasury.buy(city);
 
       return false;
     }

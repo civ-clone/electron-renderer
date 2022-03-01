@@ -23,8 +23,14 @@ import Terrain from './Map/Terrain.js';
 import Window from './Window.js';
 import World from './World.js';
 import Yields from './Map/Yields.js';
-const buildDetails = (city, chooseProduction) => {
-    const mapCanvas = e('canvas'), build = city.build, growth = city.growth, world = new World(city.player.world), landMap = new Land(world), irrigationMap = new Irrigation(world), terrainMap = new Terrain(world), improvementsMap = new Improvements(world), featureMap = new Feature(world), fogMap = new Fog(world), cityMap = new Cities(world), yieldMap = new Yields(world), map = new Portal(world, mapCanvas, landMap, irrigationMap, terrainMap, improvementsMap, featureMap, fogMap, cityMap, yieldMap);
+const buildCityBuildDetails = (city, chooseProduction, completeProduction) => e('div.build', e('header', t(`Building ${city.build.building ? city.build.building._ : 'nothing'}`)), city.build.building
+    ? e('p', t(`Progress ${city.build.progress.value} / ${city.build.cost.value}`))
+    : t(''), h(e('button', t(city.build.building ? 'Change' : 'Choose')), {
+    click: () => chooseProduction(),
+}), h(e('button', t('Buy')), {
+    click: () => completeProduction(),
+})), buildDetails = (city, chooseProduction, completeProduction) => {
+    const mapCanvas = e('canvas'), growth = city.growth, world = new World(city.player.world), landMap = new Land(world), irrigationMap = new Irrigation(world), terrainMap = new Terrain(world), improvementsMap = new Improvements(world), featureMap = new Feature(world), fogMap = new Fog(world), cityMap = new Cities(world), yieldMap = new Yields(world), map = new Portal(world, mapCanvas, landMap, irrigationMap, terrainMap, improvementsMap, featureMap, fogMap, cityMap, yieldMap);
     mapCanvas.height = terrainMap.tileSize() * 5;
     mapCanvas.width = terrainMap.tileSize() * 5;
     map.build(city.tiles);
@@ -32,19 +38,44 @@ const buildDetails = (city, chooseProduction) => {
     cityMap.render(city.tiles);
     yieldMap.render(city.tilesWorked);
     map.setCenter(city.tile.x, city.tile.y);
-    return e('div', e('div.yields', ...city.yields.map((cityYield) => e(`div.${cityYield._.toLowerCase()}`, e('div', t(cityYield._)), e('div', t(cityYield.value.toString()))))), e('div.map', mapCanvas), e('div.build', e('header', t(`Building ${build.building ? build.building._ : 'nothing'}`)), build.building
-        ? e('p', t(`Progress ${build.progress.value} / ${build.cost.value}`))
-        : t(''), h(e('button', t(build.building ? 'Change' : 'Choose')), {
-        click: () => chooseProduction(),
-    })), e('div.growth', e('header', t(growth.size.toString())), e('p', t(`Growth ${growth.progress.value} / ${growth.cost.value}`))), e('div.improvements', e('header', t('Improvements')), e('ul', ...city.improvements.map((improvement) => e('li', t(improvement._))))));
+    return e('div', e('div.yields', ...city.yields.map((cityYield) => e(`div.${cityYield._.toLowerCase()}`, e('div', t(cityYield._)), e('div', t(cityYield.value.toString()))))), e('div.map', mapCanvas), buildCityBuildDetails(city, chooseProduction, completeProduction), e('div.growth', e('header', t(growth.size.toString())), e('p', t(`Growth ${growth.progress.value} / ${growth.cost.value}`))), e('div.improvements', e('header', t('Improvements')), e('ul', ...city.improvements.map((improvement) => e('li', t(improvement._))))), e('div.units', e('header', t('Units')), e('ul', ...city.tile.units.map((unit) => e('li', t(unit._ +
+        (unit.improvements.length
+            ? ' (' +
+                unit.improvements
+                    .map((improvement) => improvement._)
+                    .join(', ') +
+                ')'
+            : '')))))));
 };
 export class City extends Window {
     constructor(city) {
-        super(city.name, buildDetails(city, () => this.changeProduction()), {
+        super(city.name, buildDetails(city, () => this.changeProduction(), () => this.completeProduction(city)), {
             size: 'maximised',
         });
         _City_city.set(this, void 0);
         __classPrivateFieldSet(this, _City_city, city, "f");
+        document.addEventListener('patchdatareceived', (event) => {
+            var _a;
+            const { detail } = event, objects = (_a = detail === null || detail === void 0 ? void 0 : detail.value) === null || _a === void 0 ? void 0 : _a.objects;
+            if (!objects) {
+                return;
+            }
+            if (city.id in objects || city.build.id in objects) {
+                document.addEventListener('dataupdated', (event) => {
+                    var _a, _b, _c;
+                    const { detail } = event, [updatedCity] = ((_c = (_b = (_a = detail === null || detail === void 0 ? void 0 : detail.data) === null || _a === void 0 ? void 0 : _a.player) === null || _b === void 0 ? void 0 : _b.cities) !== null && _c !== void 0 ? _c : []).filter((cityData) => city.id === cityData.id);
+                    if (!updatedCity) {
+                        this.close();
+                        return;
+                    }
+                    __classPrivateFieldSet(this, _City_city, updatedCity, "f");
+                    this.update(buildDetails(updatedCity, () => this.changeProduction(), () => this.completeProduction(city)));
+                    this.element().focus();
+                }, {
+                    once: true,
+                });
+            }
+        });
         this.element().addEventListener('keydown', (event) => {
             if (['c', 'C'].includes(event.key)) {
                 this.changeProduction();
@@ -56,6 +87,12 @@ export class City extends Window {
     }
     changeProduction() {
         new CityBuildSelectionWindow(__classPrivateFieldGet(this, _City_city, "f").build, () => this.element().focus());
+    }
+    completeProduction(city) {
+        transport.send('action', {
+            name: 'CompleteProduction',
+            id: city.id,
+        });
     }
 }
 _City_city = new WeakMap();

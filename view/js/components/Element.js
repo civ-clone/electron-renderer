@@ -16,7 +16,7 @@ export class Element {
         _Element_element.set(this, void 0);
         __classPrivateFieldSet(this, _Element_element, element, "f");
     }
-    build() { }
+    build(...args) { }
     element() {
         return __classPrivateFieldGet(this, _Element_element, "f");
     }

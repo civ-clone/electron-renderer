@@ -33,13 +33,17 @@ const Unit_1 = require("@civ-clone/core-unit/Unit");
 const City_2 = require("../UnknownObjects/City");
 const Player_2 = require("../UnknownObjects/Player");
 const Unit_2 = require("../UnknownObjects/Unit");
+const AdvanceRegistry_1 = require("@civ-clone/core-science/AdvanceRegistry");
 const CityRegistry_1 = require("@civ-clone/core-city/CityRegistry");
 const Engine_1 = require("@civ-clone/core-engine/Engine");
+const PlayerResearchRegistry_1 = require("@civ-clone/core-science/PlayerResearchRegistry");
+const PlayerTreasuryRegistry_1 = require("@civ-clone/core-treasury/PlayerTreasuryRegistry");
 const PlayerWorldRegistry_1 = require("@civ-clone/core-player-world/PlayerWorldRegistry");
 const Turn_1 = require("@civ-clone/core-turn-based-game/Turn");
 const UnitRegistry_1 = require("@civ-clone/core-unit/UnitRegistry");
 const Year_1 = require("@civ-clone/core-game-year/Year");
 const EventEmitter = require("events");
+const CompleteProduction_1 = require("@civ-clone/civ1-treasury/PlayerActions/CompleteProduction");
 // const referenceObject = <T extends DataObject = DataObject>(object: T) => ({
 const referenceObject = (object) => ({
     '#ref': object.id(),
@@ -90,8 +94,9 @@ class ElectronClient extends Client_1.Client {
         __classPrivateFieldGet(this, _ElectronClient_receiver, "f").call(this, 'action', (...args) => {
             __classPrivateFieldGet(this, _ElectronClient_eventEmitter, "f").emit('action', ...args);
         });
-        __classPrivateFieldGet(this, _ElectronClient_receiver, "f").call(this, 'cheat', (code) => {
-            if (code === 'RevealMap') {
+        // TODO: These could be `HiddenAction`s. Need to add a `perform` method to actions too...
+        __classPrivateFieldGet(this, _ElectronClient_receiver, "f").call(this, 'cheat', ({ name, value }) => {
+            if (name === 'RevealMap') {
                 const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
                 // A bit nasty... I wonder how slow this data transfer will be...
                 const [tile] = playerWorld.entries();
@@ -105,6 +110,20 @@ class ElectronClient extends Client_1.Client {
                     playerWorld.register(tile);
                     __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").add(playerWorld.id(), () => tile.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this)), `entries[${playerWorld.entries().indexOf(tile)}]`);
                 });
+            }
+            if (name === 'GrantAdvance') {
+                const [Advance] = AdvanceRegistry_1.instance.filter((Advance) => Advance.name === value), playerResearch = PlayerResearchRegistry_1.instance.getByPlayer(this.player());
+                if (!Advance) {
+                    return;
+                }
+                if (playerResearch.completed(Advance)) {
+                    return;
+                }
+                playerResearch.addAdvance(Advance);
+            }
+            if (name === 'GrantGold') {
+                const playerTreasury = PlayerTreasuryRegistry_1.instance.getByPlayer(this.player());
+                playerTreasury.add(value);
             }
             this.sendPatchData();
         });
@@ -317,6 +336,11 @@ class ElectronClient extends Client_1.Client {
                 return false;
             }
             playerResearch.research(ChosenAdvance);
+            return false;
+        }
+        if (playerAction instanceof CompleteProduction_1.default) {
+            const city = playerAction.value(), playerTreasury = PlayerTreasuryRegistry_1.instance.getByPlayer(this.player());
+            playerTreasury.buy(city);
             return false;
         }
         console.log(`unhandled action: ${JSON.stringify(action)}`);

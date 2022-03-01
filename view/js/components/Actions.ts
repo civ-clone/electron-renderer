@@ -6,59 +6,17 @@ import CityBuild from './Actions/CityBuild.js';
 import EndTurn from './Actions/EndTurn.js';
 import { PlayerAction } from '../types';
 
-export interface IActions extends IElement {}
+export interface IActions extends IElement {
+  build(actions: PlayerAction[]): void;
+}
 
 export class Actions extends Element implements IActions {
-  #actions: Action[] = [];
-
-  constructor(
-    actions: PlayerAction[],
-    container: HTMLElement = e('div.actions')
-  ) {
+  constructor(container: HTMLElement = e('div.actions')) {
     super(container);
 
-    actions.forEach((action) => {
-      let actionInstance: Action;
-
-      switch (action._) {
-        // This is handled separately so no need to worry.
-        case 'ActiveUnit':
-          return;
-
-        case 'ChooseResearch':
-          actionInstance = new ChooseResearch(action);
-
-          break;
-
-        case 'CityBuild':
-          actionInstance = new CityBuild(action);
-
-          break;
-
-        case 'EndTurn':
-          actionInstance = new EndTurn(action);
-
-          break;
-
-        default:
-          console.log('need to handle ' + action._);
-          return;
-        // throw new TypeError(`Unknown action type '${action._}'.`);
-      }
-
-      this.#actions.push(actionInstance);
-    });
-
-    this.element().addEventListener('actioned', (event) => {
-      this.#actions.splice(
-        this.#actions.indexOf((event as CustomEvent).detail),
-        1
-      );
-
-      ((event as CustomEvent).detail as Action).element().remove();
-
-      this.build();
-    });
+    this.element().addEventListener('actioned', (event) =>
+      (event as CustomEvent<Action>).detail.element().remove()
+    );
 
     this.element().addEventListener('keydown', (event) => {
       const currentChild = document.activeElement;
@@ -130,14 +88,40 @@ export class Actions extends Element implements IActions {
         return;
       }
     });
-
-    this.build();
   }
 
-  build(): void {
+  build(actions: PlayerAction[]): void {
     this.empty();
 
-    this.#actions.forEach((action) =>
+    actions.forEach((playerAction) => {
+      let action: Action;
+
+      switch (playerAction._) {
+        // This is handled separately so no need to worry.
+        case 'ActiveUnit':
+          return;
+
+        case 'ChooseResearch':
+          action = new ChooseResearch(playerAction);
+
+          break;
+
+        case 'CityBuild':
+          action = new CityBuild(playerAction);
+
+          break;
+
+        case 'EndTurn':
+          action = new EndTurn(playerAction);
+
+          break;
+
+        default:
+          console.log('need to handle ' + playerAction._);
+          return;
+        // throw new TypeError(`Unknown action type '${action._}'.`);
+      }
+
       this.element().prepend(
         h(action.element(), {
           click: () => action.activate(),
@@ -147,8 +131,8 @@ export class Actions extends Element implements IActions {
             }
           },
         })
-      )
-    );
+      );
+    });
   }
 }
 

@@ -1,45 +1,12 @@
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
-var _Actions_actions;
 import { Element } from './Element.js';
 import { e, h } from '../lib/html.js';
 import ChooseResearch from './Actions/ChooseResearch.js';
 import CityBuild from './Actions/CityBuild.js';
 import EndTurn from './Actions/EndTurn.js';
 export class Actions extends Element {
-    constructor(actions, container = e('div.actions')) {
+    constructor(container = e('div.actions')) {
         super(container);
-        _Actions_actions.set(this, []);
-        actions.forEach((action) => {
-            let actionInstance;
-            switch (action._) {
-                // This is handled separately so no need to worry.
-                case 'ActiveUnit':
-                    return;
-                case 'ChooseResearch':
-                    actionInstance = new ChooseResearch(action);
-                    break;
-                case 'CityBuild':
-                    actionInstance = new CityBuild(action);
-                    break;
-                case 'EndTurn':
-                    actionInstance = new EndTurn(action);
-                    break;
-                default:
-                    console.log('need to handle ' + action._);
-                    return;
-                // throw new TypeError(`Unknown action type '${action._}'.`);
-            }
-            __classPrivateFieldGet(this, _Actions_actions, "f").push(actionInstance);
-        });
-        this.element().addEventListener('actioned', (event) => {
-            __classPrivateFieldGet(this, _Actions_actions, "f").splice(__classPrivateFieldGet(this, _Actions_actions, "f").indexOf(event.detail), 1);
-            event.detail.element().remove();
-            this.build();
-        });
+        this.element().addEventListener('actioned', (event) => event.detail.element().remove());
         this.element().addEventListener('keydown', (event) => {
             var _a, _b;
             const currentChild = document.activeElement;
@@ -89,20 +56,39 @@ export class Actions extends Element {
                 return;
             }
         });
-        this.build();
     }
-    build() {
+    build(actions) {
         this.empty();
-        __classPrivateFieldGet(this, _Actions_actions, "f").forEach((action) => this.element().prepend(h(action.element(), {
-            click: () => action.activate(),
-            keydown: ({ key }) => {
-                if (key === ' ' || key === 'Enter') {
-                    action.activate();
-                }
-            },
-        })));
+        actions.forEach((playerAction) => {
+            let action;
+            switch (playerAction._) {
+                // This is handled separately so no need to worry.
+                case 'ActiveUnit':
+                    return;
+                case 'ChooseResearch':
+                    action = new ChooseResearch(playerAction);
+                    break;
+                case 'CityBuild':
+                    action = new CityBuild(playerAction);
+                    break;
+                case 'EndTurn':
+                    action = new EndTurn(playerAction);
+                    break;
+                default:
+                    console.log('need to handle ' + playerAction._);
+                    return;
+                // throw new TypeError(`Unknown action type '${action._}'.`);
+            }
+            this.element().prepend(h(action.element(), {
+                click: () => action.activate(),
+                keydown: ({ key }) => {
+                    if (key === ' ' || key === 'Enter') {
+                        action.activate();
+                    }
+                },
+            }));
+        });
     }
 }
-_Actions_actions = new WeakMap();
 export default Actions;
 //# sourceMappingURL=Actions.js.map

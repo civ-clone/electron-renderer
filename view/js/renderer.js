@@ -27,7 +27,7 @@ const options = {
     autoEndOfTurn: true,
 };
 try {
-    const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimapCanvas = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications(), mainMenu = new MainMenu(mainMenuElement);
+    const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimapCanvas = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications(), actions = new Actions(actionArea), mainMenu = new MainMenu(mainMenuElement);
     const tilesToRender = [];
     let globalNotificationTimer, lastUnit;
     transport.receive('notification', (data) => {
@@ -70,11 +70,16 @@ try {
                 orphanIds.forEach((id) => delete objectMap.objects[id]);
                 clearNextTurn = false;
             }
+            document.dispatchEvent(new CustomEvent('dataupdated', {
+                detail: {
+                    data,
+                },
+            }));
             if (lastTurn !== data.turn.value) {
                 clearNextTurn = true;
                 lastTurn = data.turn.value;
             }
-            const actions = new Actions(data.player.mandatoryActions, actionArea);
+            actions.build(data.player.mandatoryActions);
             gameArea.append(actions.element());
             world.setTileData(data.player.world.tiles);
             const gameDetails = new GameDetails(gameInfo, data.turn, data.year);
@@ -164,6 +169,11 @@ try {
                     else {
                         objectMap.objects[key] = value.hierarchy;
                     }
+                    document.dispatchEvent(new CustomEvent('patchdatareceived', {
+                        detail: {
+                            value,
+                        },
+                    }));
                     Object.entries(value.objects).forEach(([key, value]) => {
                         objectMap.objects[key] = value;
                         if (value._ === 'Tile') {
@@ -331,7 +341,7 @@ try {
                 portal.render();
             }
             if (lastKey === '%' && event.key === '^') {
-                transport.send('cheat', 'RevealMap');
+                transport.send('cheat', { name: 'RevealMap' });
             }
             lastKey = event.key;
         });

@@ -146,7 +146,10 @@ export class Window extends TransientElement implements IWindow {
       h(e('header', e('h3', t(this.#title)), ...headerActions), {
         dblclick: () => this.maximise(),
       }),
-      this.#body instanceof Node ? this.#body : e('p', t(this.#body))
+      e(
+        'div.body',
+        this.#body instanceof Node ? this.#body : e('p', t(this.#body))
+      )
     );
 
     this.element().addEventListener('keydown', (event: KeyboardEvent) => {
@@ -181,6 +184,14 @@ export class Window extends TransientElement implements IWindow {
     }
 
     this.element().classList.toggle('maximised');
+  }
+
+  public update(content: string | Node): void {
+    this.element().lastElementChild!.remove();
+
+    this.element().append(
+      content instanceof Node ? content : e('p', t(content))
+    );
   }
 }
 

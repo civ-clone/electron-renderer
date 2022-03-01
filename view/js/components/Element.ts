@@ -1,7 +1,7 @@
 import { e } from '../lib/html.js';
 
 export interface IElement {
-  build(): void;
+  build(...args: any[]): void;
   element(): HTMLElement;
 }
 
@@ -12,7 +12,7 @@ export class Element implements IElement {
     this.#element = element;
   }
 
-  build(): void {}
+  build(...args: any[]): void {}
 
   element(): HTMLElement {
     return this.#element;

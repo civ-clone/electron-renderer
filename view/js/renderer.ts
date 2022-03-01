@@ -58,6 +58,7 @@ try {
     minimapCanvas = document.getElementById('minimap') as HTMLCanvasElement,
     unitInfo = document.getElementById('unitInfo') as HTMLCanvasElement,
     notifications = new Notifications(),
+    actions = new Actions(actionArea),
     mainMenu = new MainMenu(mainMenuElement);
 
   const tilesToRender: Tile[] = [];
@@ -155,12 +156,20 @@ try {
         clearNextTurn = false;
       }
 
+      document.dispatchEvent(
+        new CustomEvent('dataupdated', {
+          detail: {
+            data,
+          },
+        })
+      );
+
       if (lastTurn !== data.turn.value) {
         clearNextTurn = true;
         lastTurn = data.turn.value;
       }
 
-      const actions = new Actions(data.player.mandatoryActions, actionArea);
+      actions.build(data.player.mandatoryActions);
 
       gameArea.append(actions.element());
 
@@ -296,6 +305,14 @@ try {
             } else {
               objectMap.objects[key] = value!.hierarchy;
             }
+
+            document.dispatchEvent(
+              new CustomEvent('patchdatareceived', {
+                detail: {
+                  value,
+                },
+              })
+            );
 
             Object.entries(value!.objects as PlainObject).forEach(
               ([key, value]) => {
@@ -524,7 +541,7 @@ try {
       }
 
       if (lastKey === '%' && event.key === '^') {
-        transport.send('cheat', 'RevealMap');
+        transport.send('cheat', { name: 'RevealMap' });
       }
 
       lastKey = event.key;

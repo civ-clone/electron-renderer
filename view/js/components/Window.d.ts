@@ -30,5 +30,6 @@ export declare class Window extends TransientElement implements IWindow {
   close(): void;
   display(focus?: boolean): void;
   maximise(): void;
+  update(content: string | Node): void;
 }
 export default Window;

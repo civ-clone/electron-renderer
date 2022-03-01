@@ -82,7 +82,7 @@ export class Window extends TransientElement {
             .map(([, element]) => element);
         this.element().append(h(e('header', e('h3', t(__classPrivateFieldGet(this, _Window_title, "f"))), ...headerActions), {
             dblclick: () => this.maximise(),
-        }), __classPrivateFieldGet(this, _Window_body, "f") instanceof Node ? __classPrivateFieldGet(this, _Window_body, "f") : e('p', t(__classPrivateFieldGet(this, _Window_body, "f"))));
+        }), e('div.body', __classPrivateFieldGet(this, _Window_body, "f") instanceof Node ? __classPrivateFieldGet(this, _Window_body, "f") : e('p', t(__classPrivateFieldGet(this, _Window_body, "f")))));
         this.element().addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 this.close();
@@ -107,6 +107,10 @@ export class Window extends TransientElement {
             return;
         }
         this.element().classList.toggle('maximised');
+    }
+    update(content) {
+        this.element().lastElementChild.remove();
+        this.element().append(content instanceof Node ? content : e('p', t(content)));
     }
 }
 _Window_body = new WeakMap(), _Window_title = new WeakMap();

@@ -1,9 +1,10 @@
 import { Element, IElement } from './Element.js';
 import { PlayerAction } from '../types';
-export interface IActions extends IElement {}
+export interface IActions extends IElement {
+  build(actions: PlayerAction[]): void;
+}
 export declare class Actions extends Element implements IActions {
-  #private;
-  constructor(actions: PlayerAction[], container?: HTMLElement);
-  build(): void;
+  constructor(container?: HTMLElement);
+  build(actions: PlayerAction[]): void;
 }
 export default Actions;
