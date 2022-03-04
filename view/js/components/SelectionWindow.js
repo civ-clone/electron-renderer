@@ -1,15 +1,21 @@
 import { e, h, t } from '../lib/html.js';
 import NotificationWindow from './NotificationWindow.js';
 export class SelectionWindow extends NotificationWindow {
-    constructor(title, optionList, onChoose, body = 'Please choose one of the following:', options = {
-        chooseLabel: 'OK',
-        displayAll: false,
-    }) {
+    constructor(title, optionList, onChoose, body = 'Please choose one of the following:', options = {}) {
         var _a;
+        options = {
+            autoFocus: true,
+            chooseLabel: 'OK',
+            displayAll: false,
+            ...options,
+        };
         const chooseHandler = (selection) => {
-            onChoose(selection);
+            this.element().dispatchEvent(new CustomEvent('selection', {
+                detail: selection,
+            }));
             this.close();
-        }, selectionList = h(e('select[autofocus]', ...optionList.map((option) => e(`option[value="${option.value}"]`, t(option.label || option.value)))), {
+            onChoose(selection);
+        }, selectionList = h(e('select', ...optionList.map((option) => e(`option[value="${option.value}"]`, t(option.label || option.value)))), {
             keydown: (event) => {
                 if (event.key === 'Enter') {
                     chooseHandler(selectionList.value);
@@ -22,6 +28,9 @@ export class SelectionWindow extends NotificationWindow {
         if (options.displayAll) {
             selectionList.setAttribute('size', optionList.length.toString());
         }
+        if (options.autoFocus) {
+            selectionList.setAttribute('autofocus', '');
+        }
         super(title, e('div', ...(body instanceof Node
             ? [body]
             : body === null
@@ -32,9 +41,12 @@ export class SelectionWindow extends NotificationWindow {
         this.element().classList.add('selectionWindow');
     }
     display() {
-        return super
-            .display(false)
-            .then(() => this.element().querySelector('select').focus());
+        return super.display(false).then(() => {
+            const select = this.element().querySelector('select');
+            if (select.hasAttribute('autofocus')) {
+                select.focus();
+            }
+        });
     }
 }
 export default SelectionWindow;

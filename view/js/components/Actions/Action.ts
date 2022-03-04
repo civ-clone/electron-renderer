@@ -1,6 +1,12 @@
 import { CityBuild, PlayerAction, PlayerResearch, Unit } from '../../types';
 import { e } from '../../lib/html.js';
 
+declare global {
+  interface GlobalEventHandlersEventMap {
+    actioned: CustomEvent<Action>;
+  }
+}
+
 export interface IAction {
   activate(): void;
   build(): void;

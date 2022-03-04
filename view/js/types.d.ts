@@ -127,7 +127,7 @@ export interface Terrain extends EntityInstance {
 
 export interface Tile extends EntityInstance {
   city: City | null;
-  goodyHut: EntityInstance;
+  goodyHut: EntityInstance | null;
   improvements: EntityInstance[];
   isCoast: boolean;
   isLand: boolean;

@@ -1,9 +1,11 @@
 import NotificationWindow from './NotificationWindow.js';
+import { WindowOptions } from './Window';
 export interface SelectionWindowOption {
   label?: string;
   value: any;
 }
-export interface SelectionWindowOptions {
+export interface SelectionWindowOptions extends WindowOptions {
+  autoFocus?: boolean;
   chooseLabel?: string;
   displayAll?: boolean;
 }
@@ -15,6 +17,6 @@ export declare class SelectionWindow extends NotificationWindow {
     body?: string | Node | null,
     options?: SelectionWindowOptions
   );
-  display(): Promise<void>;
+  display(): Promise<any>;
 }
 export default SelectionWindow;

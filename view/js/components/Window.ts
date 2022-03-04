@@ -17,6 +17,7 @@ type WindowPosition = {
 };
 
 export type WindowSettings = {
+  autoDisplay: boolean;
   canClose: boolean;
   canMaximise: boolean;
   canResize: boolean;
@@ -28,6 +29,7 @@ export type WindowSettings = {
 export type WindowOptions = { [K in keyof WindowSettings]?: WindowSettings[K] };
 
 const defaultOptions: WindowSettings = {
+  autoDisplay: true,
   canClose: true,
   canMaximise: false,
   canResize: false,
@@ -96,7 +98,9 @@ export class Window extends TransientElement implements IWindow {
       });
     }
 
-    this.display();
+    if (this.options.autoDisplay) {
+      this.display();
+    }
   }
 
   public build(): void {
@@ -153,7 +157,7 @@ export class Window extends TransientElement implements IWindow {
     );
 
     this.element().addEventListener('keydown', (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && this.options.canClose) {
         this.close();
       }
 

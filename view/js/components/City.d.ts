@@ -4,6 +4,7 @@ export declare class City extends Window {
   #private;
   constructor(city: CityData);
   changeProduction(): void;
+  close(): void;
   completeProduction(city: CityData): void;
 }
 export default City;

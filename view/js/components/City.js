@@ -9,10 +9,11 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _City_city;
+var _City_city, _City_dataObserver;
 import { e, h, t } from '../lib/html.js';
 import Cities from './Map/Cities.js';
 import CityBuildSelectionWindow from './CityBuildSelectionWindow.js';
+import DataObserver from '../lib/DataObserver.js';
 import Feature from './Map/Feature.js';
 import Fog from './Map/Fog.js';
 import Improvements from './Map/Improvements.js';
@@ -53,29 +54,60 @@ export class City extends Window {
             size: 'maximised',
         });
         _City_city.set(this, void 0);
+        _City_dataObserver.set(this, void 0);
         __classPrivateFieldSet(this, _City_city, city, "f");
-        document.addEventListener('patchdatareceived', (event) => {
-            var _a;
-            const { detail } = event, objects = (_a = detail === null || detail === void 0 ? void 0 : detail.value) === null || _a === void 0 ? void 0 : _a.objects;
-            if (!objects) {
+        __classPrivateFieldSet(this, _City_dataObserver, new DataObserver([city.id, city.build.id, city.growth.id], (data) => {
+            var _a, _b;
+            const [updatedCity] = ((_b = (_a = data.player) === null || _a === void 0 ? void 0 : _a.cities) !== null && _b !== void 0 ? _b : []).filter((cityData) => city.id === cityData.id);
+            if (!updatedCity) {
+                this.close();
                 return;
             }
-            if (city.id in objects || city.build.id in objects) {
-                document.addEventListener('dataupdated', (event) => {
-                    var _a, _b, _c;
-                    const { detail } = event, [updatedCity] = ((_c = (_b = (_a = detail === null || detail === void 0 ? void 0 : detail.data) === null || _a === void 0 ? void 0 : _a.player) === null || _b === void 0 ? void 0 : _b.cities) !== null && _c !== void 0 ? _c : []).filter((cityData) => city.id === cityData.id);
-                    if (!updatedCity) {
-                        this.close();
-                        return;
-                    }
-                    __classPrivateFieldSet(this, _City_city, updatedCity, "f");
-                    this.update(buildDetails(updatedCity, () => this.changeProduction(), () => this.completeProduction(city)));
-                    this.element().focus();
-                }, {
-                    once: true,
-                });
-            }
-        });
+            __classPrivateFieldSet(this, _City_city, updatedCity, "f");
+            this.update(buildDetails(updatedCity, () => this.changeProduction(), () => this.completeProduction(city)));
+            this.element().focus();
+        }), "f");
+        // document.addEventListener('patchdatareceived', (event) => {
+        //   const { detail } = event,
+        //     objects = detail.value.objects;
+        //
+        //   if (!objects) {
+        //     return;
+        //   }
+        //
+        //   if (city.id in objects || city.build.id in objects) {
+        //     document.addEventListener(
+        //       'dataupdated',
+        //       (event) => {
+        //         const { detail } = event,
+        //           [updatedCity] = (detail.data?.player?.cities ?? []).filter(
+        //             (cityData: CityData) => city.id === cityData.id
+        //           );
+        //
+        //         if (!updatedCity) {
+        //           this.close();
+        //
+        //           return;
+        //         }
+        //
+        //         this.#city = updatedCity;
+        //
+        //         this.update(
+        //           buildDetails(
+        //             updatedCity,
+        //             () => this.changeProduction(),
+        //             () => this.completeProduction(city)
+        //           )
+        //         );
+        //
+        //         this.element().focus();
+        //       },
+        //       {
+        //         once: true,
+        //       }
+        //     );
+        //   }
+        // });
         this.element().addEventListener('keydown', (event) => {
             if (['c', 'C'].includes(event.key)) {
                 this.changeProduction();
@@ -88,6 +120,10 @@ export class City extends Window {
     changeProduction() {
         new CityBuildSelectionWindow(__classPrivateFieldGet(this, _City_city, "f").build, () => this.element().focus());
     }
+    close() {
+        __classPrivateFieldGet(this, _City_dataObserver, "f").dispose();
+        super.close();
+    }
     completeProduction(city) {
         transport.send('action', {
             name: 'CompleteProduction',
@@ -95,6 +131,6 @@ export class City extends Window {
         });
     }
 }
-_City_city = new WeakMap();
+_City_city = new WeakMap(), _City_dataObserver = new WeakMap();
 export default City;
 //# sourceMappingURL=City.js.map

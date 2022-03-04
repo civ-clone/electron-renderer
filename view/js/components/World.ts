@@ -1,6 +1,26 @@
 import { NeighbourDirection, Tile, World as WorldData } from '../types';
 
 export class World {
+  #unknown = (x: number, y: number): Tile => ({
+    _: 'Tile',
+    id: `Tile-${x}--${y}`,
+    city: null,
+    goodyHut: null,
+    improvements: [],
+    isCoast: false,
+    isLand: false,
+    isWater: false,
+    terrain: {
+      _: 'Unknown',
+      id: `UnknownTerrain-${x}--${y}`,
+      features: [],
+    },
+    units: [],
+    x,
+    y,
+    yields: [],
+  });
+  #lookupCache: { [key: string]: number } = {};
   #tiles: Tile[];
   #height: number;
   #width: number;
@@ -20,23 +40,29 @@ export class World {
       y += this.#height;
     }
 
-    return (
-      this.#tiles.filter(
-        (tile: Tile) =>
-          tile.x === x % this.#width && tile.y === y % this.#height
-      )[0] || {
-        improvements: [],
-        isLand: false,
-        isOcean: false,
-        terrain: {
-          _: 'Unknown',
-        },
-        units: [],
-        x,
-        y,
-        yields: [],
+    while (x > this.#width) {
+      x -= this.#width;
+    }
+
+    while (y > this.#height) {
+      y -= this.#height;
+    }
+
+    const key = [x, y].toString();
+
+    if (!(key in this.#lookupCache)) {
+      const index = this.#tiles.findIndex(
+        (tile) => tile.x === x && tile.y === y
+      );
+
+      if (index === -1) {
+        return this.#unknown(x, y);
       }
-    );
+
+      this.#lookupCache[key] = index;
+    }
+
+    return this.#tiles[this.#lookupCache[key]];
   }
 
   getNeighbour(tile: Tile, direction: NeighbourDirection): Tile {

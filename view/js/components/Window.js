@@ -13,6 +13,7 @@ var _Window_body, _Window_title;
 import { e, h, t } from '../lib/html.js';
 import TransientElement from './TransientElement.js';
 const defaultOptions = {
+    autoDisplay: true,
     canClose: true,
     canMaximise: false,
     canResize: false,
@@ -60,7 +61,9 @@ export class Window extends TransientElement {
                     Math.min(0, Math.max(document.body.clientHeight - 20, this.options.position[axis])) + 'px';
             });
         }
-        this.display();
+        if (this.options.autoDisplay) {
+            this.display();
+        }
     }
     build() {
         this.empty();
@@ -84,7 +87,7 @@ export class Window extends TransientElement {
             dblclick: () => this.maximise(),
         }), e('div.body', __classPrivateFieldGet(this, _Window_body, "f") instanceof Node ? __classPrivateFieldGet(this, _Window_body, "f") : e('p', t(__classPrivateFieldGet(this, _Window_body, "f")))));
         this.element().addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
+            if (event.key === 'Escape' && this.options.canClose) {
                 this.close();
             }
             // Capture all keypresses whilst this is focused

@@ -31,6 +31,10 @@ class Game {
             this.configure();
             this.start();
         });
+        electron_1.ipcMain.handle('setOption', (event, { name, value }) => {
+            this.sendData('notification', `setting ${name} to ${value}`);
+            Engine_1.instance.setOption(name, value);
+        });
         electron_1.ipcMain.handle('quit', () => electron_1.app.quit());
     }
     createWindow() {
@@ -62,8 +66,6 @@ class Game {
         // engine.setOption('debug', true);
         Engine_1.instance.setOption('height', 60);
         Engine_1.instance.setOption('width', 80);
-        // TODO: Determine number of players via UI
-        Engine_1.instance.setOption('players', 5);
     }
     receiveData(channel, handler) {
         electron_1.ipcMain.handle(channel, (event, ...args) => handler(...args));

@@ -12,6 +12,7 @@ declare type WindowPosition = {
   y: number;
 };
 export declare type WindowSettings = {
+  autoDisplay: boolean;
   canClose: boolean;
   canMaximise: boolean;
   canResize: boolean;

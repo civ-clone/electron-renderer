@@ -35,7 +35,7 @@ export class NotificationWindow extends Window implements INotificationWindow {
     }
   }
 
-  display(focus = true): Promise<void> {
+  display(focus = true): Promise<any> {
     return new Promise((resolve) => {
       if (document.querySelector('div.notificationWindow')) {
         notificationQueue.push([this, focus, resolve]);
@@ -46,14 +46,14 @@ export class NotificationWindow extends Window implements INotificationWindow {
       super.display();
 
       if (!focus) {
-        resolve();
+        resolve(undefined);
 
         return;
       }
 
       this.element().focus();
 
-      resolve();
+      resolve(undefined);
     });
   }
 }

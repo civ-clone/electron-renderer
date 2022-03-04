@@ -6,6 +6,6 @@ export declare class NotificationWindow
 {
   constructor(title: string, body: string | Node, options?: WindowOptions);
   close(): void;
-  display(focus?: boolean): Promise<void>;
+  display(focus?: boolean): Promise<any>;
 }
 export default NotificationWindow;

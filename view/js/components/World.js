@@ -9,9 +9,29 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _World_tiles, _World_height, _World_width;
+var _World_unknown, _World_lookupCache, _World_tiles, _World_height, _World_width;
 export class World {
     constructor(world) {
+        _World_unknown.set(this, (x, y) => ({
+            _: 'Tile',
+            id: `Tile-${x}--${y}`,
+            city: null,
+            goodyHut: null,
+            improvements: [],
+            isCoast: false,
+            isLand: false,
+            isWater: false,
+            terrain: {
+                _: 'Unknown',
+                id: `UnknownTerrain-${x}--${y}`,
+                features: [],
+            },
+            units: [],
+            x,
+            y,
+            yields: [],
+        }));
+        _World_lookupCache.set(this, {});
         _World_tiles.set(this, void 0);
         _World_height.set(this, void 0);
         _World_width.set(this, void 0);
@@ -26,18 +46,38 @@ export class World {
         while (y < 0) {
             y += __classPrivateFieldGet(this, _World_height, "f");
         }
-        return (__classPrivateFieldGet(this, _World_tiles, "f").filter((tile) => tile.x === x % __classPrivateFieldGet(this, _World_width, "f") && tile.y === y % __classPrivateFieldGet(this, _World_height, "f"))[0] || {
-            improvements: [],
-            isLand: false,
-            isOcean: false,
-            terrain: {
-                _: 'Unknown',
-            },
-            units: [],
-            x,
-            y,
-            yields: [],
-        });
+        while (x > __classPrivateFieldGet(this, _World_width, "f")) {
+            x -= __classPrivateFieldGet(this, _World_width, "f");
+        }
+        while (y > __classPrivateFieldGet(this, _World_height, "f")) {
+            y -= __classPrivateFieldGet(this, _World_height, "f");
+        }
+        const key = [x, y].toString();
+        if (!(key in __classPrivateFieldGet(this, _World_lookupCache, "f"))) {
+            const index = __classPrivateFieldGet(this, _World_tiles, "f").findIndex((tile) => tile.x === x && tile.y === y);
+            if (index === -1) {
+                return __classPrivateFieldGet(this, _World_unknown, "f").call(this, x, y);
+            }
+            __classPrivateFieldGet(this, _World_lookupCache, "f")[key] = index;
+        }
+        return __classPrivateFieldGet(this, _World_tiles, "f")[__classPrivateFieldGet(this, _World_lookupCache, "f")[key]];
+        // return (
+        //   this.#tiles.filter(
+        //     (tile: Tile) =>
+        //       tile.x === x % this.#width && tile.y === y % this.#height
+        //   )[0] || {
+        //     improvements: [],
+        //     isLand: false,
+        //     isOcean: false,
+        //     terrain: {
+        //       _: 'Unknown',
+        //     },
+        //     units: [],
+        //     x,
+        //     y,
+        //     yields: [],
+        //   }
+        // );
     }
     getNeighbour(tile, direction) {
         if (direction === 'n') {
@@ -79,6 +119,6 @@ export class World {
         __classPrivateFieldSet(this, _World_tiles, tiles, "f");
     }
 }
-_World_tiles = new WeakMap(), _World_height = new WeakMap(), _World_width = new WeakMap();
+_World_unknown = new WeakMap(), _World_lookupCache = new WeakMap(), _World_tiles = new WeakMap(), _World_height = new WeakMap(), _World_width = new WeakMap();
 export default World;
 //# sourceMappingURL=World.js.map

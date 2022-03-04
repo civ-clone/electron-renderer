@@ -27,11 +27,11 @@ export class NotificationWindow extends Window {
             }
             super.display();
             if (!focus) {
-                resolve();
+                resolve(undefined);
                 return;
             }
             this.element().focus();
-            resolve();
+            resolve(undefined);
         });
     }
 }

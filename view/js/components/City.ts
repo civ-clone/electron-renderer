@@ -1,7 +1,13 @@
-import { City as CityData, CityBuild, CityGrowth, ITransport } from '../types';
+import {
+  City as CityData,
+  CityGrowth,
+  ITransport,
+  PlainObject,
+} from '../types';
 import { e, h, t } from '../lib/html.js';
 import Cities from './Map/Cities.js';
 import CityBuildSelectionWindow from './CityBuildSelectionWindow.js';
+import DataObserver from '../lib/DataObserver.js';
 import Feature from './Map/Feature.js';
 import Fog from './Map/Fog.js';
 import Improvements from './Map/Improvements.js';
@@ -134,6 +140,7 @@ const buildCityBuildDetails = (
 
 export class City extends Window {
   #city: CityData;
+  #dataObserver: DataObserver;
 
   constructor(city: CityData) {
     super(
@@ -149,48 +156,32 @@ export class City extends Window {
     );
 
     this.#city = city;
-
-    document.addEventListener('patchdatareceived', (event) => {
-      const { detail } = event as CustomEvent,
-        objects = detail?.value?.objects;
-
-      if (!objects) {
-        return;
-      }
-
-      if (city.id in objects || city.build.id in objects) {
-        document.addEventListener(
-          'dataupdated',
-          (event) => {
-            const { detail } = event as CustomEvent,
-              [updatedCity] = (detail?.data?.player?.cities ?? []).filter(
-                (cityData: CityData) => city.id === cityData.id
-              );
-
-            if (!updatedCity) {
-              this.close();
-
-              return;
-            }
-
-            this.#city = updatedCity;
-
-            this.update(
-              buildDetails(
-                updatedCity,
-                () => this.changeProduction(),
-                () => this.completeProduction(city)
-              )
-            );
-
-            this.element().focus();
-          },
-          {
-            once: true,
-          }
+    this.#dataObserver = new DataObserver(
+      [city.id, city.build.id, city.growth.id],
+      (data: PlainObject) => {
+        const [updatedCity] = (data.player?.cities ?? []).filter(
+          (cityData: CityData) => city.id === cityData.id
         );
+
+        if (!updatedCity) {
+          this.close();
+
+          return;
+        }
+
+        this.#city = updatedCity;
+
+        this.update(
+          buildDetails(
+            updatedCity,
+            () => this.changeProduction(),
+            () => this.completeProduction(city)
+          )
+        );
+
+        this.element().focus();
       }
-    });
+    );
 
     this.element().addEventListener('keydown', (event) => {
       if (['c', 'C'].includes(event.key)) {
@@ -207,6 +198,12 @@ export class City extends Window {
     new CityBuildSelectionWindow(this.#city.build, () =>
       this.element().focus()
     );
+  }
+
+  close(): void {
+    this.#dataObserver.dispose();
+
+    super.close();
   }
 
   completeProduction(city: CityData): void {

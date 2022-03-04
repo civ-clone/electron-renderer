@@ -6,6 +6,12 @@ import CityBuild from './Actions/CityBuild.js';
 import EndTurn from './Actions/EndTurn.js';
 import { PlayerAction } from '../types';
 
+declare global {
+  interface GlobalEventHandlersEventMap {
+    actioned: CustomEvent<Action>;
+  }
+}
+
 export interface IActions extends IElement {
   build(actions: PlayerAction[]): void;
 }
@@ -15,7 +21,7 @@ export class Actions extends Element implements IActions {
     super(container);
 
     this.element().addEventListener('actioned', (event) =>
-      (event as CustomEvent<Action>).detail.element().remove()
+      event.detail.element().remove()
     );
 
     this.element().addEventListener('keydown', (event) => {

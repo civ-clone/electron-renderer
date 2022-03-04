@@ -26,6 +26,11 @@ export class Game implements IGame {
       this.start();
     });
 
+    ipcMain.handle('setOption', (event, { name, value }) => {
+      this.sendData('notification', `setting ${name} to ${value}`);
+      engine.setOption(name, value);
+    });
+
     ipcMain.handle('quit', () => app.quit());
   }
 
@@ -93,9 +98,6 @@ export class Game implements IGame {
 
     engine.setOption('height', 60);
     engine.setOption('width', 80);
-
-    // TODO: Determine number of players via UI
-    engine.setOption('players', 5);
   }
 
   private receiveData(
