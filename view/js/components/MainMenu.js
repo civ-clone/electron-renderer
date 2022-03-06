@@ -17,35 +17,40 @@ export class MainMenu extends Element {
     }
     build() {
         this.element().append(e('nav', h(e('button', t('Start a New Game')), {
-            click: async () => {
+            click: () => {
                 this.disableButtons();
-                // TODO: This needs to be done via some `Rule`s or something, so that other plugins can add items in the flow
-                const numberOfPlayers = new MandatorySelection('How many players?', [
-                    {
-                        label: '7 civilizations',
-                        value: 7,
+                // TODO: This needs to be done via some `Rule`s or something and ordered via `Priority`, so that other
+                //  plugins can add items into the flow
+                [
+                    () => {
+                        const numberOfPlayers = new MandatorySelection('How many players?', [
+                            {
+                                label: '7 civilizations',
+                                value: 7,
+                            },
+                            {
+                                label: '6 civilizations',
+                                value: 6,
+                            },
+                            {
+                                label: '5 civilizations',
+                                value: 5,
+                            },
+                            {
+                                label: '4 civilizations',
+                                value: 4,
+                            },
+                            {
+                                label: '3 civilizations',
+                                value: 3,
+                            },
+                        ], (selection) => transport.send('setOption', {
+                            name: 'players',
+                            value: selection,
+                        }));
+                        return numberOfPlayers.display();
                     },
-                    {
-                        label: '6 civilizations',
-                        value: 6,
-                    },
-                    {
-                        label: '5 civilizations',
-                        value: 5,
-                    },
-                    {
-                        label: '4 civilizations',
-                        value: 4,
-                    },
-                    {
-                        label: '3 civilizations',
-                        value: 3,
-                    },
-                ], (selection) => transport.send('setOption', {
-                    name: 'players',
-                    value: selection,
-                }));
-                await numberOfPlayers.display();
+                ].reduce((promise, menu) => promise.then(() => menu()), Promise.resolve());
                 this.remove();
                 transport.send('start');
             },

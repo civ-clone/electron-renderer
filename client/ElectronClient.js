@@ -20,6 +20,7 @@ const PlayerActions_2 = require("@civ-clone/civ1-unit/PlayerActions");
 const ChooseResearch_1 = require("@civ-clone/civ1-science/PlayerActions/ChooseResearch");
 const City_1 = require("@civ-clone/core-city/City");
 const Civilization_1 = require("@civ-clone/core-civilization/Civilization");
+const CompleteProduction_1 = require("@civ-clone/civ1-treasury/PlayerActions/CompleteProduction");
 const DataQueue_1 = require("./DataQueue");
 const PlayerActions_3 = require("@civ-clone/civ1-player/PlayerActions");
 const MandatoryPlayerAction_1 = require("@civ-clone/core-player/MandatoryPlayerAction");
@@ -36,6 +37,7 @@ const Unit_2 = require("../UnknownObjects/Unit");
 const AdvanceRegistry_1 = require("@civ-clone/core-science/AdvanceRegistry");
 const CityRegistry_1 = require("@civ-clone/core-city/CityRegistry");
 const Engine_1 = require("@civ-clone/core-engine/Engine");
+const LeaderRegistry_1 = require("@civ-clone/core-civilization/LeaderRegistry");
 const PlayerResearchRegistry_1 = require("@civ-clone/core-science/PlayerResearchRegistry");
 const PlayerTreasuryRegistry_1 = require("@civ-clone/core-treasury/PlayerTreasuryRegistry");
 const PlayerWorldRegistry_1 = require("@civ-clone/core-player-world/PlayerWorldRegistry");
@@ -43,7 +45,6 @@ const Turn_1 = require("@civ-clone/core-turn-based-game/Turn");
 const UnitRegistry_1 = require("@civ-clone/core-unit/UnitRegistry");
 const Year_1 = require("@civ-clone/core-game-year/Year");
 const EventEmitter = require("events");
-const CompleteProduction_1 = require("@civ-clone/civ1-treasury/PlayerActions/CompleteProduction");
 // const referenceObject = <T extends DataObject = DataObject>(object: T) => ({
 const referenceObject = (object) => ({
     '#ref': object.id(),
@@ -203,6 +204,20 @@ class ElectronClient extends Client_1.Client {
                 }
             });
         });
+        Engine_1.instance.on('city: captured', (city, capturingPlayer, originalPlayer) => {
+            if (originalPlayer === this.player()) {
+                this.sendNotification(`${capturingPlayer
+                    .civilization()
+                    .name()} have captured our city ${city.name()}!`);
+                return;
+            }
+            if (capturingPlayer === this.player()) {
+                this.sendNotification(`We have captured ${city.name()} from ${capturingPlayer
+                    .civilization()
+                    .name()}!`);
+                return;
+            }
+        });
         ['city:created', 'city:captured', 'city:destroyed'].forEach((event) => {
             Engine_1.instance.on(event, (city) => {
                 const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
@@ -262,6 +277,49 @@ class ElectronClient extends Client_1.Client {
         Engine_1.instance.on('player:defeated', (player) => this.sendNotification(`${player.civilization().name()} destroyed by ${player
             .civilization()
             .name()}`));
+    }
+    chooseCivilization(Civilizations) {
+        const makeChoice = (ChosenCivilization) => {
+            this.player().setCivilization(new ChosenCivilization());
+            return this.chooseLeader(this.player().civilization());
+        };
+        return new Promise((resolve, reject) => {
+            if (Civilizations.length === 1) {
+                const [Civilization] = Civilizations;
+                makeChoice(Civilization).then(() => resolve());
+                return;
+            }
+            __classPrivateFieldGet(this, _ElectronClient_sender, "f").call(this, 'chooseCivilization', new TransferObject_1.default({ choices: Civilizations }).toPlainObject());
+            __classPrivateFieldGet(this, _ElectronClient_receiver, "f").call(this, 'chooseCivilization', (choice) => {
+                const [Civilization] = Civilizations.filter((Civilization) => Civilization.name === choice);
+                if (!Civilization) {
+                    reject(`Invalid civilization ${choice} (options: ${Civilizations.map((Civilization) => Civilization.name).join(', ')})`);
+                    return;
+                }
+                makeChoice(Civilization).then(() => resolve());
+            });
+        });
+    }
+    chooseLeader(civilization) {
+        return new Promise((resolve, reject) => {
+            const Leaders = LeaderRegistry_1.instance.getByCivilization(civilization.constructor);
+            if (Leaders.length === 1) {
+                const [Leader] = Leaders;
+                civilization.setLeader(new Leader());
+                resolve();
+                return;
+            }
+            __classPrivateFieldGet(this, _ElectronClient_sender, "f").call(this, 'chooseLeader', new TransferObject_1.default({ choices: Leaders }).toPlainObject());
+            __classPrivateFieldGet(this, _ElectronClient_receiver, "f").call(this, 'chooseLeader', (choice) => {
+                const [Leader] = Leaders.filter((Leader) => Leader.name === choice);
+                if (!Leader) {
+                    reject(`Invalid civilization ${choice} (options: ${Leaders.map((Leader) => Leader.name).join(', ')})`);
+                    return;
+                }
+                civilization.setLeader(new Leader());
+                resolve();
+            });
+        });
     }
     handleAction(...args) {
         const [action] = args, player = this.player(), actions = player.actions(), mandatoryActions = actions.filter((action) => action instanceof MandatoryPlayerAction_1.default);

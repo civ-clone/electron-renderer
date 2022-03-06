@@ -8,6 +8,7 @@ import {
   Tile,
   Unit,
 } from './types';
+import { e, t } from './lib/html.js';
 import { reconstituteData, ObjectMap } from './lib/reconstituteData.js';
 import Actions from './components/Actions.js';
 import ActiveUnit from './components/Map/ActiveUnit.js';
@@ -25,9 +26,11 @@ import Irrigation from './components/Map/Irrigation.js';
 import Land from './components/Map/Land.js';
 import MainMenu from './components/MainMenu.js';
 import Minimap from './components/Minimap.js';
+import NotificationWindow from './components/NotificationWindow.js';
 import Notifications from './components/Notifications.js';
 import PlayerDetails from './components/PlayerDetails.js';
 import Portal from './components/Portal.js';
+import SelectionWindow from './components/SelectionWindow.js';
 import Terrain from './components/Map/Terrain.js';
 import UnitDetails from './components/UnitDetails.js';
 import Units from './components/Map/Units.js';
@@ -79,8 +82,55 @@ try {
     }, 4000);
   });
 
+  [
+    ['chooseCivilization', 'Choose your civilization'],
+    ['chooseLeader', 'Choose your leader'],
+  ].forEach(([channel, label]) =>
+    transport.receive(channel, (rawData) => {
+      const { choices } = reconstituteData(rawData);
+
+      new SelectionWindow(
+        label,
+        choices.map(({ _: choice }: { _: string }) => ({
+          label: choice,
+          value: choice,
+        })),
+        (choice) => transport.send(channel, choice),
+        label,
+        {
+          displayAll: true,
+        }
+      );
+    })
+  );
+
   transport.receiveOnce('gameData', (objectMap: ObjectMap) => {
     const data: GameData = reconstituteData(objectMap) as GameData;
+
+    // TODO: use Intl.ListFormat if available
+    new NotificationWindow(
+      'Welcome',
+      e(
+        'div.welcome',
+        e(
+          'p',
+          t(
+            `${data.player.civilization.leader.name}, you have risen to become leader of the ${data.player.civilization._}.`
+          )
+        ),
+        e(
+          'p',
+          t(
+            `Your people have knowledge of ${[
+              'Irrigation',
+              'Mining',
+              'Roads',
+              ...data.player.research.complete,
+            ].join(', ')}`
+          )
+        )
+      )
+    );
 
     gameArea.classList.add('active');
 
@@ -248,7 +298,11 @@ try {
 
     handler(objectMap);
 
-    transport.receive('gameData', handler);
+    transport.receive('gameData', (data) => {
+      console.log('gameData called again');
+
+      handler(data);
+    });
 
     const pathToParts = (path: string) => path.replace(/]/g, '').split(/[.[]/),
       getPenultimateObject = (

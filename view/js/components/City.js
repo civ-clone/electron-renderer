@@ -67,47 +67,6 @@ export class City extends Window {
             this.update(buildDetails(updatedCity, () => this.changeProduction(), () => this.completeProduction(city)));
             this.element().focus();
         }), "f");
-        // document.addEventListener('patchdatareceived', (event) => {
-        //   const { detail } = event,
-        //     objects = detail.value.objects;
-        //
-        //   if (!objects) {
-        //     return;
-        //   }
-        //
-        //   if (city.id in objects || city.build.id in objects) {
-        //     document.addEventListener(
-        //       'dataupdated',
-        //       (event) => {
-        //         const { detail } = event,
-        //           [updatedCity] = (detail.data?.player?.cities ?? []).filter(
-        //             (cityData: CityData) => city.id === cityData.id
-        //           );
-        //
-        //         if (!updatedCity) {
-        //           this.close();
-        //
-        //           return;
-        //         }
-        //
-        //         this.#city = updatedCity;
-        //
-        //         this.update(
-        //           buildDetails(
-        //             updatedCity,
-        //             () => this.changeProduction(),
-        //             () => this.completeProduction(city)
-        //           )
-        //         );
-        //
-        //         this.element().focus();
-        //       },
-        //       {
-        //         once: true,
-        //       }
-        //     );
-        //   }
-        // });
         this.element().addEventListener('keydown', (event) => {
             if (['c', 'C'].includes(event.key)) {
                 this.changeProduction();

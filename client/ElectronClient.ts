@@ -15,10 +15,12 @@ import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch
 import City from '@civ-clone/core-city/City';
 import CityImprovement from '@civ-clone/core-city-improvement/CityImprovement';
 import Civilization from '@civ-clone/core-civilization/Civilization';
+import CompleteProduction from '@civ-clone/civ1-treasury/PlayerActions/CompleteProduction';
 import DataObject from '@civ-clone/core-data-object/DataObject';
 import DataQueue from './DataQueue';
 import { EndTurn } from '@civ-clone/civ1-player/PlayerActions';
 import GoodyHut from '@civ-clone/core-goody-hut/GoodyHut';
+import { IConstructor } from '@civ-clone/core-registry/Registry';
 import MandatoryPlayerAction from '@civ-clone/core-player/MandatoryPlayerAction';
 import Player from '@civ-clone/core-player/Player';
 import PlayerAction from '@civ-clone/core-player/PlayerAction';
@@ -38,6 +40,7 @@ import Year from '@civ-clone/core-game-year/Year';
 import { instance as advanceRegistryInstance } from '@civ-clone/core-science/AdvanceRegistry';
 import { instance as cityRegistryInstance } from '@civ-clone/core-city/CityRegistry';
 import { instance as engineInstance } from '@civ-clone/core-engine/Engine';
+import { instance as leaderRegistryInstance } from '@civ-clone/core-civilization/LeaderRegistry';
 import { instance as playerResearchRegistryInstance } from '@civ-clone/core-science/PlayerResearchRegistry';
 import { instance as playerTreasuryRegistryInstance } from '@civ-clone/core-treasury/PlayerTreasuryRegistry';
 import { instance as playerWorldRegistryInstance } from '@civ-clone/core-player-world/PlayerWorldRegistry';
@@ -45,7 +48,6 @@ import { instance as turnInstance } from '@civ-clone/core-turn-based-game/Turn';
 import { instance as unitRegistryInstance } from '@civ-clone/core-unit/UnitRegistry';
 import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
 import * as EventEmitter from 'events';
-import CompleteProduction from '@civ-clone/civ1-treasury/PlayerActions/CompleteProduction';
 
 // const referenceObject = <T extends DataObject = DataObject>(object: T) => ({
 const referenceObject = (object: { id(): string }) => ({
@@ -359,6 +361,31 @@ export class ElectronClient extends Client implements IClient {
       });
     });
 
+    engineInstance.on(
+      'city: captured',
+      (city: City, capturingPlayer: Player, originalPlayer: Player) => {
+        if (originalPlayer === this.player()) {
+          this.sendNotification(
+            `${capturingPlayer
+              .civilization()
+              .name()} have captured our city ${city.name()}!`
+          );
+
+          return;
+        }
+
+        if (capturingPlayer === this.player()) {
+          this.sendNotification(
+            `We have captured ${city.name()} from ${capturingPlayer
+              .civilization()
+              .name()}!`
+          );
+
+          return;
+        }
+      }
+    );
+
     ['city:created', 'city:captured', 'city:destroyed'].forEach((event) => {
       engineInstance.on(event, (city) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
@@ -477,6 +504,88 @@ export class ElectronClient extends Client implements IClient {
           .name()}`
       )
     );
+  }
+
+  chooseCivilization(Civilizations: typeof Civilization[]): Promise<void> {
+    const makeChoice = (ChosenCivilization: typeof Civilization) => {
+      this.player().setCivilization(new ChosenCivilization());
+
+      return this.chooseLeader(this.player().civilization());
+    };
+
+    return new Promise((resolve, reject) => {
+      if (Civilizations.length === 1) {
+        const [Civilization] = Civilizations;
+
+        makeChoice(Civilization).then(() => resolve());
+
+        return;
+      }
+
+      this.#sender(
+        'chooseCivilization',
+        new TransferObject({ choices: Civilizations }).toPlainObject()
+      );
+
+      this.#receiver('chooseCivilization', (choice) => {
+        const [Civilization] = Civilizations.filter(
+          (Civilization) => Civilization.name === choice
+        );
+
+        if (!Civilization) {
+          reject(
+            `Invalid civilization ${choice} (options: ${Civilizations.map(
+              (Civilization) => Civilization.name
+            ).join(', ')})`
+          );
+
+          return;
+        }
+
+        makeChoice(Civilization).then(() => resolve());
+      });
+    });
+  }
+
+  chooseLeader(civilization: Civilization): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const Leaders = leaderRegistryInstance.getByCivilization(
+        civilization.constructor as IConstructor<Civilization>
+      );
+
+      if (Leaders.length === 1) {
+        const [Leader] = Leaders;
+
+        civilization.setLeader(new Leader());
+
+        resolve();
+
+        return;
+      }
+
+      this.#sender(
+        'chooseLeader',
+        new TransferObject({ choices: Leaders }).toPlainObject()
+      );
+
+      this.#receiver('chooseLeader', (choice) => {
+        const [Leader] = Leaders.filter((Leader) => Leader.name === choice);
+
+        if (!Leader) {
+          reject(
+            `Invalid civilization ${choice} (options: ${Leaders.map(
+              (Leader) => Leader.name
+            ).join(', ')})`
+          );
+
+          return;
+        }
+
+        civilization.setLeader(new Leader());
+
+        resolve();
+      });
+    });
   }
 
   handleAction(...args: any[]): boolean {

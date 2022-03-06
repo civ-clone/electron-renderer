@@ -61,23 +61,6 @@ export class World {
             __classPrivateFieldGet(this, _World_lookupCache, "f")[key] = index;
         }
         return __classPrivateFieldGet(this, _World_tiles, "f")[__classPrivateFieldGet(this, _World_lookupCache, "f")[key]];
-        // return (
-        //   this.#tiles.filter(
-        //     (tile: Tile) =>
-        //       tile.x === x % this.#width && tile.y === y % this.#height
-        //   )[0] || {
-        //     improvements: [],
-        //     isLand: false,
-        //     isOcean: false,
-        //     terrain: {
-        //       _: 'Unknown',
-        //     },
-        //     units: [],
-        //     x,
-        //     y,
-        //     yields: [],
-        //   }
-        // );
     }
     getNeighbour(tile, direction) {
         if (direction === 'n') {
