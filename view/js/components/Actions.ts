@@ -5,6 +5,7 @@ import ChooseResearch from './Actions/ChooseResearch.js';
 import CityBuild from './Actions/CityBuild.js';
 import EndTurn from './Actions/EndTurn.js';
 import { PlayerAction } from '../types';
+import Portal from './Portal';
 
 declare global {
   interface GlobalEventHandlersEventMap {
@@ -13,12 +14,16 @@ declare global {
 }
 
 export interface IActions extends IElement {
-  build(actions: PlayerAction[]): void;
+  build(actions: PlayerAction[], portal: Portal): void;
 }
 
 export class Actions extends Element implements IActions {
-  constructor(container: HTMLElement = e('div.actions')) {
+  #portal: Portal;
+
+  constructor(container: HTMLElement = e('div.actions'), portal: Portal) {
     super(container);
+
+    this.#portal = portal;
 
     this.element().addEventListener('actioned', (event) =>
       event.detail.element().remove()
@@ -27,7 +32,7 @@ export class Actions extends Element implements IActions {
     this.element().addEventListener('keydown', (event) => {
       const currentChild = document.activeElement;
 
-      if (!currentChild?.matches('div.actions, div.actions *')) {
+      if (!currentChild?.matches('div#actions, div#actions *')) {
         return;
       }
 
@@ -113,7 +118,7 @@ export class Actions extends Element implements IActions {
           break;
 
         case 'CityBuild':
-          action = new CityBuild(playerAction);
+          action = new CityBuild(playerAction, this.#portal);
 
           break;
 

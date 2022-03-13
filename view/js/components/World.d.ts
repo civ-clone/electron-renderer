@@ -7,6 +7,6 @@ export declare class World {
   height(): number;
   tiles(): Tile[];
   width(): number;
-  setTileData(tiles: Tile[]): void;
+  setTiles(tiles: Tile[]): void;
 }
 export default World;

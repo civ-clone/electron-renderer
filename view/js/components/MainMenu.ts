@@ -71,14 +71,16 @@ export class MainMenu extends Element {
                   return numberOfPlayers.display();
                 },
               ] as (() => Promise<any>)[]
-            ).reduce(
-              (promise, menu) => promise.then(() => menu()),
-              Promise.resolve()
-            );
+            )
+              .reduce(
+                (promise, menu) => promise.then(() => menu()),
+                Promise.resolve()
+              )
+              .then(() => {
+                this.remove();
 
-            this.remove();
-
-            transport.send('start');
+                transport.send('start');
+              });
           },
         }),
         // h(e('button', t('Customise World')), {

@@ -1,16 +1,30 @@
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _Actions_portal;
 import { Element } from './Element.js';
 import { e, h } from '../lib/html.js';
 import ChooseResearch from './Actions/ChooseResearch.js';
 import CityBuild from './Actions/CityBuild.js';
 import EndTurn from './Actions/EndTurn.js';
 export class Actions extends Element {
-    constructor(container = e('div.actions')) {
+    constructor(container = e('div.actions'), portal) {
         super(container);
+        _Actions_portal.set(this, void 0);
+        __classPrivateFieldSet(this, _Actions_portal, portal, "f");
         this.element().addEventListener('actioned', (event) => event.detail.element().remove());
         this.element().addEventListener('keydown', (event) => {
             var _a, _b;
             const currentChild = document.activeElement;
-            if (!(currentChild === null || currentChild === void 0 ? void 0 : currentChild.matches('div.actions, div.actions *'))) {
+            if (!(currentChild === null || currentChild === void 0 ? void 0 : currentChild.matches('div#actions, div#actions *'))) {
                 return;
             }
             const { key } = event, children = Array.from(this.element().children);
@@ -69,7 +83,7 @@ export class Actions extends Element {
                     action = new ChooseResearch(playerAction);
                     break;
                 case 'CityBuild':
-                    action = new CityBuild(playerAction);
+                    action = new CityBuild(playerAction, __classPrivateFieldGet(this, _Actions_portal, "f"));
                     break;
                 case 'EndTurn':
                     action = new EndTurn(playerAction);
@@ -90,5 +104,6 @@ export class Actions extends Element {
         });
     }
 }
+_Actions_portal = new WeakMap();
 export default Actions;
 //# sourceMappingURL=Actions.js.map

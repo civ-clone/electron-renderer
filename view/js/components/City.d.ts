@@ -5,6 +5,6 @@ export declare class City extends Window {
   constructor(city: CityData);
   changeProduction(): void;
   close(): void;
-  completeProduction(city: CityData): void;
+  completeProduction(): void;
 }
 export default City;

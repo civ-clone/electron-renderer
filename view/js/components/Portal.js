@@ -9,17 +9,19 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _Portal_canvas, _Portal_center, _Portal_context, _Portal_layers, _Portal_world;
+var _Portal_canvas, _Portal_center, _Portal_context, _Portal_layers, _Portal_scale, _Portal_world;
 import { e } from '../lib/html.js';
 export class Portal {
-    constructor(world, canvas = e('canvas'), ...layers) {
+    constructor(world, canvas = e('canvas'), scale = 2, ...layers) {
         _Portal_canvas.set(this, void 0);
         _Portal_center.set(this, { x: 0, y: 0 });
         _Portal_context.set(this, void 0);
         _Portal_layers.set(this, []);
+        _Portal_scale.set(this, void 0);
         _Portal_world.set(this, void 0);
         __classPrivateFieldSet(this, _Portal_world, world, "f");
         __classPrivateFieldSet(this, _Portal_canvas, canvas, "f");
+        __classPrivateFieldSet(this, _Portal_scale, scale, "f");
         __classPrivateFieldGet(this, _Portal_layers, "f").push(...layers);
         __classPrivateFieldSet(this, _Portal_context, canvas.getContext('2d'), "f");
     }
@@ -30,16 +32,14 @@ export class Portal {
         return __classPrivateFieldGet(this, _Portal_center, "f");
     }
     visibleRange() {
-        // TODO: replace `2` with the scale
-        const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / 2), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / 2);
+        const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f")), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f"));
         return [
             { x: __classPrivateFieldGet(this, _Portal_center, "f").x - xRange, y: __classPrivateFieldGet(this, _Portal_center, "f").y - yRange },
             { x: __classPrivateFieldGet(this, _Portal_center, "f").x + xRange, y: __classPrivateFieldGet(this, _Portal_center, "f").y + yRange },
         ];
     }
     isVisible(x, y) {
-        // TODO: replace `2` with the scale
-        const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / 2), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / 2);
+        const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f")), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f"));
         return (x < __classPrivateFieldGet(this, _Portal_center, "f").x + xRange &&
             x > __classPrivateFieldGet(this, _Portal_center, "f").x - xRange &&
             y < __classPrivateFieldGet(this, _Portal_center, "f").y + yRange &&
@@ -75,12 +75,15 @@ export class Portal {
             }
         }
     }
+    scale() {
+        return __classPrivateFieldGet(this, _Portal_scale, "f");
+    }
     setCenter(x, y) {
         __classPrivateFieldGet(this, _Portal_center, "f").x = x;
         __classPrivateFieldGet(this, _Portal_center, "f").y = y;
         this.render();
     }
 }
-_Portal_canvas = new WeakMap(), _Portal_center = new WeakMap(), _Portal_context = new WeakMap(), _Portal_layers = new WeakMap(), _Portal_world = new WeakMap();
+_Portal_canvas = new WeakMap(), _Portal_center = new WeakMap(), _Portal_context = new WeakMap(), _Portal_layers = new WeakMap(), _Portal_scale = new WeakMap(), _Portal_world = new WeakMap();
 export default Portal;
 //# sourceMappingURL=Portal.js.map

@@ -12,14 +12,7 @@ export class EndTurn extends Action {
   }
 
   build(): void {
-    this.element().append(
-      e(
-        `button.endTurn[title="End turn"]`,
-        e(
-          'img[src="../../node_modules/feather-icons/dist/icons/check-circle.svg"][alt="End turn"]'
-        )
-      )
-    );
+    this.element().append(e(`button.endTurn[title="End turn"]`));
   }
 }
 

@@ -17,5 +17,6 @@ export declare class DataObserver {
   #private;
   constructor(ids: string[], handler: dataUpdatedHandler);
   dispose(): void;
+  setIds(ids: string[]): void;
 }
 export default DataObserver;

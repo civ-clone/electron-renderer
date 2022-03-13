@@ -2,7 +2,6 @@ import { SelectionWindow, } from './SelectionWindow.js';
 export class MandatorySelection extends SelectionWindow {
     constructor(title, optionList, onChoose, body = 'Please choose one of the following:', options = {
         autoDisplay: false,
-        chooseLabel: 'OK',
         canClose: false,
         displayAll: false,
     }) {

@@ -22,9 +22,7 @@ export class Units extends Map {
         const { x, y } = tile, size = this.tileSize(), offsetX = x * size, offsetY = y * size;
         if (tile.units.length > 0 &&
             (__classPrivateFieldGet(this, _Units_activeUnit, "f") !== null ? __classPrivateFieldGet(this, _Units_activeUnit, "f").tile.id !== tile.id : true)) {
-            const [unit] = tile.units.sort((a, b) => { var _a, _b; return ((_a = b.defence) === null || _a === void 0 ? void 0 : _a.value) - ((_b = a.defence) === null || _b === void 0 ? void 0 : _b.value); }), player = unit.player, civilization = player.civilization, [colors] = civilization.attributes.filter((attribute) => attribute.name === 'colors'), image = this.replaceColors(this.getPreloadedImage(`units/${unit._.toLowerCase()}`), 
-            // To come from theme manifest
-            ['#60E064', '#2C7800'], colors.value);
+            const [unit] = tile.units.sort((a, b) => { var _a, _b; return ((_a = b.defence) === null || _a === void 0 ? void 0 : _a.value) - ((_b = a.defence) === null || _b === void 0 ? void 0 : _b.value); }), image = this.renderUnit(unit);
             if (tile.units.length > 1) {
                 this.putImage(image, offsetX - this.scale(), offsetY - this.scale());
             }
@@ -33,6 +31,12 @@ export class Units extends Map {
                 this.drawImage('map/fortify', x, y);
             }
         }
+    }
+    renderUnit(unit) {
+        const player = unit.player, civilization = player.civilization, [colors] = civilization.attributes.filter((attribute) => attribute.name === 'colors');
+        return this.replaceColors(this.getPreloadedImage(`units/${unit._.toLowerCase()}`), 
+        // To come from theme manifest
+        ['#60E064', '#2C7800'], colors.value);
     }
     setActiveUnit(unit) {
         __classPrivateFieldSet(this, _Units_activeUnit, unit, "f");

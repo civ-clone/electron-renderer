@@ -1,12 +1,7 @@
 import { e } from '../lib/html.js';
 import Map from './Map.js';
-import { Tile } from '../types';
+import { Coordinate, Tile } from '../types';
 import World from './World.js';
-
-export type Coordinate = {
-  x: number;
-  y: number;
-};
 
 export interface IPortal {
   build(updatedTiles: Tile[]): void;
@@ -20,15 +15,18 @@ export class Portal implements IPortal {
   #center: Coordinate = { x: 0, y: 0 };
   #context: CanvasRenderingContext2D;
   #layers: Map[] = [];
+  #scale: number;
   #world: World;
 
   constructor(
     world: World,
     canvas: HTMLCanvasElement = e('canvas') as HTMLCanvasElement,
+    scale = 2,
     ...layers: Map[]
   ) {
     this.#world = world;
     this.#canvas = canvas;
+    this.#scale = scale;
     this.#layers.push(...layers);
 
     this.#context = canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -42,12 +40,13 @@ export class Portal implements IPortal {
     return this.#center;
   }
 
-  visibleRange(): { x: number; y: number }[] {
-    // TODO: replace `2` with the scale
+  visibleRange(): [Coordinate, Coordinate] {
     const xRange = Math.floor(
-        this.#canvas.width / this.#layers[0].tileSize() / 2
+        this.#canvas.width / this.#layers[0].tileSize() / this.#scale
       ),
-      yRange = Math.floor(this.#canvas.height / this.#layers[0].tileSize() / 2);
+      yRange = Math.floor(
+        this.#canvas.height / this.#layers[0].tileSize() / this.#scale
+      );
 
     return [
       { x: this.#center.x - xRange, y: this.#center.y - yRange },
@@ -56,11 +55,12 @@ export class Portal implements IPortal {
   }
 
   isVisible(x: number, y: number): boolean {
-    // TODO: replace `2` with the scale
     const xRange = Math.floor(
-        this.#canvas.width / this.#layers[0].tileSize() / 2
+        this.#canvas.width / this.#layers[0].tileSize() / this.#scale
       ),
-      yRange = Math.floor(this.#canvas.height / this.#layers[0].tileSize() / 2);
+      yRange = Math.floor(
+        this.#canvas.height / this.#layers[0].tileSize() / this.#scale
+      );
 
     return (
       x < this.#center.x + xRange &&
@@ -122,6 +122,10 @@ export class Portal implements IPortal {
         });
       }
     }
+  }
+
+  scale(): number {
+    return this.#scale;
   }
 
   setCenter(x: number, y: number): void {

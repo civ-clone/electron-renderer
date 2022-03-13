@@ -1,5 +1,7 @@
-import { CityBuild, ITransport } from '../types';
-import SelectionWindow from './SelectionWindow.js';
+import { City as CityData, CityBuild, ITransport } from '../types';
+import { SelectionWindow, SelectionWindowActions } from './SelectionWindow.js';
+import City from './City.js';
+import Portal from './Portal';
 
 declare var transport: ITransport;
 
@@ -8,7 +10,28 @@ type onCompleteHandler = (hasSelected: boolean, ...args: any[]) => void;
 export class CityBuildSelectionWindow extends SelectionWindow {
   private onComplete: onCompleteHandler;
 
-  constructor(cityBuild: CityBuild, onComplete: onCompleteHandler = () => {}) {
+  public static showCityAction = (city: CityData) => ({
+    label: 'View city',
+    action(selectionWindow: SelectionWindow) {
+      selectionWindow.close();
+
+      new City(city);
+    },
+  });
+  public static showCityOnMapAction = (city: CityData, portal: Portal) => ({
+    label: 'Show on map',
+    action(selectionWindow: SelectionWindow) {
+      selectionWindow.close();
+
+      portal.setCenter(city.tile.x, city.tile.y);
+    },
+  });
+
+  constructor(
+    cityBuild: CityBuild,
+    onComplete: onCompleteHandler = () => {},
+    additionalActions: SelectionWindowActions = {}
+  ) {
     super(
       `What would you like to build in ${cityBuild.city.name}?`,
       cityBuild.available.map((advance) => ({
@@ -29,6 +52,7 @@ export class CityBuildSelectionWindow extends SelectionWindow {
       },
       null,
       {
+        actions: additionalActions,
         displayAll: true,
       }
     );
@@ -39,7 +63,9 @@ export class CityBuildSelectionWindow extends SelectionWindow {
   close(hasSelected: boolean = false): void {
     super.close();
 
-    this.onComplete(hasSelected);
+    if (hasSelected) {
+      this.onComplete(hasSelected);
+    }
   }
 }
 

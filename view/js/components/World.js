@@ -46,10 +46,10 @@ export class World {
         while (y < 0) {
             y += __classPrivateFieldGet(this, _World_height, "f");
         }
-        while (x > __classPrivateFieldGet(this, _World_width, "f")) {
+        while (x >= __classPrivateFieldGet(this, _World_width, "f")) {
             x -= __classPrivateFieldGet(this, _World_width, "f");
         }
-        while (y > __classPrivateFieldGet(this, _World_height, "f")) {
+        while (y >= __classPrivateFieldGet(this, _World_height, "f")) {
             y -= __classPrivateFieldGet(this, _World_height, "f");
         }
         const key = [x, y].toString();
@@ -98,7 +98,7 @@ export class World {
     width() {
         return __classPrivateFieldGet(this, _World_width, "f");
     }
-    setTileData(tiles) {
+    setTiles(tiles) {
         __classPrivateFieldSet(this, _World_tiles, tiles, "f");
     }
 }

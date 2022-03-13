@@ -1,10 +1,6 @@
 import Map from './Map.js';
-import { Tile } from '../types';
+import { Coordinate, Tile } from '../types';
 import World from './World.js';
-export declare type Coordinate = {
-  x: number;
-  y: number;
-};
 export interface IPortal {
   build(updatedTiles: Tile[]): void;
   isVisible(x: number, y: number): boolean;
@@ -13,15 +9,18 @@ export interface IPortal {
 }
 export declare class Portal implements IPortal {
   #private;
-  constructor(world: World, canvas?: HTMLCanvasElement, ...layers: Map[]);
+  constructor(
+    world: World,
+    canvas?: HTMLCanvasElement,
+    scale?: number,
+    ...layers: Map[]
+  );
   build(updatedTiles: Tile[]): void;
   center(): Coordinate;
-  visibleRange(): {
-    x: number;
-    y: number;
-  }[];
+  visibleRange(): [Coordinate, Coordinate];
   isVisible(x: number, y: number): boolean;
   render(): void;
+  scale(): number;
   setCenter(x: number, y: number): void;
 }
 export default Portal;

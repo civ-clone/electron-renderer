@@ -116,7 +116,7 @@ export class Game implements IGame {
   start(): void {
     this.#ready.then((): void => {
       engine.on('engine:start', (): void => {
-        new Array(engine.option('players'))
+        new Array(parseInt(engine.option('players'), 10))
           .fill(0)
           .forEach((value: 0, i: number) => {
             const player = new Player(),

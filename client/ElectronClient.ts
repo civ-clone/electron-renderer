@@ -9,7 +9,7 @@ import {
   CityBuild,
 } from '@civ-clone/core-city-build/PlayerActions';
 import { Client, IClient } from '@civ-clone/core-civ-client/Client';
-import { ActiveUnit } from '@civ-clone/civ1-unit/PlayerActions';
+import { ActiveUnit, InactiveUnit } from '@civ-clone/civ1-unit/PlayerActions';
 import Advance from '@civ-clone/core-science/Advance';
 import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch';
 import City from '@civ-clone/core-city/City';
@@ -36,6 +36,7 @@ import UnitAction from '@civ-clone/core-unit/Action';
 import UnknownCity from '../UnknownObjects/City';
 import UnknownPlayer from '../UnknownObjects/Player';
 import UnknownUnit from '../UnknownObjects/Unit';
+import Wonder from '@civ-clone/core-wonder/Wonder';
 import Year from '@civ-clone/core-game-year/Year';
 import { instance as advanceRegistryInstance } from '@civ-clone/core-science/AdvanceRegistry';
 import { instance as cityRegistryInstance } from '@civ-clone/core-city/CityRegistry';
@@ -247,8 +248,13 @@ export class ElectronClient extends Client implements IClient {
 
         // TODO: check if this is another player first and if there's already another unit there, use an unknown unit
         //  Need to update Units renderer if this happens
-        this.#dataQueue.add(unit.tile().id(), () =>
-          unit.tile().toPlainObject(this.#dataFilter(filterToReference(Player)))
+        this.#dataQueue.update(unit.tile().id(), () =>
+          unit.tile().toPlainObject(
+            this.#dataFilter(
+              // filterToReferenceAllExcept(Tile, Unit, UnknownPlayer, Yield)
+              filterToReference(Player)
+            )
+          )
         );
 
         if (unit.player() !== this.player()) {
@@ -310,38 +316,21 @@ export class ElectronClient extends Client implements IClient {
           return;
         }
 
-        if (unit.player() !== this.player()) {
-          if (playerWorld.includes(action.from())) {
-            this.#dataQueue.update(action.from().id(), () =>
-              action
-                .from()
-                .toPlainObject(
-                  this.#dataFilter(filterToReference(Player, City))
-                )
-            );
-          }
-
-          if (playerWorld.includes(action.to())) {
-            this.#dataQueue.update(action.to().id(), () =>
-              action
-                .to()
-                .toPlainObject(
-                  this.#dataFilter(filterToReference(Player, City))
-                )
-            );
-          }
+        if (playerWorld.includes(action.from())) {
+          this.#dataQueue.update(action.from().id(), () =>
+            action
+              .from()
+              .toPlainObject(this.#dataFilter(filterToReference(Player, City)))
+          );
         }
 
-        action
-          .to()
-          .getSurroundingArea(unit.visibility().value())
-          .forEach((tile: Tile) =>
-            this.#dataQueue.update(tile.id(), () =>
-              tile.toPlainObject(
-                this.#dataFilter(filterToReference(Player, City))
-              )
-            )
+        if (playerWorld.includes(action.to())) {
+          this.#dataQueue.update(action.to().id(), () =>
+            action
+              .to()
+              .toPlainObject(this.#dataFilter(filterToReference(Player, City)))
           );
+        }
       });
     });
 
@@ -362,9 +351,21 @@ export class ElectronClient extends Client implements IClient {
     });
 
     engineInstance.on(
-      'city: captured',
+      'city:captured',
       (city: City, capturingPlayer: Player, originalPlayer: Player) => {
         if (originalPlayer === this.player()) {
+          const playerCities = cityRegistryInstance.getByPlayer(this.player()),
+            cityIndex = playerCities.indexOf(city);
+
+          if (cityIndex !== -1) {
+            this.#dataQueue.update(this.player().id(), () =>
+              this.player().toPlainObject(
+                this.#dataFilter(filterToReferenceAllExcept(Player))
+              )
+            );
+            // this.#dataQueue.remove(this.player().id(), `cities[${cityIndex}]`);
+          }
+
           this.sendNotification(
             `${capturingPlayer
               .civilization()
@@ -399,32 +400,33 @@ export class ElectronClient extends Client implements IClient {
         this.#dataQueue.update(city.tile().id(), () =>
           city.tile().toPlainObject(this.#dataFilter(filterToReference(Player)))
         );
-
-        if (city.player() !== this.player()) {
-          return;
-        }
-
-        if (event === 'city:captured') {
-          const playerCities = cityRegistryInstance.getByPlayer(this.player()),
-            cityIndex = playerCities.indexOf(city);
-
-          if (cityIndex === -1) {
-          }
-
-          this.#dataQueue.add(
-            this.player().id(),
-            () =>
-              city
-                .tile()
-                .toPlainObject(this.#dataFilter(filterToReference(Tile))),
-            `cities[]`
-          );
-        }
       });
     });
 
     engineInstance.on('city:building-complete', (cityBuild, build) => {
-      if (cityBuild.city().player() !== this.player()) {
+      const playerWorld = playerWorldRegistryInstance.getByPlayer(
+        this.player()
+      );
+
+      if (
+        cityBuild.city().player() !== this.player() &&
+        build instanceof Wonder
+      ) {
+        this.sendNotification(
+          `${
+            playerWorld.includes(cityBuild.city().tile())
+              ? cityBuild.city().name()
+              : 'A faraway city'
+          } has completed work on ${build.constructor.name}!`
+        );
+
+        return;
+      }
+
+      if (
+        cityBuild.city().player() !== this.player() &&
+        !(build instanceof Wonder)
+      ) {
         return;
       }
 
@@ -504,6 +506,12 @@ export class ElectronClient extends Client implements IClient {
           .name()}`
       )
     );
+
+    engineInstance.on('city:civil-disorder', (city: City) => {
+      if (city.player() === this.player()) {
+        this.sendNotification(`Civil disorder in ${city.name()}!`);
+      }
+    });
   }
 
   chooseCivilization(Civilizations: typeof Civilization[]): Promise<void> {
@@ -633,6 +641,7 @@ export class ElectronClient extends Client implements IClient {
           ...unit.actions(),
           ...Object.values(unit.actionsForNeighbours()),
         ].flat();
+
       let actions = allActions.filter(
         (action: UnitAction): boolean => action.constructor.name === unitAction
       );
@@ -662,6 +671,14 @@ export class ElectronClient extends Client implements IClient {
       const [actionToPerform] = actions;
 
       actionToPerform.perform();
+
+      return false;
+    }
+
+    if (playerAction instanceof InactiveUnit) {
+      const unit: Unit = playerAction.value();
+
+      unit.activate();
 
       return false;
     }

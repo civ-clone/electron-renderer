@@ -40,11 +40,11 @@ export class World {
       y += this.#height;
     }
 
-    while (x > this.#width) {
+    while (x >= this.#width) {
       x -= this.#width;
     }
 
-    while (y > this.#height) {
+    while (y >= this.#height) {
       y -= this.#height;
     }
 
@@ -113,7 +113,7 @@ export class World {
     return this.#width;
   }
 
-  setTileData(tiles: Tile[]): void {
+  setTiles(tiles: Tile[]): void {
     this.#tiles = tiles;
   }
 }

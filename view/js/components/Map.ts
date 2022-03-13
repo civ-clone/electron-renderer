@@ -11,7 +11,6 @@ export interface IMap {
 }
 
 export class Map implements IMap {
-  #activeUnit: Unit | null;
   #canvas: HTMLCanvasElement;
   #context: CanvasRenderingContext2D;
   #visible: boolean = true;
@@ -22,11 +21,9 @@ export class Map implements IMap {
 
   constructor(
     world: World,
-    canvas: HTMLCanvasElement = e('canvas') as HTMLCanvasElement,
-    activeUnit: Unit | null = null,
-    scale: number = 2
+    scale: number = 2,
+    canvas: HTMLCanvasElement = e('canvas') as HTMLCanvasElement
   ) {
-    this.#activeUnit = activeUnit;
     this.#canvas = canvas;
     this.#world = world;
     this.#tileSize = 16;

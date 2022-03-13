@@ -7,17 +7,21 @@
   right: 0;
 
   .action {
-    margin: 1em;
+    margin: 0 1em 1em;
+    text-align: right;
 
     button {
       appearance: none;
       border-radius: 50%;
-      background: #ccc none no-repeat center center;
+      background: #ccc none no-repeat center / 16px;
       box-shadow: 2px 2px 2px rgba(0, 0, 0, .4);
+      box-sizing: content-box;
       cursor: pointer;
-      height: 3em;
+      font-size: 12px;
+      height: 3.1em;
       outline: none;
-      width: 3em;
+      padding: 0;
+      width: 3.1em;
 
       &:active {
         background-color: #aaa;
@@ -32,8 +36,6 @@
 
       &.chooseResearch,
       &.cityBuild {
-        background-position: 0.5625em 0.5625em;
-        background-size: 16px;
         image-rendering: pixelated;
       }
 
@@ -56,6 +58,11 @@
       }
 
       &.endTurn {
+        background-image: url('../../node_modules/feather-icons/dist/icons/check-circle.svg');
+        background-size: 50%;
+        border-width: 3px;
+        font-size: 18px;
+
         &:focus,
         &:focus-visible {
           border-color: #daa520;

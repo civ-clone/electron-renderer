@@ -34,6 +34,7 @@ const Unit_1 = require("@civ-clone/core-unit/Unit");
 const City_2 = require("../UnknownObjects/City");
 const Player_2 = require("../UnknownObjects/Player");
 const Unit_2 = require("../UnknownObjects/Unit");
+const Wonder_1 = require("@civ-clone/core-wonder/Wonder");
 const AdvanceRegistry_1 = require("@civ-clone/core-science/AdvanceRegistry");
 const CityRegistry_1 = require("@civ-clone/core-city/CityRegistry");
 const Engine_1 = require("@civ-clone/core-engine/Engine");
@@ -155,7 +156,9 @@ class ElectronClient extends Client_1.Client {
                 }
                 // TODO: check if this is another player first and if there's already another unit there, use an unknown unit
                 //  Need to update Units renderer if this happens
-                __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").add(unit.tile().id(), () => unit.tile().toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))));
+                __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(unit.tile().id(), () => unit.tile().toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, 
+                // filterToReferenceAllExcept(Tile, Unit, UnknownPlayer, Yield)
+                filterToReference(Player_1.default))));
                 if (unit.player() !== this.player()) {
                     return;
                 }
@@ -178,22 +181,16 @@ class ElectronClient extends Client_1.Client {
                     !playerWorld.includes(action.to())) {
                     return;
                 }
-                if (unit.player() !== this.player()) {
-                    if (playerWorld.includes(action.from())) {
-                        __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(action.from().id(), () => action
-                            .from()
-                            .toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default, City_1.default))));
-                    }
-                    if (playerWorld.includes(action.to())) {
-                        __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(action.to().id(), () => action
-                            .to()
-                            .toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default, City_1.default))));
-                    }
+                if (playerWorld.includes(action.from())) {
+                    __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(action.from().id(), () => action
+                        .from()
+                        .toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default, City_1.default))));
                 }
-                action
-                    .to()
-                    .getSurroundingArea(unit.visibility().value())
-                    .forEach((tile) => __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(tile.id(), () => tile.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default, City_1.default)))));
+                if (playerWorld.includes(action.to())) {
+                    __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(action.to().id(), () => action
+                        .to()
+                        .toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default, City_1.default))));
+                }
             });
         });
         ['tile-improvement:built', 'tile-improvement:pillaged'].forEach((event) => {
@@ -204,8 +201,13 @@ class ElectronClient extends Client_1.Client {
                 }
             });
         });
-        Engine_1.instance.on('city: captured', (city, capturingPlayer, originalPlayer) => {
+        Engine_1.instance.on('city:captured', (city, capturingPlayer, originalPlayer) => {
             if (originalPlayer === this.player()) {
+                const playerCities = CityRegistry_1.instance.getByPlayer(this.player()), cityIndex = playerCities.indexOf(city);
+                if (cityIndex !== -1) {
+                    __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(this.player().id(), () => this.player().toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReferenceAllExcept(Player_1.default))));
+                    // this.#dataQueue.remove(this.player().id(), `cities[${cityIndex}]`);
+                }
                 this.sendNotification(`${capturingPlayer
                     .civilization()
                     .name()} have captured our city ${city.name()}!`);
@@ -225,21 +227,19 @@ class ElectronClient extends Client_1.Client {
                     return;
                 }
                 __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(city.tile().id(), () => city.tile().toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))));
-                if (city.player() !== this.player()) {
-                    return;
-                }
-                if (event === 'city:captured') {
-                    const playerCities = CityRegistry_1.instance.getByPlayer(this.player()), cityIndex = playerCities.indexOf(city);
-                    if (cityIndex === -1) {
-                    }
-                    __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").add(this.player().id(), () => city
-                        .tile()
-                        .toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Tile_1.default))), `cities[]`);
-                }
             });
         });
         Engine_1.instance.on('city:building-complete', (cityBuild, build) => {
-            if (cityBuild.city().player() !== this.player()) {
+            const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
+            if (cityBuild.city().player() !== this.player() &&
+                build instanceof Wonder_1.default) {
+                this.sendNotification(`${playerWorld.includes(cityBuild.city().tile())
+                    ? cityBuild.city().name()
+                    : 'A faraway city'} has completed work on ${build.constructor.name}!`);
+                return;
+            }
+            if (cityBuild.city().player() !== this.player() &&
+                !(build instanceof Wonder_1.default)) {
                 return;
             }
             __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(cityBuild.id(), () => cityBuild.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Tile_1.default, Unit_1.default, Player_1.default))));
@@ -277,6 +277,11 @@ class ElectronClient extends Client_1.Client {
         Engine_1.instance.on('player:defeated', (player) => this.sendNotification(`${player.civilization().name()} destroyed by ${player
             .civilization()
             .name()}`));
+        Engine_1.instance.on('city:civil-disorder', (city) => {
+            if (city.player() === this.player()) {
+                this.sendNotification(`Civil disorder in ${city.name()}!`);
+            }
+        });
     }
     chooseCivilization(Civilizations) {
         const makeChoice = (ChosenCivilization) => {
@@ -361,6 +366,11 @@ class ElectronClient extends Client_1.Client {
             }
             const [actionToPerform] = actions;
             actionToPerform.perform();
+            return false;
+        }
+        if (playerAction instanceof PlayerActions_2.InactiveUnit) {
+            const unit = playerAction.value();
+            unit.activate();
             return false;
         }
         if (playerAction instanceof PlayerActions_1.CityBuild ||

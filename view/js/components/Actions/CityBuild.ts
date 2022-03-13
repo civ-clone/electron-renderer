@@ -1,11 +1,26 @@
-import { CityBuild as CityBuildObject } from '../../types';
+import { CityBuild as CityBuildObject, PlayerAction } from '../../types';
 import { e, h } from '../../lib/html.js';
 import Action from './Action.js';
 import CityBuildSelectionWindow from '../CityBuildSelectionWindow.js';
+import Portal from '../Portal.js';
 
 export class CityBuild extends Action {
+  #portal: Portal;
+
+  constructor(action: PlayerAction, portal: Portal) {
+    super(action);
+
+    this.#portal = portal;
+  }
+
   public activate(): void {
-    new CityBuildSelectionWindow(this.value(), () => this.complete());
+    new CityBuildSelectionWindow(this.value(), () => this.complete(), {
+      showCity: CityBuildSelectionWindow.showCityAction(this.value().city),
+      showCityOnMap: CityBuildSelectionWindow.showCityOnMapAction(
+        this.value().city,
+        this.#portal
+      ),
+    });
   }
 
   build(): void {

@@ -19,17 +19,7 @@ export class Units extends Map implements IMap {
       const [unit] = tile.units.sort(
           (a: Unit, b: Unit): number => b.defence?.value - a.defence?.value
         ),
-        player = unit.player,
-        civilization = player.civilization,
-        [colors] = civilization.attributes.filter(
-          (attribute) => attribute.name === 'colors'
-        ),
-        image = this.replaceColors(
-          this.getPreloadedImage(`units/${unit._.toLowerCase()}`),
-          // To come from theme manifest
-          ['#60E064', '#2C7800'],
-          colors.value
-        );
+        image = this.renderUnit(unit);
 
       if (tile.units.length > 1) {
         this.putImage(image, offsetX - this.scale(), offsetY - this.scale());
@@ -43,6 +33,21 @@ export class Units extends Map implements IMap {
         this.drawImage('map/fortify', x, y);
       }
     }
+  }
+
+  protected renderUnit(unit: Unit): CanvasImageSource {
+    const player = unit.player,
+      civilization = player.civilization,
+      [colors] = civilization.attributes.filter(
+        (attribute) => attribute.name === 'colors'
+      );
+
+    return this.replaceColors(
+      this.getPreloadedImage(`units/${unit._.toLowerCase()}`),
+      // To come from theme manifest
+      ['#60E064', '#2C7800'],
+      colors.value
+    );
   }
 
   setActiveUnit(unit: Unit | null): void {

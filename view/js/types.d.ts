@@ -39,6 +39,7 @@ export interface City extends EntityInstance {
   tile: Tile;
   tiles: Tile[];
   tilesWorked: Tile[];
+  units: Unit[];
   yields: Yield[];
 }
 
@@ -103,6 +104,7 @@ export interface Unit extends EntityInstance {
   actionsForNeighbours: {
     [key: string]: UnitAction[];
   };
+  active: boolean;
   attack: Yield;
   city: City;
   defence: Yield;
@@ -125,7 +127,12 @@ export interface Terrain extends EntityInstance {
   features: EntityInstance[];
 }
 
-export interface Tile extends EntityInstance {
+export interface Coordinate {
+  x: number;
+  y: number;
+}
+
+export interface Tile extends EntityInstance, Coordinate {
   city: City | null;
   goodyHut: EntityInstance | null;
   improvements: EntityInstance[];
@@ -134,8 +141,6 @@ export interface Tile extends EntityInstance {
   isWater: boolean;
   terrain: Terrain;
   units: Unit[];
-  x: number;
-  y: number;
   yields: Yield[];
 }
 

@@ -30,7 +30,7 @@ const options = {
     autoEndOfTurn: true,
 };
 try {
-    const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimapCanvas = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications(), actions = new Actions(actionArea), mainMenu = new MainMenu(mainMenuElement);
+    const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimapCanvas = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications(), mainMenu = new MainMenu(mainMenuElement);
     const tilesToRender = [];
     let globalNotificationTimer, lastUnit;
     transport.receive('notification', (data) => {
@@ -67,11 +67,11 @@ try {
         gameArea.classList.add('active');
         mapPortal.width = mapPortal.parentElement.offsetWidth;
         mapPortal.height = mapPortal.parentElement.offsetHeight;
-        const world = new World(data.player.world);
+        const scale = 2, world = new World(data.player.world);
         let activeUnit = null, activeUnits = [];
-        const intervalHandler = new IntervalHandler(), eventHandler = new EventHandler(), landMap = new Land(world), irrigationMap = new Irrigation(world), terrainMap = new Terrain(world), improvementsMap = new Improvements(world), featureMap = new Feature(world), goodyHutsMap = new GoodyHuts(world), fogMap = new Fog(world), yieldsMap = new Yields(world), unitsMap = new Units(world), citiesMap = new Cities(world), cityNamesMap = new CityNames(world), activeUnitsMap = new ActiveUnit(world);
+        const intervalHandler = new IntervalHandler(), eventHandler = new EventHandler(), landMap = new Land(world, scale), irrigationMap = new Irrigation(world, scale), terrainMap = new Terrain(world, scale), improvementsMap = new Improvements(world, scale), featureMap = new Feature(world, scale), goodyHutsMap = new GoodyHuts(world, scale), fogMap = new Fog(world, scale), yieldsMap = new Yields(world, scale), unitsMap = new Units(world, scale), citiesMap = new Cities(world, scale), cityNamesMap = new CityNames(world, scale), activeUnitsMap = new ActiveUnit(world, scale);
         yieldsMap.setVisible(false);
-        const portal = new Portal(world, mapPortal, landMap, irrigationMap, terrainMap, improvementsMap, featureMap, goodyHutsMap, fogMap, yieldsMap, unitsMap, citiesMap, cityNamesMap, activeUnitsMap), minimap = new Minimap(minimapCanvas, world, portal, landMap, citiesMap);
+        const portal = new Portal(world, mapPortal, scale, landMap, irrigationMap, terrainMap, improvementsMap, featureMap, goodyHutsMap, fogMap, yieldsMap, unitsMap, citiesMap, cityNamesMap, activeUnitsMap), minimap = new Minimap(minimapCanvas, world, portal, landMap, citiesMap), actions = new Actions(actionArea, portal);
         intervalHandler.on(() => {
             activeUnitsMap.setVisible(!activeUnitsMap.isVisible());
             portal.build(tilesToRender.splice(0));
@@ -89,7 +89,7 @@ try {
             // A bit crude, I'd like to run this as as background job too
             if (orphanIds) {
                 // clean up orphan data
-                orphanIds.forEach((id) => delete objectMap.objects[id]);
+                setTimeout(((orphanIds) => () => orphanIds.forEach((id) => delete objectMap.objects[id]))(orphanIds), 1);
                 clearNextTurn = false;
             }
             document.dispatchEvent(new CustomEvent('dataupdated', {
@@ -103,7 +103,7 @@ try {
             }
             actions.build(data.player.mandatoryActions);
             gameArea.append(actions.element());
-            world.setTileData(data.player.world.tiles);
+            world.setTiles(data.player.world.tiles);
             const gameDetails = new GameDetails(gameInfo, data.turn, data.year);
             gameDetails.build();
             const playerDetails = new PlayerDetails(playerInfo, data.player);
@@ -137,6 +137,11 @@ try {
                     portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
                     portal.render();
                 }
+            }
+            else {
+                unitsMap.setActiveUnit(null);
+                activeUnitsMap.setActiveUnit(null);
+                portal.render();
             }
             // ensure UI looks responsive
             portal.build(tilesToRender.splice(0));
@@ -251,12 +256,18 @@ try {
                 while (y > world.height()) {
                     y -= world.height();
                 }
-                const tile = world.get(Math.trunc(x), Math.trunc(y));
+                const tile = world.get(Math.trunc(x), Math.trunc(y)), playerTileUnits = tile.units.filter((unit) => unit.player.id === data.player.id && !unit.active);
                 if (tile.city) {
                     new City(tile.city);
                 }
-                else if (tile.units.length) {
-                    console.log(tile.units);
+                else if (playerTileUnits.length) {
+                    new SelectionWindow('Activate unit', playerTileUnits.map((unit) => ({
+                        label: unit._,
+                        value: unit.id,
+                    })), (selection) => transport.send('action', {
+                        name: 'InactiveUnit',
+                        id: selection,
+                    }), null);
                 }
                 else {
                     portal.setCenter(tile.x, tile.y);

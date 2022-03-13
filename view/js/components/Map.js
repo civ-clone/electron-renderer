@@ -9,11 +9,10 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _Map_activeUnit, _Map_canvas, _Map_context, _Map_visible, _Map_preload, _Map_scale, _Map_tileSize, _Map_world;
+var _Map_canvas, _Map_context, _Map_visible, _Map_preload, _Map_scale, _Map_tileSize, _Map_world;
 import { e } from '../lib/html.js';
 export class Map {
-    constructor(world, canvas = e('canvas'), activeUnit = null, scale = 2) {
-        _Map_activeUnit.set(this, void 0);
+    constructor(world, scale = 2, canvas = e('canvas')) {
         _Map_canvas.set(this, void 0);
         _Map_context.set(this, void 0);
         _Map_visible.set(this, true);
@@ -21,7 +20,6 @@ export class Map {
         _Map_scale.set(this, void 0);
         _Map_tileSize.set(this, void 0);
         _Map_world.set(this, void 0);
-        __classPrivateFieldSet(this, _Map_activeUnit, activeUnit, "f");
         __classPrivateFieldSet(this, _Map_canvas, canvas, "f");
         __classPrivateFieldSet(this, _Map_world, world, "f");
         __classPrivateFieldSet(this, _Map_tileSize, 16, "f");
@@ -165,6 +163,6 @@ export class Map {
         __classPrivateFieldSet(this, _Map_visible, visible, "f");
     }
 }
-_Map_activeUnit = new WeakMap(), _Map_canvas = new WeakMap(), _Map_context = new WeakMap(), _Map_visible = new WeakMap(), _Map_preload = new WeakMap(), _Map_scale = new WeakMap(), _Map_tileSize = new WeakMap(), _Map_world = new WeakMap();
+_Map_canvas = new WeakMap(), _Map_context = new WeakMap(), _Map_visible = new WeakMap(), _Map_preload = new WeakMap(), _Map_scale = new WeakMap(), _Map_tileSize = new WeakMap(), _Map_world = new WeakMap();
 export default Map;
 //# sourceMappingURL=Map.js.map

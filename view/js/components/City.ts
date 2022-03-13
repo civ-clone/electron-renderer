@@ -7,6 +7,7 @@ import {
 import { e, h, t } from '../lib/html.js';
 import Cities from './Map/Cities.js';
 import CityBuildSelectionWindow from './CityBuildSelectionWindow.js';
+import ConfirmationWindow from './ConfirmationWindow.js';
 import DataObserver from '../lib/DataObserver.js';
 import Feature from './Map/Feature.js';
 import Fog from './Map/Fog.js';
@@ -66,6 +67,8 @@ const buildCityBuildDetails = (
       map = new Portal(
         world,
         mapCanvas,
+        // TODO: have this passed in from the underlying trigger
+        2,
         landMap,
         irrigationMap,
         terrainMap,
@@ -114,11 +117,33 @@ const buildCityBuildDetails = (
         )
       ),
       e(
-        'div.units',
-        e('header', t('Units')),
+        'div.garrisoned-units',
+        e('header', t('Garrisoned Units')),
         e(
           'ul',
           ...city.tile.units.map((unit) =>
+            e(
+              'li',
+              t(
+                unit._ +
+                  (unit.improvements.length
+                    ? ' (' +
+                      unit.improvements
+                        .map((improvement) => improvement._)
+                        .join(', ') +
+                      ')'
+                    : '')
+              )
+            )
+          )
+        )
+      ),
+      e(
+        'div.supported-units',
+        e('header', t('Supported Units')),
+        e(
+          'ul',
+          ...city.units.map((unit) =>
             e(
               'li',
               t(
@@ -148,7 +173,7 @@ export class City extends Window {
       buildDetails(
         city,
         () => this.changeProduction(),
-        () => this.completeProduction(city)
+        () => this.completeProduction()
       ),
       {
         size: 'maximised',
@@ -157,12 +182,18 @@ export class City extends Window {
 
     this.#city = city;
     this.#dataObserver = new DataObserver(
-      [city.id, city.build.id, city.growth.id],
+      [
+        city.id,
+        city.build.id,
+        city.growth.id,
+        ...city.units.map((unit) => unit.id),
+      ],
       (data: PlainObject) => {
-        const [updatedCity] = (data.player?.cities ?? []).filter(
-          (cityData: CityData) => city.id === cityData.id
-        );
+        const [updatedCity] = (
+          (data.player?.cities ?? []) as CityData[]
+        ).filter((cityData: CityData) => city.id === cityData.id);
 
+        // City must have been captured or destroyed
         if (!updatedCity) {
           this.close();
 
@@ -171,11 +202,18 @@ export class City extends Window {
 
         this.#city = updatedCity;
 
+        this.#dataObserver.setIds([
+          updatedCity.id,
+          updatedCity.build.id,
+          updatedCity.growth.id,
+          ...updatedCity.units.map((unit) => unit.id),
+        ]);
+
         this.update(
           buildDetails(
             updatedCity,
             () => this.changeProduction(),
-            () => this.completeProduction(city)
+            () => this.completeProduction()
           )
         );
 
@@ -186,9 +224,19 @@ export class City extends Window {
     this.element().addEventListener('keydown', (event) => {
       if (['c', 'C'].includes(event.key)) {
         this.changeProduction();
+
+        event.preventDefault();
+        event.stopPropagation();
       }
 
-      if (event.key === 'Enter') {
+      if (['b', 'B'].includes(event.key)) {
+        this.completeProduction();
+
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      if (['Enter', 'x', 'X'].includes(event.key)) {
         this.close();
       }
     });
@@ -206,11 +254,20 @@ export class City extends Window {
     super.close();
   }
 
-  completeProduction(city: CityData): void {
-    transport.send('action', {
-      name: 'CompleteProduction',
-      id: city.id,
-    });
+  completeProduction(): void {
+    if (!this.#city.build.building) {
+      return;
+    }
+
+    new ConfirmationWindow(
+      'Are you sure?',
+      `Do you want to rush building of ${this.#city.build.building._}`,
+      () =>
+        transport.send('action', {
+          name: 'CompleteProduction',
+          id: this.#city.id,
+        })
+    );
   }
 }
 

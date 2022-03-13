@@ -1,19 +1,32 @@
 import { e, h, t } from '../lib/html.js';
-import NotificationWindow from './NotificationWindow.js';
-import { WindowOptions } from './Window';
+import {
+  NotificationWindow,
+  NotificationWindowOptions,
+} from './NotificationWindow.js';
 
 export interface SelectionWindowOption {
   label?: string;
   value: any;
 }
 
-export interface SelectionWindowOptions extends WindowOptions {
+export interface SelectionWindowAction {
+  label: string;
+  action: (select: SelectionWindow) => void;
+}
+
+export interface SelectionWindowActions {
+  [key: string]: SelectionWindowAction;
+}
+
+export interface SelectionWindowOptions extends NotificationWindowOptions {
+  actions?: SelectionWindowActions;
   autoFocus?: boolean;
-  chooseLabel?: string;
   displayAll?: boolean;
 }
 
 export class SelectionWindow extends NotificationWindow {
+  #selectionList: HTMLSelectElement;
+
   constructor(
     title: string,
     optionList: SelectionWindowOption[],
@@ -23,9 +36,16 @@ export class SelectionWindow extends NotificationWindow {
   ) {
     options = {
       autoFocus: true,
-      chooseLabel: 'OK',
       displayAll: false,
       ...options,
+      actions: {
+        primary: {
+          label: 'OK',
+          action: (selectionWindow) =>
+            chooseHandler(selectionWindow.selectionList().value),
+        },
+        ...options.actions,
+      },
     };
 
     const chooseHandler = (selection: string): void => {
@@ -39,7 +59,7 @@ export class SelectionWindow extends NotificationWindow {
 
         onChoose(selection);
       },
-      selectionList = h(
+      selectionList: HTMLSelectElement = h(
         e(
           'select',
           ...optionList.map((option) =>
@@ -55,13 +75,11 @@ export class SelectionWindow extends NotificationWindow {
               chooseHandler(selectionList.value);
             }
           },
-          dblclick: () => {
-            chooseHandler(selectionList.value);
-          },
+          dblclick: () => chooseHandler(selectionList.value),
         }
       );
 
-    if (options.displayAll) {
+    if (options.displayAll && optionList.length > 1) {
       selectionList.setAttribute('size', optionList.length.toString());
     }
 
@@ -81,24 +99,36 @@ export class SelectionWindow extends NotificationWindow {
         selectionList,
         e(
           'footer',
-          h(e('button', t(options.chooseLabel ?? 'OK')), {
-            click: () => chooseHandler(selectionList.value),
-          })
+          ...Object.entries(options.actions!).map(([, { label, action }]) =>
+            h(e('button', t(label)), {
+              click: () => action(this),
+              keydown: (event) => {
+                if (event.key === 'Enter') {
+                  action(this);
+                }
+              },
+            })
+          )
         )
       )
     );
 
     this.element().classList.add('selectionWindow');
+    this.#selectionList = selectionList;
   }
 
   display(): Promise<any> {
     return super.display(false).then(() => {
       const select = this.element().querySelector('select');
 
-      if (select!.hasAttribute('autofocus')) {
-        select!.focus();
+      if (select && select.hasAttribute('autofocus')) {
+        select.focus();
       }
     });
+  }
+
+  selectionList(): HTMLSelectElement {
+    return this.#selectionList;
   }
 }
 

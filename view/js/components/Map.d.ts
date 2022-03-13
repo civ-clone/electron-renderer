@@ -1,4 +1,4 @@
-import { NeighbourDirection, Tile, Unit } from '../types';
+import { NeighbourDirection, Tile } from '../types';
 import World from './World.js';
 export interface IMap {
   context(): CanvasRenderingContext2D;
@@ -9,12 +9,7 @@ export interface IMap {
 }
 export declare class Map implements IMap {
   #private;
-  constructor(
-    world: World,
-    canvas?: HTMLCanvasElement,
-    activeUnit?: Unit | null,
-    scale?: number
-  );
+  constructor(world: World, scale?: number, canvas?: HTMLCanvasElement);
   canvas(): HTMLCanvasElement;
   clear(): void;
   context(): CanvasRenderingContext2D;

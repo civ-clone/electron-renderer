@@ -41,6 +41,10 @@ export const reconstituteData = (
         orphanIds.splice(orphanIds.indexOf(value['#ref']), 1);
       }
 
+      if (!(value['#ref'] in objects)) {
+        throw new TypeError(`missing ${value['#ref']}`);
+      }
+
       const updated = getReferences(objects[value['#ref']]);
 
       seenObjects.set(value, updated);

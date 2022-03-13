@@ -14,8 +14,11 @@ declare global {
 
 export class DataObserver {
   #handler: (event: patchDataReceivedEvent) => void;
+  #ids: string[] = [];
 
   constructor(ids: string[], handler: dataUpdatedHandler) {
+    this.setIds(ids);
+
     this.#handler = (event) => {
       const { detail } = event,
         objects = detail.value.objects;
@@ -24,7 +27,7 @@ export class DataObserver {
         return;
       }
 
-      if (ids.some((id) => id in objects)) {
+      if (this.#ids.some((id) => id in objects)) {
         document.addEventListener(
           'dataupdated',
           (event) => handler(event.detail.data),
@@ -40,6 +43,10 @@ export class DataObserver {
 
   dispose(): void {
     document.removeEventListener('patchdatareceived', this.#handler);
+  }
+
+  setIds(ids: string[]): void {
+    this.#ids.splice(0, this.#ids.length, ...ids);
   }
 }
 

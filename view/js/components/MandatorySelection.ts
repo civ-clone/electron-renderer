@@ -18,7 +18,6 @@ export class MandatorySelection extends SelectionWindow {
     body: string | Node | null = 'Please choose one of the following:',
     options: SelectionWindowOptions = {
       autoDisplay: false, // as we need to call display and wait for it to be complete.
-      chooseLabel: 'OK',
       canClose: false,
       displayAll: false,
     }

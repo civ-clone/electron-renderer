@@ -76,7 +76,7 @@ class Game {
     start() {
         __classPrivateFieldGet(this, _Game_ready, "f").then(() => {
             Engine_1.instance.on('engine:start', () => {
-                new Array(Engine_1.instance.option('players'))
+                new Array(parseInt(Engine_1.instance.option('players'), 10))
                     .fill(0)
                     .forEach((value, i) => {
                     const player = new Player_1.default(), 

@@ -50,9 +50,12 @@ export class MainMenu extends Element {
                         }));
                         return numberOfPlayers.display();
                     },
-                ].reduce((promise, menu) => promise.then(() => menu()), Promise.resolve());
-                this.remove();
-                transport.send('start');
+                ]
+                    .reduce((promise, menu) => promise.then(() => menu()), Promise.resolve())
+                    .then(() => {
+                    this.remove();
+                    transport.send('start');
+                });
             },
         }), 
         // h(e('button', t('Customise World')), {
