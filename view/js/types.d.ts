@@ -49,9 +49,18 @@ export interface CityGrowth extends EntityInstance {
   size: number;
 }
 
+export interface ItemCost extends EntityInstance {
+  value: number;
+}
+
+export interface BuildItem extends EntityInstance {
+  item: Entity;
+  cost: ItemCost;
+}
+
 export interface CityBuild extends EntityInstance {
-  available: Entity[];
-  building: Entity | null;
+  available: BuildItem[];
+  building: BuildItem | null;
   city: City;
   cost: Yield;
   progress: Yield;
@@ -84,10 +93,16 @@ export interface Player extends EntityInstance {
 }
 
 export interface PlayerAction extends EntityInstance {
-  value: Unit | PlayerResearch | CityBuild;
+  value:
+    | Unit
+    | PlayerResearch
+    | CityBuild
+    | PlayerTradeRates
+    | PlayerGovernment;
 }
 
 export interface PlayerGovernment extends EntityInstance {
+  available: Entity[];
   current: EntityInstance;
 }
 
@@ -97,6 +112,10 @@ export interface PlayerResearch extends EntityInstance {
   cost: Yield;
   progress: Yield;
   researching: Entity | null;
+}
+
+export interface PlayerTradeRates extends EntityInstance {
+  all: Yield[];
 }
 
 export interface Unit extends EntityInstance {

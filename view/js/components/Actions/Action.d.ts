@@ -1,4 +1,11 @@
-import { CityBuild, PlayerAction, PlayerResearch, Unit } from '../../types';
+import {
+  CityBuild,
+  PlayerAction,
+  PlayerGovernment,
+  PlayerResearch,
+  PlayerTradeRates,
+  Unit,
+} from '../../types';
 declare global {
   interface GlobalEventHandlersEventMap {
     actioned: CustomEvent<Action>;
@@ -9,7 +16,12 @@ export interface IAction {
   build(): void;
   complete(): void;
   element(): HTMLElement;
-  value(): CityBuild | PlayerResearch | Unit;
+  value():
+    | CityBuild
+    | PlayerResearch
+    | Unit
+    | PlayerGovernment
+    | PlayerTradeRates;
 }
 export declare class Action implements IAction {
   #private;
@@ -18,6 +30,11 @@ export declare class Action implements IAction {
   build(): void;
   complete(): void;
   element(): HTMLElement;
-  value(): CityBuild | PlayerResearch | Unit;
+  value():
+    | CityBuild
+    | PlayerResearch
+    | Unit
+    | PlayerGovernment
+    | PlayerTradeRates;
 }
 export default Action;

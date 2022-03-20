@@ -32,10 +32,17 @@ export class CityBuildSelectionWindow extends SelectionWindow {
     onComplete: onCompleteHandler = () => {},
     additionalActions: SelectionWindowActions = {}
   ) {
+    const [production] = cityBuild.city.yields.filter(
+      (cityYield) => cityYield._ === 'Production'
+    );
+
     super(
       `What would you like to build in ${cityBuild.city.name}?`,
-      cityBuild.available.map((advance) => ({
-        value: advance._,
+      cityBuild.available.map((buildItem) => ({
+        label: `${buildItem.item._} (Cost: ${
+          buildItem.cost.value
+        } / ${Math.ceil(buildItem.cost.value / production.value)} turns)`,
+        value: buildItem.item._,
       })),
       (selection) => {
         if (!selection) {

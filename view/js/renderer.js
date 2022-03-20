@@ -30,7 +30,7 @@ const options = {
     autoEndOfTurn: true,
 };
 try {
-    const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimapCanvas = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications(), mainMenu = new MainMenu(mainMenuElement);
+    const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), secondaryActionArea = document.getElementById('other-actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimapCanvas = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications(), mainMenu = new MainMenu(mainMenuElement);
     const tilesToRender = [];
     let globalNotificationTimer, lastUnit;
     transport.receive('notification', (data) => {
@@ -56,14 +56,16 @@ try {
         });
     }));
     transport.receiveOnce('gameData', (objectMap) => {
-        const data = reconstituteData(objectMap);
+        const data = reconstituteData(objectMap), 
+        // @ts-ignore
+        formatter = new Intl.ListFormat();
         // TODO: use Intl.ListFormat if available
-        new NotificationWindow('Welcome', e('div.welcome', e('p', t(`${data.player.civilization.leader.name}, you have risen to become leader of the ${data.player.civilization._}.`)), e('p', t(`Your people have knowledge of ${[
+        new NotificationWindow('Welcome', e('div.welcome', e('p', t(`${data.player.civilization.leader.name}, you have risen to become leader of the ${data.player.civilization._}.`)), e('p', t(`Your people have knowledge of ${formatter.format([
             'Irrigation',
             'Mining',
             'Roads',
-            ...data.player.research.complete,
-        ].join(', ')}`))));
+            ...data.player.research.complete.map((advance) => advance._),
+        ])}`))));
         gameArea.classList.add('active');
         mapPortal.width = mapPortal.parentElement.offsetWidth;
         mapPortal.height = mapPortal.parentElement.offsetHeight;
@@ -71,7 +73,7 @@ try {
         let activeUnit = null, activeUnits = [];
         const intervalHandler = new IntervalHandler(), eventHandler = new EventHandler(), landMap = new Land(world, scale), irrigationMap = new Irrigation(world, scale), terrainMap = new Terrain(world, scale), improvementsMap = new Improvements(world, scale), featureMap = new Feature(world, scale), goodyHutsMap = new GoodyHuts(world, scale), fogMap = new Fog(world, scale), yieldsMap = new Yields(world, scale), unitsMap = new Units(world, scale), citiesMap = new Cities(world, scale), cityNamesMap = new CityNames(world, scale), activeUnitsMap = new ActiveUnit(world, scale);
         yieldsMap.setVisible(false);
-        const portal = new Portal(world, mapPortal, scale, landMap, irrigationMap, terrainMap, improvementsMap, featureMap, goodyHutsMap, fogMap, yieldsMap, unitsMap, citiesMap, cityNamesMap, activeUnitsMap), minimap = new Minimap(minimapCanvas, world, portal, landMap, citiesMap), actions = new Actions(actionArea, portal);
+        const portal = new Portal(world, mapPortal, scale, landMap, irrigationMap, terrainMap, improvementsMap, featureMap, goodyHutsMap, fogMap, yieldsMap, unitsMap, citiesMap, cityNamesMap, activeUnitsMap), minimap = new Minimap(minimapCanvas, world, portal, landMap, citiesMap), primaryActions = new Actions(actionArea, portal), secondaryActions = new Actions(secondaryActionArea, portal);
         intervalHandler.on(() => {
             activeUnitsMap.setVisible(!activeUnitsMap.isVisible());
             portal.build(tilesToRender.splice(0));
@@ -85,11 +87,19 @@ try {
         let lastTurn = 1, clearNextTurn = false;
         const handler = (objectMap) => {
             let orphanIds = clearNextTurn ? [] : null;
+            // TODO: look into if it's possible to have data reconstituted in a worker thread
             const data = reconstituteData(objectMap, orphanIds);
             // A bit crude, I'd like to run this as as background job too
             if (orphanIds) {
-                // clean up orphan data
-                setTimeout(((orphanIds) => () => orphanIds.forEach((id) => delete objectMap.objects[id]))(orphanIds), 1);
+                // clean up orphan data - late game there can be tens of thousands of these to clean up
+                ((orphanIds) => {
+                    const maxCount = 1000, delay = 200;
+                    for (let i = 0, max = Math.ceil(orphanIds.length / maxCount); i < max; i++) {
+                        setTimeout(() => orphanIds
+                            .slice(i * maxCount, (i + 1) * maxCount - 1)
+                            .forEach((id) => delete objectMap.objects[id]), (i + 1) * delay);
+                    }
+                })(orphanIds);
                 clearNextTurn = false;
             }
             document.dispatchEvent(new CustomEvent('dataupdated', {
@@ -101,8 +111,9 @@ try {
                 clearNextTurn = true;
                 lastTurn = data.turn.value;
             }
-            actions.build(data.player.mandatoryActions);
-            gameArea.append(actions.element());
+            primaryActions.build(data.player.mandatoryActions);
+            secondaryActions.build(data.player.actions.filter((action) => ['AdjustTradeRates', 'Revolution'].includes(action._)));
+            gameArea.append(primaryActions.element());
             world.setTiles(data.player.world.tiles);
             const gameDetails = new GameDetails(gameInfo, data.turn, data.year);
             gameDetails.build();
@@ -256,7 +267,8 @@ try {
                 while (y > world.height()) {
                     y -= world.height();
                 }
-                const tile = world.get(Math.trunc(x), Math.trunc(y)), playerTileUnits = tile.units.filter((unit) => unit.player.id === data.player.id && !unit.active);
+                const tile = world.get(Math.trunc(x), Math.trunc(y)), playerTileUnits = tile.units.filter((unit) => unit.player.id === data.player.id // && !unit.active
+                );
                 if (tile.city) {
                     new City(tile.city);
                 }
@@ -264,10 +276,25 @@ try {
                     new SelectionWindow('Activate unit', playerTileUnits.map((unit) => ({
                         label: unit._,
                         value: unit.id,
-                    })), (selection) => transport.send('action', {
-                        name: 'InactiveUnit',
-                        id: selection,
-                    }), null);
+                    })), (selection) => {
+                        const [unit] = playerTileUnits.filter((tileUnit) => tileUnit.id === selection);
+                        if (!unit) {
+                            return;
+                        }
+                        if (!unit.active) {
+                            transport.send('action', {
+                                name: 'InactiveUnit',
+                                id: selection,
+                            });
+                            return;
+                        }
+                        // TODO: portal.setActiveUnit(unit);
+                        activeUnit = unit;
+                        unitsMap.setActiveUnit(activeUnit);
+                        unitsMap.render();
+                        activeUnitsMap.setActiveUnit(activeUnit);
+                        activeUnitsMap.render();
+                    }, null);
                 }
                 else {
                     portal.setCenter(tile.x, tile.y);

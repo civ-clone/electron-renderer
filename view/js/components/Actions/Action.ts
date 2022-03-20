@@ -1,4 +1,11 @@
-import { CityBuild, PlayerAction, PlayerResearch, Unit } from '../../types';
+import {
+  CityBuild,
+  PlayerAction,
+  PlayerGovernment,
+  PlayerResearch,
+  PlayerTradeRates,
+  Unit,
+} from '../../types';
 import { e } from '../../lib/html.js';
 
 declare global {
@@ -12,7 +19,12 @@ export interface IAction {
   build(): void;
   complete(): void;
   element(): HTMLElement;
-  value(): CityBuild | PlayerResearch | Unit;
+  value():
+    | CityBuild
+    | PlayerResearch
+    | Unit
+    | PlayerGovernment
+    | PlayerTradeRates;
 }
 
 export class Action implements IAction {
@@ -47,7 +59,12 @@ export class Action implements IAction {
     return this.#element;
   }
 
-  value(): CityBuild | PlayerResearch | Unit {
+  value():
+    | CityBuild
+    | PlayerResearch
+    | Unit
+    | PlayerGovernment
+    | PlayerTradeRates {
     return this.#action.value;
   }
 }

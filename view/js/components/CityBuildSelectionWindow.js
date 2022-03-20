@@ -2,8 +2,10 @@ import { SelectionWindow } from './SelectionWindow.js';
 import City from './City.js';
 export class CityBuildSelectionWindow extends SelectionWindow {
     constructor(cityBuild, onComplete = () => { }, additionalActions = {}) {
-        super(`What would you like to build in ${cityBuild.city.name}?`, cityBuild.available.map((advance) => ({
-            value: advance._,
+        const [production] = cityBuild.city.yields.filter((cityYield) => cityYield._ === 'Production');
+        super(`What would you like to build in ${cityBuild.city.name}?`, cityBuild.available.map((buildItem) => ({
+            label: `${buildItem.item._} (Cost: ${buildItem.cost.value} / ${Math.ceil(buildItem.cost.value / production.value)} turns)`,
+            value: buildItem.item._,
         })), (selection) => {
             if (!selection) {
                 return;

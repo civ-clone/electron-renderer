@@ -1,11 +1,13 @@
 import { Element, IElement } from './Element.js';
 import { e, h } from '../lib/html.js';
 import Action from './Actions/Action.js';
+import AdjustTradeRates from './Actions/AdjustTradeRates.js';
 import ChooseResearch from './Actions/ChooseResearch.js';
 import CityBuild from './Actions/CityBuild.js';
 import EndTurn from './Actions/EndTurn.js';
 import { PlayerAction } from '../types';
-import Portal from './Portal';
+import Portal from './Portal.js';
+import Revolution from './Actions/Revolution.js';
 
 declare global {
   interface GlobalEventHandlersEventMap {
@@ -14,7 +16,7 @@ declare global {
 }
 
 export interface IActions extends IElement {
-  build(actions: PlayerAction[], portal: Portal): void;
+  build(mandatoryActions: PlayerAction[], actions: PlayerAction[]): void;
 }
 
 export class Actions extends Element implements IActions {
@@ -112,6 +114,11 @@ export class Actions extends Element implements IActions {
         case 'ActiveUnit':
           return;
 
+        case 'AdjustTradeRates':
+          action = new AdjustTradeRates(playerAction);
+
+          break;
+
         case 'ChooseResearch':
           action = new ChooseResearch(playerAction);
 
@@ -124,6 +131,11 @@ export class Actions extends Element implements IActions {
 
         case 'EndTurn':
           action = new EndTurn(playerAction);
+
+          break;
+
+        case 'Revolution':
+          action = new Revolution(playerAction);
 
           break;
 

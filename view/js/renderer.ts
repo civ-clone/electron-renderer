@@ -53,6 +53,9 @@ try {
     ) as HTMLElement,
     mainMenuElement = document.querySelector('#mainmenu') as HTMLElement,
     actionArea = document.getElementById('actions') as HTMLElement,
+    secondaryActionArea = document.getElementById(
+      'other-actions'
+    ) as HTMLElement,
     gameArea = document.getElementById('game') as HTMLElement,
     mapWrapper = document.getElementById('map') as HTMLElement,
     mapPortal = mapWrapper.querySelector('canvas') as HTMLCanvasElement,
@@ -104,7 +107,9 @@ try {
   );
 
   transport.receiveOnce('gameData', (objectMap: ObjectMap) => {
-    const data: GameData = reconstituteData(objectMap) as GameData;
+    const data: GameData = reconstituteData(objectMap) as GameData,
+      // @ts-ignore
+      formatter = new Intl.ListFormat();
 
     // TODO: use Intl.ListFormat if available
     new NotificationWindow(
@@ -120,12 +125,12 @@ try {
         e(
           'p',
           t(
-            `Your people have knowledge of ${[
+            `Your people have knowledge of ${formatter.format([
               'Irrigation',
               'Mining',
               'Roads',
-              ...data.player.research.complete,
-            ].join(', ')}`
+              ...data.player.research.complete.map((advance) => advance._),
+            ])}`
           )
         )
       )
@@ -177,7 +182,8 @@ try {
         activeUnitsMap
       ),
       minimap = new Minimap(minimapCanvas, world, portal, landMap, citiesMap),
-      actions = new Actions(actionArea, portal);
+      primaryActions = new Actions(actionArea, portal),
+      secondaryActions = new Actions(secondaryActionArea, portal);
 
     intervalHandler.on(() => {
       activeUnitsMap.setVisible(!activeUnitsMap.isVisible());
@@ -198,18 +204,30 @@ try {
     const handler = (objectMap: ObjectMap): void => {
       let orphanIds: string[] | null = clearNextTurn ? [] : null;
 
+      // TODO: look into if it's possible to have data reconstituted in a worker thread
       const data: GameData = reconstituteData(objectMap, orphanIds) as GameData;
 
       // A bit crude, I'd like to run this as as background job too
       if (orphanIds) {
-        // clean up orphan data
-        setTimeout(
-          (
-            (orphanIds) => () =>
-              orphanIds.forEach((id) => delete objectMap.objects[id])
-          )(orphanIds),
-          1
-        );
+        // clean up orphan data - late game there can be tens of thousands of these to clean up
+        ((orphanIds) => {
+          const maxCount = 1000,
+            delay = 200;
+
+          for (
+            let i = 0, max = Math.ceil(orphanIds.length / maxCount);
+            i < max;
+            i++
+          ) {
+            setTimeout(
+              () =>
+                orphanIds
+                  .slice(i * maxCount, (i + 1) * maxCount - 1)
+                  .forEach((id) => delete objectMap.objects[id]),
+              (i + 1) * delay
+            );
+          }
+        })(orphanIds);
 
         clearNextTurn = false;
       }
@@ -227,9 +245,14 @@ try {
         lastTurn = data.turn.value;
       }
 
-      actions.build(data.player.mandatoryActions);
+      primaryActions.build(data.player.mandatoryActions);
+      secondaryActions.build(
+        data.player.actions.filter((action: PlayerAction) =>
+          ['AdjustTradeRates', 'Revolution'].includes(action._)
+        )
+      );
 
-      gameArea.append(actions.element());
+      gameArea.append(primaryActions.element());
 
       world.setTiles(data.player.world.tiles);
 
@@ -461,7 +484,7 @@ try {
 
         const tile = world.get(Math.trunc(x), Math.trunc(y)),
           playerTileUnits = tile.units.filter(
-            (unit: Unit) => unit.player.id === data.player.id && !unit.active
+            (unit: Unit) => unit.player.id === data.player.id // && !unit.active
           );
 
         if (tile.city) {
@@ -473,11 +496,31 @@ try {
               label: unit._,
               value: unit.id,
             })),
-            (selection: string) =>
-              transport.send('action', {
-                name: 'InactiveUnit',
-                id: selection,
-              }),
+            (selection: string) => {
+              const [unit] = playerTileUnits.filter(
+                (tileUnit) => tileUnit.id === selection
+              );
+
+              if (!unit) {
+                return;
+              }
+
+              if (!unit.active) {
+                transport.send('action', {
+                  name: 'InactiveUnit',
+                  id: selection,
+                });
+
+                return;
+              }
+
+              // TODO: portal.setActiveUnit(unit);
+              activeUnit = unit;
+              unitsMap.setActiveUnit(activeUnit);
+              unitsMap.render();
+              activeUnitsMap.setActiveUnit(activeUnit);
+              activeUnitsMap.render();
+            },
             null
           );
         } else {

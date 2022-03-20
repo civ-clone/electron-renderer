@@ -27,6 +27,8 @@ const MandatoryPlayerAction_1 = require("@civ-clone/core-player/MandatoryPlayerA
 const Player_1 = require("@civ-clone/core-player/Player");
 const PlayerWorld_1 = require("@civ-clone/core-player-world/PlayerWorld");
 const Retryable_1 = require("./Retryable");
+const PlayerActions_4 = require("@civ-clone/civ1-government/PlayerActions");
+const PlayerActions_5 = require("@civ-clone/civ1-trade-rate/PlayerActions");
 const TransferObject_1 = require("./TransferObject");
 const Tile_1 = require("@civ-clone/core-world/Tile");
 const UndiscoveredTile_1 = require("@civ-clone/core-player-world/UndiscoveredTile");
@@ -37,8 +39,10 @@ const Unit_2 = require("../UnknownObjects/Unit");
 const Wonder_1 = require("@civ-clone/core-wonder/Wonder");
 const AdvanceRegistry_1 = require("@civ-clone/core-science/AdvanceRegistry");
 const CityRegistry_1 = require("@civ-clone/core-city/CityRegistry");
+const CurrentPlayerRegistry_1 = require("@civ-clone/core-player/CurrentPlayerRegistry");
 const Engine_1 = require("@civ-clone/core-engine/Engine");
 const LeaderRegistry_1 = require("@civ-clone/core-civilization/LeaderRegistry");
+const PlayerRegistry_1 = require("@civ-clone/core-player/PlayerRegistry");
 const PlayerResearchRegistry_1 = require("@civ-clone/core-science/PlayerResearchRegistry");
 const PlayerTreasuryRegistry_1 = require("@civ-clone/core-treasury/PlayerTreasuryRegistry");
 const PlayerWorldRegistry_1 = require("@civ-clone/core-player-world/PlayerWorldRegistry");
@@ -98,21 +102,31 @@ class ElectronClient extends Client_1.Client {
         });
         // TODO: These could be `HiddenAction`s. Need to add a `perform` method to actions too...
         __classPrivateFieldGet(this, _ElectronClient_receiver, "f").call(this, 'cheat', ({ name, value }) => {
-            if (name === 'RevealMap') {
-                const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
-                // A bit nasty... I wonder how slow this data transfer will be...
-                const [tile] = playerWorld.entries();
-                tile
-                    .map()
-                    .entries()
-                    .forEach((tile) => {
-                    if (playerWorld.includes(tile)) {
-                        return;
-                    }
-                    playerWorld.register(tile);
-                    __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").add(playerWorld.id(), () => tile.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this)), `entries[${playerWorld.entries().indexOf(tile)}]`);
-                });
-            }
+            // if (name === 'RevealMap') {
+            //   const playerWorld = playerWorldRegistryInstance.getByPlayer(
+            //     this.player()
+            //   );
+            //
+            //   // A bit nasty... I wonder how slow this data transfer will be...
+            //   const [tile] = playerWorld.entries();
+            //
+            //   tile
+            //     .map()
+            //     .entries()
+            //     .forEach((tile) => {
+            //       if (playerWorld.includes(tile)) {
+            //         return;
+            //       }
+            //
+            //       playerWorld.register(tile);
+            //
+            //       this.#dataQueue.add(
+            //         playerWorld.id(),
+            //         () => tile.toPlainObject(this.#dataFilter()),
+            //         `entries[${playerWorld.entries().indexOf(tile)}]`
+            //       );
+            //     });
+            // }
             if (name === 'GrantAdvance') {
                 const [Advance] = AdvanceRegistry_1.instance.filter((Advance) => Advance.name === value), playerResearch = PlayerResearchRegistry_1.instance.getByPlayer(this.player());
                 if (!Advance) {
@@ -122,10 +136,25 @@ class ElectronClient extends Client_1.Client {
                     return;
                 }
                 playerResearch.addAdvance(Advance);
+                __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").add(playerResearch.id(), playerResearch.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))));
             }
             if (name === 'GrantGold') {
                 const playerTreasury = PlayerTreasuryRegistry_1.instance.getByPlayer(this.player());
                 playerTreasury.add(value);
+                __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").add(playerTreasury.id(), playerTreasury.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))));
+            }
+            if (name === 'ModifyUnit') {
+                const { unitId, properties } = value;
+                const [unit] = UnitRegistry_1.instance.getBy('id', unitId);
+                if (!unit) {
+                    return;
+                }
+                ['attack', 'defence', 'moves', 'movement', 'visibility'].forEach((property) => {
+                    if (property in properties) {
+                        unit[property]().set(properties[property]);
+                    }
+                });
+                __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").add(unit.id(), unit.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))));
             }
             this.sendPatchData();
         });
@@ -148,7 +177,7 @@ class ElectronClient extends Client_1.Client {
             }
             __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").add(playerWorld.id(), () => tile.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))), `tiles[${index}]`);
         });
-        ['unit:created', 'unit:destroyed'].forEach((event) => {
+        ['unit:created', 'unit:defeated'].forEach((event) => {
             Engine_1.instance.on(event, (unit) => {
                 const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
                 if (!playerWorld.includes(unit.tile())) {
@@ -214,13 +243,19 @@ class ElectronClient extends Client_1.Client {
                 return;
             }
             if (capturingPlayer === this.player()) {
-                this.sendNotification(`We have captured ${city.name()} from ${capturingPlayer
+                this.sendNotification(`We have captured ${city.name()} from ${originalPlayer
                     .civilization()
                     .name()}!`);
                 return;
             }
         });
-        ['city:created', 'city:captured', 'city:destroyed'].forEach((event) => {
+        [
+            'city:created',
+            'city:captured',
+            'city:destroyed',
+            'city:grow',
+            'city:shrink',
+        ].forEach((event) => {
             Engine_1.instance.on(event, (city) => {
                 const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
                 if (!playerWorld.includes(city.tile())) {
@@ -274,9 +309,20 @@ class ElectronClient extends Client_1.Client {
                 return;
             }
         });
-        Engine_1.instance.on('player:defeated', (player) => this.sendNotification(`${player.civilization().name()} destroyed by ${player
-            .civilization()
-            .name()}`));
+        Engine_1.instance.on('player:defeated', (defeatedPlayer, player) => {
+            if (defeatedPlayer === this.player()) {
+                this.sendNotification(`You have been defeated!`);
+                PlayerRegistry_1.instance.unregister(...PlayerRegistry_1.instance.entries());
+                CurrentPlayerRegistry_1.instance.unregister(...CurrentPlayerRegistry_1.instance.entries());
+                // TODO: summary and quit
+                __classPrivateFieldGet(this, _ElectronClient_sender, "f").call(this, 'restart', null);
+            }
+            this.sendNotification(player
+                ? `${defeatedPlayer.civilization().name()} defeated by ${player
+                    .civilization()
+                    .name()}.`
+                : `${defeatedPlayer.civilization().name()} defeated.`);
+        });
         Engine_1.instance.on('city:civil-disorder', (city) => {
             if (city.player() === this.player()) {
                 this.sendNotification(`Civil disorder in ${city.name()}!`);
@@ -370,6 +416,9 @@ class ElectronClient extends Client_1.Client {
         }
         if (playerAction instanceof PlayerActions_2.InactiveUnit) {
             const unit = playerAction.value();
+            if (unit.moves().value() > 0) {
+                __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(unit.id(), unit.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default, Tile_1.default))));
+            }
             unit.activate();
             return false;
         }
@@ -380,14 +429,14 @@ class ElectronClient extends Client_1.Client {
                 console.log(`no build item specified`);
                 return false;
             }
-            const [BuildItem] = cityBuild
+            const [buildItem] = cityBuild
                 .available()
-                .filter((BuildItem) => BuildItem.name === chosen);
-            if (!BuildItem) {
+                .filter((buildItem) => buildItem.item().name === chosen);
+            if (!buildItem) {
                 console.log(`build item not available: ${chosen}`);
                 return false;
             }
-            cityBuild.build(BuildItem);
+            cityBuild.build(buildItem.item());
             return false;
         }
         if (playerAction instanceof ChooseResearch_1.default) {
@@ -409,6 +458,36 @@ class ElectronClient extends Client_1.Client {
         if (playerAction instanceof CompleteProduction_1.default) {
             const city = playerAction.value(), playerTreasury = PlayerTreasuryRegistry_1.instance.getByPlayer(this.player());
             playerTreasury.buy(city);
+            __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(playerTreasury.id(), playerTreasury.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))));
+            return false;
+        }
+        // TODO: DelayedPlayerAction -> Revolution --> SelectGovernment
+        if (playerAction instanceof PlayerActions_4.Revolution) {
+            const playerGovernment = playerAction.value(), { chosen } = action, [GovernmentType] = playerGovernment
+                .available()
+                .filter((GovernmentType) => GovernmentType.name === chosen);
+            if (!GovernmentType) {
+                console.error(`Government type: '${chosen}' not found.`);
+                return false;
+            }
+            playerGovernment.set(new GovernmentType());
+            const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
+            __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(playerWorld.id(), playerWorld.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))));
+            return false;
+        }
+        if (playerAction instanceof PlayerActions_5.AdjustTradeRates) {
+            const playerTradeRates = playerAction.value(), { value } = action;
+            try {
+                playerTradeRates.setAll(value.map(([name, value]) => {
+                    const [rate] = playerTradeRates
+                        .all()
+                        .filter((rate) => rate.constructor.name === name);
+                    return [rate.constructor, value];
+                }));
+            }
+            catch (e) {
+                console.error(e);
+            }
             return false;
         }
         console.log(`unhandled action: ${JSON.stringify(action)}`);

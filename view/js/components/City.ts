@@ -31,13 +31,24 @@ const buildCityBuildDetails = (
       'div.build',
       e(
         'header',
-        t(`Building ${city.build.building ? city.build.building._ : 'nothing'}`)
+        t(
+          `Building ${
+            city.build.building ? city.build.building.item._ : 'nothing'
+          }`
+        )
       ),
       city.build.building
         ? e(
             'p',
             t(
-              `Progress ${city.build.progress.value} / ${city.build.cost.value}`
+              `Progress ${city.build.progress.value} / ${
+                city.build.cost.value
+              } (${Math.ceil(
+                (city.build.cost.value - city.build.progress.value) /
+                  city.yields.filter(
+                    (cityYield) => cityYield._ === 'Production'
+                  )[0].value
+              )} turns)`
             )
           )
         : t(''),
@@ -261,7 +272,7 @@ export class City extends Window {
 
     new ConfirmationWindow(
       'Are you sure?',
-      `Do you want to rush building of ${this.#city.build.building._}`,
+      `Do you want to rush building of ${this.#city.build.building.item._}`,
       () =>
         transport.send('action', {
           name: 'CompleteProduction',

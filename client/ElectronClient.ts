@@ -11,9 +11,10 @@ import {
 import { Client, IClient } from '@civ-clone/core-civ-client/Client';
 import { ActiveUnit, InactiveUnit } from '@civ-clone/civ1-unit/PlayerActions';
 import Advance from '@civ-clone/core-science/Advance';
+import BuildItem from '@civ-clone/core-city-build/BuildItem';
 import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch';
 import City from '@civ-clone/core-city/City';
-import CityImprovement from '@civ-clone/core-city-improvement/CityImprovement';
+import CityBuildItem from '@civ-clone/core-city-build/CityBuild';
 import Civilization from '@civ-clone/core-civilization/Civilization';
 import CompleteProduction from '@civ-clone/civ1-treasury/PlayerActions/CompleteProduction';
 import DataObject from '@civ-clone/core-data-object/DataObject';
@@ -24,11 +25,16 @@ import { IConstructor } from '@civ-clone/core-registry/Registry';
 import MandatoryPlayerAction from '@civ-clone/core-player/MandatoryPlayerAction';
 import Player from '@civ-clone/core-player/Player';
 import PlayerAction from '@civ-clone/core-player/PlayerAction';
+import PlayerGovernment from '@civ-clone/core-government/PlayerGovernment';
 import PlayerResearch from '@civ-clone/core-science/PlayerResearch';
+import PlayerTradeRates from '@civ-clone/core-trade-rate/PlayerTradeRates';
 import PlayerWorld from '@civ-clone/core-player-world/PlayerWorld';
 import Retryable from './Retryable';
+import { Revolution } from '@civ-clone/civ1-government/PlayerActions';
+import { AdjustTradeRates } from '@civ-clone/civ1-trade-rate/PlayerActions';
 import TransferObject from './TransferObject';
 import Tile from '@civ-clone/core-world/Tile';
+import TradeRate from '@civ-clone/core-trade-rate/TradeRate';
 import Turn from '@civ-clone/core-turn-based-game/Turn';
 import UndiscoveredTile from '@civ-clone/core-player-world/UndiscoveredTile';
 import Unit from '@civ-clone/core-unit/Unit';
@@ -40,8 +46,10 @@ import Wonder from '@civ-clone/core-wonder/Wonder';
 import Year from '@civ-clone/core-game-year/Year';
 import { instance as advanceRegistryInstance } from '@civ-clone/core-science/AdvanceRegistry';
 import { instance as cityRegistryInstance } from '@civ-clone/core-city/CityRegistry';
+import { instance as currentPlayerRegistryInstance } from '@civ-clone/core-player/CurrentPlayerRegistry';
 import { instance as engineInstance } from '@civ-clone/core-engine/Engine';
 import { instance as leaderRegistryInstance } from '@civ-clone/core-civilization/LeaderRegistry';
+import { instance as playerRegistryInstance } from '@civ-clone/core-player/PlayerRegistry';
 import { instance as playerResearchRegistryInstance } from '@civ-clone/core-science/PlayerResearchRegistry';
 import { instance as playerTreasuryRegistryInstance } from '@civ-clone/core-treasury/PlayerTreasuryRegistry';
 import { instance as playerWorldRegistryInstance } from '@civ-clone/core-player-world/PlayerWorldRegistry';
@@ -179,6 +187,13 @@ export class ElectronClient extends Client implements IClient {
           }
 
           playerResearch.addAdvance(Advance);
+
+          this.#dataQueue.add(
+            playerResearch.id(),
+            playerResearch.toPlainObject(
+              this.#dataFilter(filterToReference(Player))
+            )
+          );
         }
 
         if (name === 'GrantGold') {
@@ -187,6 +202,42 @@ export class ElectronClient extends Client implements IClient {
           );
 
           playerTreasury.add(value);
+
+          this.#dataQueue.add(
+            playerTreasury.id(),
+            playerTreasury.toPlainObject(
+              this.#dataFilter(filterToReference(Player))
+            )
+          );
+        }
+
+        if (name === 'ModifyUnit') {
+          const { unitId, properties } = value;
+
+          const [unit] = unitRegistryInstance.getBy('id', unitId);
+
+          if (!unit) {
+            return;
+          }
+
+          (
+            ['attack', 'defence', 'moves', 'movement', 'visibility'] as (
+              | 'attack'
+              | 'defence'
+              | 'moves'
+              | 'movement'
+              | 'visibility'
+            )[]
+          ).forEach((property) => {
+            if (property in properties) {
+              unit[property]().set(properties[property]);
+            }
+          });
+
+          this.#dataQueue.add(
+            unit.id(),
+            unit.toPlainObject(this.#dataFilter(filterToReference(Player)))
+          );
         }
 
         this.sendPatchData();
@@ -236,7 +287,7 @@ export class ElectronClient extends Client implements IClient {
       );
     });
 
-    ['unit:created', 'unit:destroyed'].forEach((event) => {
+    ['unit:created', 'unit:defeated'].forEach((event) => {
       engineInstance.on(event, (unit) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
           this.player()
@@ -377,7 +428,7 @@ export class ElectronClient extends Client implements IClient {
 
         if (capturingPlayer === this.player()) {
           this.sendNotification(
-            `We have captured ${city.name()} from ${capturingPlayer
+            `We have captured ${city.name()} from ${originalPlayer
               .civilization()
               .name()}!`
           );
@@ -387,7 +438,13 @@ export class ElectronClient extends Client implements IClient {
       }
     );
 
-    ['city:created', 'city:captured', 'city:destroyed'].forEach((event) => {
+    [
+      'city:created',
+      'city:captured',
+      'city:destroyed',
+      'city:grow',
+      'city:shrink',
+    ].forEach((event) => {
       engineInstance.on(event, (city) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
           this.player()
@@ -499,12 +556,32 @@ export class ElectronClient extends Client implements IClient {
       }
     );
 
-    engineInstance.on('player:defeated', (player: Player) =>
-      this.sendNotification(
-        `${player.civilization().name()} destroyed by ${player
-          .civilization()
-          .name()}`
-      )
+    engineInstance.on(
+      'player:defeated',
+      (defeatedPlayer: Player, player: Player | null) => {
+        if (defeatedPlayer === this.player()) {
+          this.sendNotification(`You have been defeated!`);
+
+          playerRegistryInstance.unregister(
+            ...playerRegistryInstance.entries()
+          );
+          currentPlayerRegistryInstance.unregister(
+            ...currentPlayerRegistryInstance.entries()
+          );
+
+          // TODO: summary and quit
+
+          this.#sender('restart', null);
+        }
+
+        this.sendNotification(
+          player
+            ? `${defeatedPlayer.civilization().name()} defeated by ${player
+                .civilization()
+                .name()}.`
+            : `${defeatedPlayer.civilization().name()} defeated.`
+        );
+      }
     );
 
     engineInstance.on('city:civil-disorder', (city: City) => {
@@ -678,6 +755,13 @@ export class ElectronClient extends Client implements IClient {
     if (playerAction instanceof InactiveUnit) {
       const unit: Unit = playerAction.value();
 
+      if (unit.moves().value() > 0) {
+        this.#dataQueue.update(
+          unit.id(),
+          unit.toPlainObject(this.#dataFilter(filterToReference(Player, Tile)))
+        );
+      }
+
       unit.activate();
 
       return false;
@@ -687,7 +771,7 @@ export class ElectronClient extends Client implements IClient {
       playerAction instanceof CityBuild ||
       playerAction instanceof ChangeProduction
     ) {
-      const cityBuild = playerAction.value(),
+      const cityBuild = playerAction.value() as CityBuildItem,
         { chosen } = action;
 
       if (!chosen) {
@@ -696,20 +780,17 @@ export class ElectronClient extends Client implements IClient {
         return false;
       }
 
-      const [BuildItem] = cityBuild
+      const [buildItem] = cityBuild
         .available()
-        .filter(
-          (BuildItem: typeof Unit | typeof CityImprovement) =>
-            BuildItem.name === chosen
-        );
+        .filter((buildItem: BuildItem) => buildItem.item().name === chosen);
 
-      if (!BuildItem) {
+      if (!buildItem) {
         console.log(`build item not available: ${chosen}`);
 
         return false;
       }
 
-      cityBuild.build(BuildItem);
+      cityBuild.build(buildItem.item());
 
       return false;
     }
@@ -746,6 +827,62 @@ export class ElectronClient extends Client implements IClient {
         );
 
       playerTreasury.buy(city);
+
+      this.#dataQueue.update(
+        playerTreasury.id(),
+        playerTreasury.toPlainObject(
+          this.#dataFilter(filterToReference(Player))
+        )
+      );
+
+      return false;
+    }
+
+    // TODO: DelayedPlayerAction -> Revolution --> SelectGovernment
+    if (playerAction instanceof Revolution) {
+      const playerGovernment = playerAction.value() as PlayerGovernment,
+        { chosen } = action,
+        [GovernmentType] = playerGovernment
+          .available()
+          .filter((GovernmentType) => GovernmentType.name === chosen);
+
+      if (!GovernmentType) {
+        console.error(`Government type: '${chosen}' not found.`);
+
+        return false;
+      }
+
+      playerGovernment.set(new GovernmentType());
+
+      const playerWorld = playerWorldRegistryInstance.getByPlayer(
+        this.player()
+      );
+
+      this.#dataQueue.update(
+        playerWorld.id(),
+        playerWorld.toPlainObject(this.#dataFilter(filterToReference(Player)))
+      );
+
+      return false;
+    }
+
+    if (playerAction instanceof AdjustTradeRates) {
+      const playerTradeRates = playerAction.value() as PlayerTradeRates,
+        { value } = action;
+
+      try {
+        playerTradeRates.setAll(
+          value.map(([name, value]: [string, string]) => {
+            const [rate] = playerTradeRates
+              .all()
+              .filter((rate) => rate.constructor.name === name);
+
+            return [rate.constructor as typeof TradeRate, value];
+          })
+        );
+      } catch (e) {
+        console.error(e);
+      }
 
       return false;
     }

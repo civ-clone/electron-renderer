@@ -12,9 +12,11 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _Actions_portal;
 import { Element } from './Element.js';
 import { e, h } from '../lib/html.js';
+import AdjustTradeRates from './Actions/AdjustTradeRates.js';
 import ChooseResearch from './Actions/ChooseResearch.js';
 import CityBuild from './Actions/CityBuild.js';
 import EndTurn from './Actions/EndTurn.js';
+import Revolution from './Actions/Revolution.js';
 export class Actions extends Element {
     constructor(container = e('div.actions'), portal) {
         super(container);
@@ -79,6 +81,9 @@ export class Actions extends Element {
                 // This is handled separately so no need to worry.
                 case 'ActiveUnit':
                     return;
+                case 'AdjustTradeRates':
+                    action = new AdjustTradeRates(playerAction);
+                    break;
                 case 'ChooseResearch':
                     action = new ChooseResearch(playerAction);
                     break;
@@ -87,6 +92,9 @@ export class Actions extends Element {
                     break;
                 case 'EndTurn':
                     action = new EndTurn(playerAction);
+                    break;
+                case 'Revolution':
+                    action = new Revolution(playerAction);
                     break;
                 default:
                     console.log('need to handle ' + playerAction._);

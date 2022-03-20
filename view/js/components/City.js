@@ -25,8 +25,9 @@ import Terrain from './Map/Terrain.js';
 import Window from './Window.js';
 import World from './World.js';
 import Yields from './Map/Yields.js';
-const buildCityBuildDetails = (city, chooseProduction, completeProduction) => e('div.build', e('header', t(`Building ${city.build.building ? city.build.building._ : 'nothing'}`)), city.build.building
-    ? e('p', t(`Progress ${city.build.progress.value} / ${city.build.cost.value}`))
+const buildCityBuildDetails = (city, chooseProduction, completeProduction) => e('div.build', e('header', t(`Building ${city.build.building ? city.build.building.item._ : 'nothing'}`)), city.build.building
+    ? e('p', t(`Progress ${city.build.progress.value} / ${city.build.cost.value} (${Math.ceil((city.build.cost.value - city.build.progress.value) /
+        city.yields.filter((cityYield) => cityYield._ === 'Production')[0].value)} turns)`))
     : t(''), h(e('button', t(city.build.building ? 'Change' : 'Choose')), {
     click: () => chooseProduction(),
 }), h(e('button', t('Buy')), {
@@ -116,7 +117,7 @@ export class City extends Window {
         if (!__classPrivateFieldGet(this, _City_city, "f").build.building) {
             return;
         }
-        new ConfirmationWindow('Are you sure?', `Do you want to rush building of ${__classPrivateFieldGet(this, _City_city, "f").build.building._}`, () => transport.send('action', {
+        new ConfirmationWindow('Are you sure?', `Do you want to rush building of ${__classPrivateFieldGet(this, _City_city, "f").build.building.item._}`, () => transport.send('action', {
             name: 'CompleteProduction',
             id: __classPrivateFieldGet(this, _City_city, "f").id,
         }));

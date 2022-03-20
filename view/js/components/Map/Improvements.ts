@@ -61,6 +61,7 @@ export class Terrain extends TerrainAbstract {
         neighbouringRailroad = this.filterNeighbours(
           tile,
           (adjoiningTile: Tile): boolean =>
+            !!adjoiningTile.city ||
             adjoiningTile.improvements.some(
               (improvement: EntityInstance): boolean =>
                 improvement._ === 'Railroad'
@@ -77,11 +78,27 @@ export class Terrain extends TerrainAbstract {
         }
       });
 
-      neighbouringRailroad.forEach((direction: NeighbourDirection): void =>
-        this.drawImage(`improvements/railroad_${direction}`, x, y)
-      );
+      if (improvements.Railroad) {
+        neighbouringRailroad.forEach((direction: NeighbourDirection): void =>
+          this.drawImage(`improvements/railroad_${direction}`, x, y)
+        );
+      }
 
-      // TODO: render a dot or something like civ
+      if (neighbouringRoad.length === 0 && neighbouringRailroad.length === 0) {
+        const size = this.tileSize(),
+          offsetX = x * size,
+          offsetY = y * size,
+          center = Math.floor(this.tileSize() / 2) - this.scale();
+
+        this.context().fillStyle = improvements.Railroad ? '#000' : '#8c5828';
+        this.context().rect(
+          offsetX + center,
+          offsetY + center,
+          this.scale() * 2,
+          this.scale() * 2
+        );
+        this.context().fill();
+      }
     }
   }
 }
