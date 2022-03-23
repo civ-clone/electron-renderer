@@ -21,11 +21,9 @@ I'm looking at adding the ability to add an asset pack and a mechanism for manag
 
 - It hangs when generating the start `Tile`s for way too long - this has been moved to a `Worker` but transferring the data is still slow and locks the main thread :(
 - Moves aren't validated correctly when they don't succeed, meaning you have to try over and over until your 0.3333333 moves eventually takes you to the mountain tile.
-- You can't activate a previously `Fortified` `Unit`.
 - Each turn, you're sent all the data again, fresh. This will get big and slow. A nice fix for this might be listeners for things that change the data and only send those updates, but this might end up being problematic in its own way. I've looked at data diffing too, but that will have its own costs associated.
 - No `GoTo`.
 - Some tile yields are wrong, currently building a city on `Plains`/`Horse` gives you three production and `Forest`/`Game` only yields one `Food`.
-- `ClearForest` is broken (and presumably `ClearSwamp`, `ClearJungle`, `PlantForest` too)
 - Some `Civilization`'s colours are terrible.
 
 ## Images

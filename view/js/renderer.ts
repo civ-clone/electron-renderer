@@ -111,7 +111,6 @@ try {
       // @ts-ignore
       formatter = new Intl.ListFormat();
 
-    // TODO: use Intl.ListFormat if available
     new NotificationWindow(
       'Welcome',
       e(
@@ -408,7 +407,7 @@ try {
               ([key, value]) => {
                 objectMap.objects[key] = value;
 
-                if (value._ === 'Tile') {
+                if (value._ === 'PlayerTile') {
                   // Since we only use tilesToRender for x and y this should be fine...
                   tilesToRender.push(value);
                 }
@@ -633,12 +632,17 @@ try {
       }
 
       if (event.key === 'Tab') {
-        const bottomAction = actionArea.querySelector(
-          'div.action:last-child button'
+        const topAction = actionArea.querySelector(
+          'div.action:first-child button'
         ) as HTMLButtonElement | null;
 
-        if (bottomAction !== null) {
-          bottomAction.focus();
+        if (topAction !== null) {
+          topAction.focus();
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          return;
         }
       }
 
@@ -647,6 +651,8 @@ try {
           portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
 
           portal.render();
+
+          return;
         }
       }
 
@@ -657,16 +663,22 @@ try {
         activeUnitsMap.setVisible(!activeUnitsMap.isVisible());
 
         portal.render();
+
+        return;
       }
 
       if (event.key === 'y') {
         yieldsMap.setVisible(!yieldsMap.isVisible());
 
         portal.render();
+
+        return;
       }
 
       if (lastKey === '%' && event.key === '^') {
         transport.send('cheat', { name: 'RevealMap' });
+
+        return;
       }
 
       lastKey = event.key;

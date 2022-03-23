@@ -1,6 +1,19 @@
 import { Tile, Unit } from '../../types';
 import { Map, IMap } from '../Map.js';
 
+const busyLookup: { [key: string]: string } = {
+  BuildingIrrigation: 'I',
+  BuildingMine: 'M',
+  BuildingRoad: 'R',
+  BuildingRailroad: 'RR',
+  // 'ClearingForest': 'CF',
+  // 'ClearingJungle': 'CJ',
+  // 'ClearingSwamp': 'CS',
+  // 'Fortifying': 'F',
+  // 'Sleeping': 'S',
+  // 'PlantingForest': 'PF',
+};
+
 export class Units extends Map implements IMap {
   #activeUnit: Unit | null = null;
 
@@ -31,6 +44,29 @@ export class Units extends Map implements IMap {
         unit.improvements?.some((improvement) => improvement._ === 'Fortified')
       ) {
         this.drawImage('map/fortify', x, y);
+      }
+
+      if (unit.busy) {
+        // if (unit.busy._ === 'Sleeping') {} // TODO: fade the unit like in Civ 1
+        const sizeOffsetX = this.tileSize() / 2,
+          sizeOffsetY = this.tileSize() * 0.75,
+          identifier =
+            busyLookup[unit.busy._] ?? unit.busy._.replace(/[a-z]+/g, '');
+
+        this.context().font = `bold ${8 * this.scale()}px sans-serif`;
+        this.context().fillStyle = 'black';
+        this.context().textAlign = 'center';
+        this.context().fillText(
+          identifier,
+          offsetX + sizeOffsetX + this.scale(),
+          offsetY + sizeOffsetY
+        );
+        this.context().fillStyle = 'white';
+        this.context().fillText(
+          identifier,
+          offsetX + sizeOffsetX,
+          offsetY + sizeOffsetY - this.scale()
+        );
       }
     }
   }

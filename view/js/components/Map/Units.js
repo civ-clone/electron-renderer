@@ -11,13 +11,25 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 };
 var _Units_activeUnit;
 import { Map } from '../Map.js';
+const busyLookup = {
+    BuildingIrrigation: 'I',
+    BuildingMine: 'M',
+    BuildingRoad: 'R',
+    BuildingRailroad: 'RR',
+    // 'ClearingForest': 'CF',
+    // 'ClearingJungle': 'CJ',
+    // 'ClearingSwamp': 'CS',
+    // 'Fortifying': 'F',
+    // 'Sleeping': 'S',
+    // 'PlantingForest': 'PF',
+};
 export class Units extends Map {
     constructor() {
         super(...arguments);
         _Units_activeUnit.set(this, null);
     }
     renderTile(tile) {
-        var _a;
+        var _a, _b;
         super.renderTile(tile);
         const { x, y } = tile, size = this.tileSize(), offsetX = x * size, offsetY = y * size;
         if (tile.units.length > 0 &&
@@ -29,6 +41,16 @@ export class Units extends Map {
             this.putImage(image, offsetX, offsetY);
             if ((_a = unit.improvements) === null || _a === void 0 ? void 0 : _a.some((improvement) => improvement._ === 'Fortified')) {
                 this.drawImage('map/fortify', x, y);
+            }
+            if (unit.busy) {
+                // if (unit.busy._ === 'Sleeping') {} // TODO: fade the unit like in Civ 1
+                const sizeOffsetX = this.tileSize() / 2, sizeOffsetY = this.tileSize() * 0.75, identifier = (_b = busyLookup[unit.busy._]) !== null && _b !== void 0 ? _b : unit.busy._.replace(/[a-z]+/g, '');
+                this.context().font = `bold ${8 * this.scale()}px sans-serif`;
+                this.context().fillStyle = 'black';
+                this.context().textAlign = 'center';
+                this.context().fillText(identifier, offsetX + sizeOffsetX + this.scale(), offsetY + sizeOffsetY);
+                this.context().fillStyle = 'white';
+                this.context().fillText(identifier, offsetX + sizeOffsetX, offsetY + sizeOffsetY - this.scale());
             }
         }
     }

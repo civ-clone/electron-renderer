@@ -125,7 +125,8 @@ export interface Unit extends EntityInstance {
   };
   active: boolean;
   attack: Yield;
-  city: City;
+  busy: Entity | null;
+  city: City | null;
   defence: Yield;
   improvements: EntityInstance[];
   movement: Yield;
@@ -163,12 +164,25 @@ export interface Tile extends EntityInstance, Coordinate {
   yields: Yield[];
 }
 
+export interface PlayerTile extends Tile {
+  city: City | null;
+  goodyHut: EntityInstance | null;
+  improvements: EntityInstance[];
+  isCoast: boolean;
+  isLand: boolean;
+  isWater: boolean;
+  terrain: Terrain;
+  tile: Tile;
+  units: Unit[];
+  yields: Yield[];
+}
+
 export type AdjacentNeighbour = 'n' | 'e' | 's' | 'w';
 export type NeighbourDirection = AdjacentNeighbour | 'ne' | 'se' | 'sw' | 'nw';
 
 export interface World extends EntityInstance {
   height: number;
-  tiles: Tile[];
+  tiles: PlayerTile[];
   width: number;
 }
 

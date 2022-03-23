@@ -31,76 +31,67 @@ export class Actions extends Element implements IActions {
       event.detail.element().remove()
     );
 
-    this.element().addEventListener('keydown', (event) => {
-      const currentChild = document.activeElement;
+    this.element().addEventListener(
+      'keydown',
+      (event) => {
+        const currentChild = document.activeElement;
 
-      if (!currentChild?.matches('div#actions, div#actions *')) {
-        return;
-      }
+        if (!this.element().contains(currentChild)) {
+          return;
+        }
 
-      const { key } = event,
-        children = Array.from(this.element().children) as HTMLElement[];
+        const { key } = event,
+          children = Array.from(this.element().children) as HTMLElement[];
 
-      if (children.length === 0) {
-        return;
-      }
+        if (
+          !['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(key) ||
+          children.length === 0
+        ) {
+          return;
+        }
 
-      // TODO: scroll the actions container if the element isn't visible
-      if (currentChild === this.element()) {
         event.preventDefault();
         event.stopPropagation();
 
-        if (key === 'UpArrow') {
-          (currentChild.lastElementChild as HTMLElement)?.focus();
+        let currentAction =
+          currentChild === this.element()
+            ? ['ArrowLeft', 'ArrowUp'].includes(key)
+              ? (currentChild.firstElementChild as HTMLElement)
+              : (currentChild.lastElementChild as HTMLElement)
+            : (currentChild as HTMLElement);
+
+        while (currentAction.parentElement !== this.element()) {
+          currentAction = currentAction.parentElement as HTMLElement;
+        }
+
+        const currentIndex = children.indexOf(currentAction);
+
+        if (['ArrowUp', 'ArrowLeft'].includes(key)) {
+          if (currentIndex > 0) {
+            children[currentIndex - 1].querySelector('button')?.focus();
+
+            return;
+          }
+
+          children.pop()!.querySelector('button')!.focus();
 
           return;
         }
 
-        if (key === 'DownArrow') {
-          (currentChild.firstElementChild as HTMLElement)?.focus();
+        if (['ArrowDown', 'ArrowRight'].includes(key)) {
+          if (currentIndex < children.length - 1) {
+            children[currentIndex + 1]!.querySelector('button')!.focus();
+
+            return;
+          }
+
+          children.shift()!.querySelector('button')!.focus();
 
           return;
         }
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      let currentAction =
-        currentChild === this.element()
-          ? (currentChild.lastElementChild as HTMLElement)
-          : (currentChild as HTMLElement);
-
-      while (currentAction.parentElement !== this.element()) {
-        currentAction = currentAction.parentElement as HTMLElement;
-      }
-
-      const currentIndex = children.indexOf(currentAction);
-
-      if (key === 'UpArrow') {
-        if (currentIndex > 0) {
-          children[currentIndex - 1].focus();
-
-          return;
-        }
-
-        children.pop()!.focus();
-
-        return;
-      }
-
-      if (key === 'DownArrow') {
-        if (currentIndex > children.length - 1) {
-          children.shift()!.focus();
-
-          return;
-        }
-
-        children[currentIndex + 1]!.focus();
-
-        return;
-      }
-    });
+      },
+      true
+    );
   }
 
   build(actions: PlayerAction[]): void {

@@ -13,6 +13,67 @@ body {
   overflow: hidden;
 }
 
+.action {
+  margin: 0 1em 1em;
+  text-align: right;
+}
+.action button {
+  appearance: none;
+  border-radius: 50%;
+  background: #ccc none no-repeat center/14px;
+  box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.4);
+  box-sizing: content-box;
+  cursor: pointer;
+  font-size: 12px;
+  height: 3.1em;
+  image-rendering: pixelated;
+  outline: none;
+  padding: 0;
+  width: 3.1em;
+}
+.action button:active {
+  background-color: #aaa;
+  position: relative;
+  top: 2px;
+  left: 2px;
+}
+.action button:hover {
+  background-color: #eee;
+}
+.action button.chooseResearch {
+  background-image: url("../assets/city/bulb.png");
+}
+.action button.chooseResearch:focus, .action button.chooseResearch:focus-visible {
+  border-color: #25e0e8;
+}
+.action button.cityBuild {
+  background-image: url("../assets/city/production.png");
+}
+.action button.cityBuild:focus, .action button.cityBuild:focus-visible {
+  border-color: #e8e8e8;
+}
+.action button.endTurn {
+  background-image: url("../../node_modules/feather-icons/dist/icons/check-circle.svg");
+  background-size: 50%;
+  border-width: 3px;
+  font-size: 18px;
+}
+.action button.endTurn:focus, .action button.endTurn:focus-visible {
+  border-color: #daa520;
+}
+.action button.adjustTradeRates {
+  background-image: url("../assets/city/trade.png");
+}
+.action button.adjustTradeRates:focus, .action button.adjustTradeRates:focus-visible {
+  border-color: #fcfc94;
+}
+.action button.chooseGovernment {
+  background-image: url("../assets/city/sad.png");
+}
+.action button.chooseGovernment:focus, .action button.chooseGovernment:focus-visible {
+  border-color: #000;
+}
+
 #actions {
   bottom: 0;
   display: flex;
@@ -23,53 +84,26 @@ body {
 }
 #actions .action {
   margin: 0 1em 1em;
-  text-align: right;
 }
 #actions .action button {
-  appearance: none;
-  border-radius: 50%;
-  background: #ccc none no-repeat center/16px;
-  box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.4);
-  box-sizing: content-box;
-  cursor: pointer;
   font-size: 12px;
   height: 3.1em;
-  outline: none;
-  padding: 0;
   width: 3.1em;
 }
-#actions .action button:active {
-  background-color: #aaa;
-  position: relative;
-  top: 2px;
-  left: 2px;
+
+#other-actions {
+  position: absolute;
+  right: 0;
+  display: flex;
+  flex-direction: row;
+  padding: 1em;
 }
-#actions .action button:hover {
-  background-color: #eee;
+#other-actions .action {
+  margin: 0 0 0 0.5em;
 }
-#actions .action button.chooseResearch, #actions .action button.cityBuild {
-  image-rendering: pixelated;
-}
-#actions .action button.chooseResearch {
-  background-image: url("../assets/city/bulb.png");
-}
-#actions .action button.chooseResearch:focus, #actions .action button.chooseResearch:focus-visible {
-  border-color: #25e0e8;
-}
-#actions .action button.cityBuild {
-  background-image: url("../assets/city/production.png");
-}
-#actions .action button.cityBuild:focus, #actions .action button.cityBuild:focus-visible {
-  border-color: #e8e8e8;
-}
-#actions .action button.endTurn {
-  background-image: url("../../node_modules/feather-icons/dist/icons/check-circle.svg");
-  background-size: 50%;
-  border-width: 3px;
-  font-size: 18px;
-}
-#actions .action button.endTurn:focus, #actions .action button.endTurn:focus-visible {
-  border-color: #daa520;
+#other-actions .action button {
+  height: 2em;
+  width: 2em;
 }
 
 .city {

@@ -26,8 +26,8 @@ import Window from './Window.js';
 import World from './World.js';
 import Yields from './Map/Yields.js';
 const buildCityBuildDetails = (city, chooseProduction, completeProduction) => e('div.build', e('header', t(`Building ${city.build.building ? city.build.building.item._ : 'nothing'}`)), city.build.building
-    ? e('p', t(`Progress ${city.build.progress.value} / ${city.build.cost.value} (${Math.ceil((city.build.cost.value - city.build.progress.value) /
-        city.yields.filter((cityYield) => cityYield._ === 'Production')[0].value)} turns)`))
+    ? e('p', t(`Progress ${city.build.progress.value} / ${city.build.cost.value} (${Math.max(1, Math.ceil((city.build.cost.value - city.build.progress.value) /
+        city.yields.filter((cityYield) => cityYield._ === 'Production')[0].value))} turns)`))
     : t(''), h(e('button', t(city.build.building ? 'Change' : 'Choose')), {
     click: () => chooseProduction(),
 }), h(e('button', t('Buy')), {

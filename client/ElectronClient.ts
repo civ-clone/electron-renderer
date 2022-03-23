@@ -1,3 +1,4 @@
+import { ActiveUnit, InactiveUnit } from '@civ-clone/civ1-unit/PlayerActions';
 import {
   Advance as FreeAdvance,
   City as FreeCity,
@@ -9,7 +10,6 @@ import {
   CityBuild,
 } from '@civ-clone/core-city-build/PlayerActions';
 import { Client, IClient } from '@civ-clone/core-civ-client/Client';
-import { ActiveUnit, InactiveUnit } from '@civ-clone/civ1-unit/PlayerActions';
 import Advance from '@civ-clone/core-science/Advance';
 import BuildItem from '@civ-clone/core-city-build/BuildItem';
 import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch';
@@ -27,6 +27,7 @@ import Player from '@civ-clone/core-player/Player';
 import PlayerAction from '@civ-clone/core-player/PlayerAction';
 import PlayerGovernment from '@civ-clone/core-government/PlayerGovernment';
 import PlayerResearch from '@civ-clone/core-science/PlayerResearch';
+import PlayerTile from '@civ-clone/core-player-world/PlayerTile';
 import PlayerTradeRates from '@civ-clone/core-trade-rate/PlayerTradeRates';
 import PlayerWorld from '@civ-clone/core-player-world/PlayerWorld';
 import Retryable from './Retryable';
@@ -36,7 +37,6 @@ import TransferObject from './TransferObject';
 import Tile from '@civ-clone/core-world/Tile';
 import TradeRate from '@civ-clone/core-trade-rate/TradeRate';
 import Turn from '@civ-clone/core-turn-based-game/Turn';
-import UndiscoveredTile from '@civ-clone/core-player-world/UndiscoveredTile';
 import Unit from '@civ-clone/core-unit/Unit';
 import UnitAction from '@civ-clone/core-unit/Action';
 import UnknownCity from '../UnknownObjects/City';
@@ -57,20 +57,23 @@ import { instance as turnInstance } from '@civ-clone/core-turn-based-game/Turn';
 import { instance as unitRegistryInstance } from '@civ-clone/core-unit/UnitRegistry';
 import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
 import * as EventEmitter from 'events';
+import Busy from '@civ-clone/core-unit/Rules/Busy';
 
-// const referenceObject = <T extends DataObject = DataObject>(object: T) => ({
-const referenceObject = (object: { id(): string }) => ({
-    '#ref': object.id(),
-  }),
+const referenceObject = (object: any) =>
+    object instanceof DataObject
+      ? {
+          '#ref': object.id(),
+        }
+      : object,
   filterToReference =
     (...types: (new (...args: any[]) => any)[]) =>
-    (object: DataObject) =>
+    (object: any) =>
       types.some((Type) => object instanceof Type)
         ? referenceObject(object)
         : object,
   filterToReferenceAllExcept =
     (...types: (new (...args: any[]) => any)[]) =>
-    (object: DataObject) =>
+    (object: any) =>
       types.some((Type) => object instanceof Type)
         ? object
         : referenceObject(object);
@@ -112,9 +115,13 @@ export class ElectronClient extends Client implements IClient {
           this.player()
         );
 
-        if (!playerWorld.includes(object)) {
-          return new UndiscoveredTile(object.x(), object.y(), object.map());
-        }
+        return playerWorld.get(object.x(), object.y());
+      }
+
+      if (object instanceof Busy) {
+        return {
+          _: object.constructor.name,
+        };
       }
 
       return localFilter(object);
@@ -144,31 +151,31 @@ export class ElectronClient extends Client implements IClient {
     this.#receiver(
       'cheat',
       ({ name, value }: { name: string; value: any }): void => {
-        if (name === 'RevealMap') {
-          const playerWorld = playerWorldRegistryInstance.getByPlayer(
-            this.player()
-          );
-
-          // A bit nasty... I wonder how slow this data transfer will be...
-          const [tile] = playerWorld.entries();
-
-          tile
-            .map()
-            .entries()
-            .forEach((tile) => {
-              if (playerWorld.includes(tile)) {
-                return;
-              }
-
-              playerWorld.register(tile);
-
-              this.#dataQueue.add(
-                playerWorld.id(),
-                () => tile.toPlainObject(this.#dataFilter()),
-                `entries[${playerWorld.entries().indexOf(tile)}]`
-              );
-            });
-        }
+        // if (name === 'RevealMap') {
+        //   const playerWorld = playerWorldRegistryInstance.getByPlayer(
+        //     this.player()
+        //   );
+        //
+        //   // A bit nasty... I wonder how slow this data transfer will be...
+        //   const [tile] = playerWorld.entries();
+        //
+        //   tile
+        //     .map()
+        //     .entries()
+        //     .forEach((tile) => {
+        //       if (playerWorld.includes(tile)) {
+        //         return;
+        //       }
+        //
+        //       playerWorld.register(tile);
+        //
+        //       this.#dataQueue.add(
+        //         playerWorld.id(),
+        //         () => tile.toPlainObject(this.#dataFilter()),
+        //         `entries[${playerWorld.entries().indexOf(tile)}]`
+        //       );
+        //     });
+        // }
 
         if (name === 'GrantAdvance') {
           const [Advance] = advanceRegistryInstance.filter(
@@ -252,15 +259,15 @@ export class ElectronClient extends Client implements IClient {
       const playerWorld = playerWorldRegistryInstance.getByPlayer(
           this.player()
         ),
-        index = playerWorld.entries().indexOf(tile);
+        playerTile = playerWorld.getByTile(tile);
 
-      if (index === -1) {
+      if (playerTile === null) {
         console.log('using a Retryable');
         new Retryable(
           () => {
-            const index = playerWorld.entries().indexOf(tile);
+            const playerTile = playerWorld.getByTile(tile);
 
-            if (index === -1) {
+            if (playerTile === null) {
               return false;
             }
 
@@ -268,7 +275,7 @@ export class ElectronClient extends Client implements IClient {
               playerWorld.id(),
               () =>
                 tile.toPlainObject(this.#dataFilter(filterToReference(Player))),
-              `tiles[${index}]`
+              `tiles[${playerWorld.entries().indexOf(playerTile)}]`
             );
 
             return true;
@@ -282,25 +289,27 @@ export class ElectronClient extends Client implements IClient {
 
       this.#dataQueue.add(
         playerWorld.id(),
-        () => tile.toPlainObject(this.#dataFilter(filterToReference(Player))),
-        `tiles[${index}]`
+        () =>
+          playerTile.toPlainObject(this.#dataFilter(filterToReference(Player))),
+        `tiles[${playerWorld.entries().indexOf(playerTile)}]`
       );
     });
 
     ['unit:created', 'unit:defeated'].forEach((event) => {
       engineInstance.on(event, (unit) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
-          this.player()
-        );
+            this.player()
+          ),
+          playerTile = playerWorld.getByTile(unit.tile());
 
-        if (!playerWorld.includes(unit.tile())) {
+        if (!playerTile) {
           return;
         }
 
         // TODO: check if this is another player first and if there's already another unit there, use an unknown unit
         //  Need to update Units renderer if this happens
-        this.#dataQueue.update(unit.tile().id(), () =>
-          unit.tile().toPlainObject(
+        this.#dataQueue.update(playerTile.id(), () =>
+          playerTile.toPlainObject(
             this.#dataFilter(
               // filterToReferenceAllExcept(Tile, Unit, UnknownPlayer, Yield)
               filterToReference(Player)
@@ -324,12 +333,14 @@ export class ElectronClient extends Client implements IClient {
             player.id(),
             () =>
               unit.toPlainObject(
-                this.#dataFilter(filterToReference(Tile, Player, City))
+                this.#dataFilter(
+                  filterToReference(Tile, Player, PlayerTile, City)
+                )
               ),
             `units[${playerIndex}]`
           );
           this.#dataQueue.add(
-            unit.tile().id(),
+            playerTile.id(),
             () => unit.toPlainObject(this.#dataFilter(filterToReference(Unit))),
             `units[${tileIndex}]`
           );
@@ -357,29 +368,28 @@ export class ElectronClient extends Client implements IClient {
     ['unit:moved'].forEach((event) => {
       engineInstance.on(event, (unit, action) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
-          this.player()
-        );
+            this.player()
+          ),
+          fromTile = playerWorld.getByTile(action.from()),
+          toTile = playerWorld.getByTile(action.to());
 
-        if (
-          !playerWorld.includes(action.from()) &&
-          !playerWorld.includes(action.to())
-        ) {
+        if (!fromTile && !toTile) {
           return;
         }
 
-        if (playerWorld.includes(action.from())) {
-          this.#dataQueue.update(action.from().id(), () =>
-            action
-              .from()
-              .toPlainObject(this.#dataFilter(filterToReference(Player, City)))
+        if (fromTile) {
+          this.#dataQueue.update(fromTile.id(), () =>
+            fromTile.toPlainObject(
+              this.#dataFilter(filterToReference(Player, City))
+            )
           );
         }
 
-        if (playerWorld.includes(action.to())) {
-          this.#dataQueue.update(action.to().id(), () =>
-            action
-              .to()
-              .toPlainObject(this.#dataFilter(filterToReference(Player, City)))
+        if (toTile) {
+          this.#dataQueue.update(toTile.id(), () =>
+            toTile.toPlainObject(
+              this.#dataFilter(filterToReference(Player, City))
+            )
           );
         }
       });
@@ -388,12 +398,13 @@ export class ElectronClient extends Client implements IClient {
     ['tile-improvement:built', 'tile-improvement:pillaged'].forEach((event) => {
       engineInstance.on(event, (tile) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
-          this.player()
-        );
+            this.player()
+          ),
+          playerTile = playerWorld.getByTile(tile);
 
-        if (playerWorld.includes(tile)) {
-          this.#dataQueue.update(tile.id(), () =>
-            tile.toPlainObject(
+        if (playerTile) {
+          this.#dataQueue.update(playerTile.id(), () =>
+            playerTile.toPlainObject(
               this.#dataFilter(filterToReference(Player, City))
             )
           );
@@ -447,15 +458,16 @@ export class ElectronClient extends Client implements IClient {
     ].forEach((event) => {
       engineInstance.on(event, (city) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
-          this.player()
-        );
+            this.player()
+          ),
+          playerTile = playerWorld.getByTile(city.tile());
 
-        if (!playerWorld.includes(city.tile())) {
+        if (!playerTile) {
           return;
         }
 
-        this.#dataQueue.update(city.tile().id(), () =>
-          city.tile().toPlainObject(this.#dataFilter(filterToReference(Player)))
+        this.#dataQueue.update(playerTile.id(), () =>
+          playerTile.toPlainObject(this.#dataFilter(filterToReference(Player)))
         );
       });
     });
@@ -471,7 +483,7 @@ export class ElectronClient extends Client implements IClient {
       ) {
         this.sendNotification(
           `${
-            playerWorld.includes(cityBuild.city().tile())
+            playerWorld.getByTile(cityBuild.city().tile())
               ? cityBuild.city().name()
               : 'A faraway city'
           } has completed work on ${build.constructor.name}!`
@@ -730,8 +742,18 @@ export class ElectronClient extends Client implements IClient {
           return false;
         }
 
+        const [playerTile] = playerWorldRegistryInstance
+          .getByPlayer(this.player())
+          .filter((tile) => tile.id() === target);
+
+        if (!playerTile) {
+          console.log(`tile not found: ${target}`);
+
+          return false;
+        }
+
         actions = actions.filter(
-          (action: UnitAction): boolean => action.to().id() === target
+          (action: UnitAction): boolean => action.to() === playerTile.tile()
         );
 
         if (actions.length > 1) {

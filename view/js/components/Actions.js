@@ -24,54 +24,44 @@ export class Actions extends Element {
         __classPrivateFieldSet(this, _Actions_portal, portal, "f");
         this.element().addEventListener('actioned', (event) => event.detail.element().remove());
         this.element().addEventListener('keydown', (event) => {
-            var _a, _b;
+            var _a;
             const currentChild = document.activeElement;
-            if (!(currentChild === null || currentChild === void 0 ? void 0 : currentChild.matches('div#actions, div#actions *'))) {
+            if (!this.element().contains(currentChild)) {
                 return;
             }
             const { key } = event, children = Array.from(this.element().children);
-            if (children.length === 0) {
+            if (!['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(key) ||
+                children.length === 0) {
                 return;
-            }
-            // TODO: scroll the actions container if the element isn't visible
-            if (currentChild === this.element()) {
-                event.preventDefault();
-                event.stopPropagation();
-                if (key === 'UpArrow') {
-                    (_a = currentChild.lastElementChild) === null || _a === void 0 ? void 0 : _a.focus();
-                    return;
-                }
-                if (key === 'DownArrow') {
-                    (_b = currentChild.firstElementChild) === null || _b === void 0 ? void 0 : _b.focus();
-                    return;
-                }
             }
             event.preventDefault();
             event.stopPropagation();
             let currentAction = currentChild === this.element()
-                ? currentChild.lastElementChild
+                ? ['ArrowLeft', 'ArrowUp'].includes(key)
+                    ? currentChild.firstElementChild
+                    : currentChild.lastElementChild
                 : currentChild;
             while (currentAction.parentElement !== this.element()) {
                 currentAction = currentAction.parentElement;
             }
             const currentIndex = children.indexOf(currentAction);
-            if (key === 'UpArrow') {
+            if (['ArrowUp', 'ArrowLeft'].includes(key)) {
                 if (currentIndex > 0) {
-                    children[currentIndex - 1].focus();
+                    (_a = children[currentIndex - 1].querySelector('button')) === null || _a === void 0 ? void 0 : _a.focus();
                     return;
                 }
-                children.pop().focus();
+                children.pop().querySelector('button').focus();
                 return;
             }
-            if (key === 'DownArrow') {
-                if (currentIndex > children.length - 1) {
-                    children.shift().focus();
+            if (['ArrowDown', 'ArrowRight'].includes(key)) {
+                if (currentIndex < children.length - 1) {
+                    children[currentIndex + 1].querySelector('button').focus();
                     return;
                 }
-                children[currentIndex + 1].focus();
+                children.shift().querySelector('button').focus();
                 return;
             }
-        });
+        }, true);
     }
     build(actions) {
         this.empty();

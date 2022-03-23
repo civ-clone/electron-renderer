@@ -59,7 +59,6 @@ try {
         const data = reconstituteData(objectMap), 
         // @ts-ignore
         formatter = new Intl.ListFormat();
-        // TODO: use Intl.ListFormat if available
         new NotificationWindow('Welcome', e('div.welcome', e('p', t(`${data.player.civilization.leader.name}, you have risen to become leader of the ${data.player.civilization._}.`)), e('p', t(`Your people have knowledge of ${formatter.format([
             'Irrigation',
             'Mining',
@@ -217,7 +216,7 @@ try {
                     }));
                     Object.entries(value.objects).forEach(([key, value]) => {
                         objectMap.objects[key] = value;
-                        if (value._ === 'Tile') {
+                        if (value._ === 'PlayerTile') {
                             // Since we only use tilesToRender for x and y this should be fine...
                             tilesToRender.push(value);
                         }
@@ -381,15 +380,19 @@ try {
                 return;
             }
             if (event.key === 'Tab') {
-                const bottomAction = actionArea.querySelector('div.action:last-child button');
-                if (bottomAction !== null) {
-                    bottomAction.focus();
+                const topAction = actionArea.querySelector('div.action:first-child button');
+                if (topAction !== null) {
+                    topAction.focus();
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
                 }
             }
             if (event.key === 'c') {
                 if (activeUnit) {
                     portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
                     portal.render();
+                    return;
                 }
             }
             if (event.key === 't') {
@@ -398,13 +401,16 @@ try {
                 cityNamesMap.setVisible(!cityNamesMap.isVisible());
                 activeUnitsMap.setVisible(!activeUnitsMap.isVisible());
                 portal.render();
+                return;
             }
             if (event.key === 'y') {
                 yieldsMap.setVisible(!yieldsMap.isVisible());
                 portal.render();
+                return;
             }
             if (lastKey === '%' && event.key === '^') {
                 transport.send('cheat', { name: 'RevealMap' });
+                return;
             }
             lastKey = event.key;
         });

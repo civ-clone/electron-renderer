@@ -43,11 +43,14 @@ const buildCityBuildDetails = (
             t(
               `Progress ${city.build.progress.value} / ${
                 city.build.cost.value
-              } (${Math.ceil(
-                (city.build.cost.value - city.build.progress.value) /
-                  city.yields.filter(
-                    (cityYield) => cityYield._ === 'Production'
-                  )[0].value
+              } (${Math.max(
+                1,
+                Math.ceil(
+                  (city.build.cost.value - city.build.progress.value) /
+                    city.yields.filter(
+                      (cityYield) => cityYield._ === 'Production'
+                    )[0].value
+                )
               )} turns)`
             )
           )
