@@ -17,7 +17,12 @@ export class Action {
         _Action_element.set(this, void 0);
         __classPrivateFieldSet(this, _Action_action, action, "f");
         __classPrivateFieldSet(this, _Action_element, e('div.action'), "f");
-        __classPrivateFieldGet(this, _Action_element, "f").addEventListener('keydown', (event) => event.stopPropagation());
+        __classPrivateFieldGet(this, _Action_element, "f").addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                return;
+            }
+            event.stopPropagation();
+        });
         this.build();
     }
     activate() { }

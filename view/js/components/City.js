@@ -25,9 +25,11 @@ import Terrain from './Map/Terrain.js';
 import Window from './Window.js';
 import World from './World.js';
 import Yields from './Map/Yields.js';
-const buildCityBuildDetails = (city, chooseProduction, completeProduction) => e('div.build', e('header', t(`Building ${city.build.building ? city.build.building.item._ : 'nothing'}`)), city.build.building
-    ? e('p', t(`Progress ${city.build.progress.value} / ${city.build.cost.value} (${Math.max(1, Math.ceil((city.build.cost.value - city.build.progress.value) /
-        city.yields.filter((cityYield) => cityYield._ === 'Production')[0].value))} turns)`))
+const turns = (city) => Math.max(1, Math.ceil((city.build.cost.value - city.build.progress.value) /
+    city.yields
+        .filter((cityYield) => cityYield._ === 'Production')
+        .reduce((total, cityYield) => total + cityYield.value, 0))), buildCityBuildDetails = (city, chooseProduction, completeProduction) => e('div.build', e('header', t(`Building ${city.build.building ? city.build.building.item._ : 'nothing'}`)), city.build.building
+    ? e('p', t(`Progress ${city.build.progress.value} / ${city.build.cost.value} (${turns(city)} turn${turns(city) === 1 ? '' : 's'})`))
     : t(''), h(e('button', t(city.build.building ? 'Change' : 'Choose')), {
     click: () => chooseProduction(),
 }), h(e('button', t('Buy')), {
@@ -43,7 +45,20 @@ const buildCityBuildDetails = (city, chooseProduction, completeProduction) => e(
     cityMap.render(city.tiles);
     yieldMap.render(city.tilesWorked);
     map.setCenter(city.tile.x, city.tile.y);
-    return e('div', e('div.yields', ...city.yields.map((cityYield) => e(`div.${cityYield._.toLowerCase()}`, e('div', t(cityYield._)), e('div', t(cityYield.value.toString()))))), e('div.map', mapCanvas), buildCityBuildDetails(city, chooseProduction, completeProduction), e('div.growth', e('header', t(growth.size.toString())), e('p', t(`Growth ${growth.progress.value} / ${growth.cost.value}`))), e('div.improvements', e('header', t('Improvements')), e('ul', ...city.improvements.map((improvement) => e('li', t(improvement._))))), e('div.garrisoned-units', e('header', t('Garrisoned Units')), e('ul', ...city.tile.units.map((unit) => e('li', t(unit._ +
+    return e('div', e('div.yields-detail', 
+    // TODO: reduce/consolidate these
+    ...Object.entries(city.yields.reduce((yieldObject, cityYield) => {
+        if (!(cityYield._ in yieldObject)) {
+            yieldObject[cityYield._] = 0;
+        }
+        yieldObject[cityYield._] += cityYield.value;
+        return yieldObject;
+    }, {})).map(([label, value]) => e('div', e('div', t(label)), e('div', t(value))))), h(e('div.map', mapCanvas), {
+        click: () => transport.send('action', {
+            name: 'ReassignWorkers',
+            city: city.id,
+        }),
+    }), buildCityBuildDetails(city, chooseProduction, completeProduction), e('div.growth', e('header', t(growth.size.toString())), e('p', t(`Growth ${growth.progress.value} / ${growth.cost.value}`))), e('div.improvements', e('header', t('Improvements')), e('ul', ...city.improvements.map((improvement) => e('li', t(improvement._))))), e('div.garrisoned-units', e('header', t('Garrisoned Units')), e('ul', ...city.tile.units.map((unit) => e('li', t(unit._ +
         (unit.improvements.length
             ? ' (' +
                 unit.improvements
@@ -57,7 +72,9 @@ const buildCityBuildDetails = (city, chooseProduction, completeProduction) => e(
                     .map((improvement) => improvement._)
                     .join(', ') +
                 ')'
-            : '')))))));
+            : '')))))), e('div.yields-detail', ...city.yields.map((cityYield) => e(`div.${cityYield._.toLowerCase()}`, e('div', t(`${cityYield._} (${cityYield.values
+        .map(([, description]) => description)
+        .join(', ')})`)), e('div', t(cityYield.value.toString()))))));
 };
 export class City extends Window {
     constructor(city) {

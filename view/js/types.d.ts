@@ -188,6 +188,7 @@ export interface World extends EntityInstance {
 
 export interface Yield extends EntityInstance {
   value: number;
+  values: [number, string][];
 }
 
 export interface GameData extends EntityInstance {

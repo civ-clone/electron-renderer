@@ -30,9 +30,29 @@ const options = {
     autoEndOfTurn: true,
 };
 try {
-    const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), secondaryActionArea = document.getElementById('other-actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimapCanvas = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications(), mainMenu = new MainMenu(mainMenuElement);
+    const notificationArea = document.getElementById('notification'), mainMenuElement = document.querySelector('#mainmenu'), actionArea = document.getElementById('actions'), secondaryActionArea = document.getElementById('other-actions'), gameArea = document.getElementById('game'), mapWrapper = document.getElementById('map'), mapPortal = mapWrapper.querySelector('canvas'), gameInfo = document.getElementById('gameDetails'), playerInfo = document.getElementById('playerDetails'), minimapCanvas = document.getElementById('minimap'), unitInfo = document.getElementById('unitInfo'), notifications = new Notifications(), mainMenu = new MainMenu(mainMenuElement), setActiveUnit = (unit, portal, unitsMap, activeUnitsMap) => {
+        const unitDetails = new UnitDetails(unitInfo, unit);
+        activeUnit = unit;
+        unitDetails.build();
+        unitsMap.setActiveUnit(unit);
+        unitsMap.render();
+        unitsMap.setVisible(true);
+        activeUnitsMap.setActiveUnit(unit);
+        activeUnitsMap.render();
+        activeUnitsMap.setVisible(true);
+        if (unit === null) {
+            portal.render();
+            return;
+        }
+        lastUnit = unit;
+        unitsMap.update([...((lastUnit === null || lastUnit === void 0 ? void 0 : lastUnit.tile) ? [lastUnit.tile] : []), unit.tile]);
+        if (!portal.isVisible(unit.tile.x, unit.tile.y)) {
+            portal.setCenter(unit.tile.x, unit.tile.y);
+        }
+        portal.render();
+    };
     const tilesToRender = [];
-    let globalNotificationTimer, lastUnit;
+    let globalNotificationTimer, lastUnit = null, activeUnit = null;
     transport.receive('notification', (data) => {
         notificationArea.innerHTML = data;
         if (globalNotificationTimer) {
@@ -69,7 +89,7 @@ try {
         mapPortal.width = mapPortal.parentElement.offsetWidth;
         mapPortal.height = mapPortal.parentElement.offsetHeight;
         const scale = 2, world = new World(data.player.world);
-        let activeUnit = null, activeUnits = [];
+        let activeUnits = [];
         const intervalHandler = new IntervalHandler(), eventHandler = new EventHandler(), landMap = new Land(world, scale), irrigationMap = new Irrigation(world, scale), terrainMap = new Terrain(world, scale), improvementsMap = new Improvements(world, scale), featureMap = new Feature(world, scale), goodyHutsMap = new GoodyHuts(world, scale), fogMap = new Fog(world, scale), yieldsMap = new Yields(world, scale), unitsMap = new Units(world, scale), citiesMap = new Cities(world, scale), cityNamesMap = new CityNames(world, scale), activeUnitsMap = new ActiveUnit(world, scale);
         yieldsMap.setVisible(false);
         const portal = new Portal(world, mapPortal, scale, landMap, irrigationMap, terrainMap, improvementsMap, featureMap, goodyHutsMap, fogMap, yieldsMap, unitsMap, citiesMap, cityNamesMap, activeUnitsMap), minimap = new Minimap(minimapCanvas, world, portal, landMap, citiesMap), primaryActions = new Actions(actionArea, portal), secondaryActions = new Actions(secondaryActionArea, portal);
@@ -130,29 +150,14 @@ try {
                         (portal.isVisible(unitA.tile.x, unitA.tile.y)
                             ? 1
                             : 0));
-            activeUnit = activeUnitAction ? activeUnitAction.value : null;
-            unitsMap.setActiveUnit(activeUnit);
-            activeUnitsMap.setActiveUnit(activeUnit);
-            const unitDetails = new UnitDetails(unitInfo, activeUnit);
-            unitDetails.build();
-            if (activeUnit) {
-                unitsMap.update([
-                    ...(lastUnit && lastUnit.tile ? [lastUnit.tile] : []),
-                    activeUnit.tile,
-                ]);
-                lastUnit = activeUnit;
-                unitsMap.setActiveUnit(activeUnit);
-                activeUnitsMap.setActiveUnit(activeUnit);
-                if (!portal.isVisible(activeUnit.tile.x, activeUnit.tile.y)) {
-                    portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
-                    portal.render();
-                }
+            if (lastUnit !== (activeUnitAction === null || activeUnitAction === void 0 ? void 0 : activeUnitAction.value)) {
+                lastUnit = null;
             }
-            else {
-                unitsMap.setActiveUnit(null);
-                activeUnitsMap.setActiveUnit(null);
-                portal.render();
-            }
+            setActiveUnit((lastUnit === null || lastUnit === void 0 ? void 0 : lastUnit.active)
+                ? lastUnit
+                : activeUnitAction
+                    ? activeUnitAction.value
+                    : null, portal, unitsMap, activeUnitsMap);
             // ensure UI looks responsive
             portal.build(tilesToRender.splice(0));
             portal.render();
@@ -273,7 +278,7 @@ try {
                 }
                 else if (playerTileUnits.length) {
                     new SelectionWindow('Activate unit', playerTileUnits.map((unit) => ({
-                        label: unit._,
+                        label: unit._ + (unit.busy ? ' (' + unit.busy._ + ')' : ''),
                         value: unit.id,
                     })), (selection) => {
                         const [unit] = playerTileUnits.filter((tileUnit) => tileUnit.id === selection);
@@ -287,12 +292,7 @@ try {
                             });
                             return;
                         }
-                        // TODO: portal.setActiveUnit(unit);
-                        activeUnit = unit;
-                        unitsMap.setActiveUnit(activeUnit);
-                        unitsMap.render();
-                        activeUnitsMap.setActiveUnit(activeUnit);
-                        activeUnitsMap.render();
+                        setActiveUnit(unit, portal, unitsMap, activeUnitsMap);
                     }, null);
                 }
                 else {
@@ -371,7 +371,12 @@ try {
                     }
                 }
             }
-            if (event.key === 'Enter') {
+            if (event.key === 'Escape' && document.activeElement !== null) {
+                document.activeElement.blur();
+                return;
+            }
+            if (event.key === 'Enter' &&
+                data.player.mandatoryActions.some((action) => action._ === 'EndOfTurn')) {
                 transport.send('action', {
                     name: 'EndTurn',
                 });
@@ -388,18 +393,20 @@ try {
                     return;
                 }
             }
-            if (event.key === 'c') {
-                if (activeUnit) {
-                    portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
-                    portal.render();
-                    return;
-                }
+            if (event.key === 'c' && activeUnit) {
+                portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
+                portal.render();
+                minimap.update();
+                return;
+            }
+            if (event.key === 'w' && activeUnit && activeUnits.length > 1) {
+                const units = activeUnits.map((unitAction) => unitAction.value), current = units.indexOf(activeUnit), unit = units[current === units.length - 1 ? 0 : current + 1];
+                setActiveUnit(unit, portal, unitsMap, activeUnitsMap);
             }
             if (event.key === 't') {
                 unitsMap.setVisible(!unitsMap.isVisible());
                 citiesMap.setVisible(!citiesMap.isVisible());
                 cityNamesMap.setVisible(!cityNamesMap.isVisible());
-                activeUnitsMap.setVisible(!activeUnitsMap.isVisible());
                 portal.render();
                 return;
             }

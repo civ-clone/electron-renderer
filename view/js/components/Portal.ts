@@ -5,9 +5,13 @@ import World from './World.js';
 
 export interface IPortal {
   build(updatedTiles: Tile[]): void;
+  center(): Coordinate;
   isVisible(x: number, y: number): boolean;
   render(): void;
+  scale(): number;
   setCenter(x: number, y: number): void;
+  visibleBounds(): [number, number, number, number];
+  visibleRange(): [Coordinate, Coordinate];
 }
 
 export class Portal implements IPortal {
@@ -40,44 +44,28 @@ export class Portal implements IPortal {
     return this.#center;
   }
 
-  visibleRange(): [Coordinate, Coordinate] {
-    const xRange = Math.floor(
-        this.#canvas.width / this.#layers[0].tileSize() / this.#scale
-      ),
-      yRange = Math.floor(
-        this.#canvas.height / this.#layers[0].tileSize() / this.#scale
-      );
-
-    return [
-      { x: this.#center.x - xRange, y: this.#center.y - yRange },
-      { x: this.#center.x + xRange, y: this.#center.y + yRange },
-    ];
-  }
-
   isVisible(x: number, y: number): boolean {
-    const xRange = Math.floor(
-        this.#canvas.width / this.#layers[0].tileSize() / this.#scale
-      ),
-      yRange = Math.floor(
-        this.#canvas.height / this.#layers[0].tileSize() / this.#scale
-      );
+    const [xLowerBound, xUpperBound, yLowerBound, yUpperBound] =
+      this.visibleBounds();
 
+    // I _think_ this logic is correct now...
     return (
-      x < this.#center.x + xRange &&
-      x > this.#center.x - xRange &&
-      y < this.#center.y + yRange &&
-      y > this.#center.y - yRange
+      (xLowerBound > xUpperBound
+        ? x < xUpperBound || x > xLowerBound
+        : x < xUpperBound && x > xLowerBound) &&
+      (yLowerBound > yUpperBound
+        ? y < yUpperBound || y > yLowerBound
+        : y < yUpperBound && y > yLowerBound)
     );
   }
 
   render(): void {
-    // TODO: replace `2` with the scale
     const tileSize = this.#layers[0].tileSize(),
       layerWidth = this.#world.width() * tileSize,
-      centerX = this.#center.x * tileSize + Math.trunc(tileSize / 2),
+      centerX = this.#center.x * tileSize + Math.trunc(tileSize / this.scale()),
       portalCenterX = Math.trunc(this.#canvas.width / 2),
       layerHeight = this.#world.height() * tileSize,
-      centerY = this.#center.y * tileSize + Math.trunc(tileSize / 2),
+      centerY = this.#center.y * tileSize + Math.trunc(tileSize / this.scale()),
       portalCenterY = Math.trunc(this.#canvas.height / 2);
 
     let startX = portalCenterX - centerX,
@@ -133,6 +121,37 @@ export class Portal implements IPortal {
     this.#center.y = y;
 
     this.render();
+  }
+
+  visibleBounds(): [number, number, number, number] {
+    const xRange = Math.floor(
+        this.#canvas.width / this.#layers[0].tileSize() / this.#scale
+      ),
+      yRange = Math.floor(
+        this.#canvas.height / this.#layers[0].tileSize() / this.#scale
+      ),
+      xLowerBound =
+        (this.#center.x - xRange + this.#world.width()) % this.#world.width(),
+      xUpperBound = (this.#center.x + xRange) % this.#world.width(),
+      yLowerBound =
+        (this.#center.y - yRange + this.#world.height()) % this.#world.height(),
+      yUpperBound = (this.#center.y + yRange) % this.#world.height();
+
+    return [xLowerBound, xUpperBound, yLowerBound, yUpperBound];
+  }
+
+  visibleRange(): [Coordinate, Coordinate] {
+    const xRange = Math.floor(
+        this.#canvas.width / this.#layers[0].tileSize() / this.#scale
+      ),
+      yRange = Math.floor(
+        this.#canvas.height / this.#layers[0].tileSize() / this.#scale
+      );
+
+    return [
+      { x: this.#center.x - xRange, y: this.#center.y - yRange },
+      { x: this.#center.x + xRange, y: this.#center.y + yRange },
+    ];
   }
 }
 

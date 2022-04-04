@@ -58,6 +58,7 @@ import { instance as unitRegistryInstance } from '@civ-clone/core-unit/UnitRegis
 import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
 import * as EventEmitter from 'events';
 import Busy from '@civ-clone/core-unit/Rules/Busy';
+import { reassignWorkers } from '@civ-clone/civ1-city/lib/assignWorkers';
 
 const referenceObject = (object: any) =>
     object instanceof DataObject
@@ -151,31 +152,34 @@ export class ElectronClient extends Client implements IClient {
     this.#receiver(
       'cheat',
       ({ name, value }: { name: string; value: any }): void => {
-        // if (name === 'RevealMap') {
-        //   const playerWorld = playerWorldRegistryInstance.getByPlayer(
-        //     this.player()
-        //   );
-        //
-        //   // A bit nasty... I wonder how slow this data transfer will be...
-        //   const [tile] = playerWorld.entries();
-        //
-        //   tile
-        //     .map()
-        //     .entries()
-        //     .forEach((tile) => {
-        //       if (playerWorld.includes(tile)) {
-        //         return;
-        //       }
-        //
-        //       playerWorld.register(tile);
-        //
-        //       this.#dataQueue.add(
-        //         playerWorld.id(),
-        //         () => tile.toPlainObject(this.#dataFilter()),
-        //         `entries[${playerWorld.entries().indexOf(tile)}]`
-        //       );
-        //     });
-        // }
+        if (name === 'RevealMap') {
+          const playerWorld = playerWorldRegistryInstance.getByPlayer(
+            this.player()
+          );
+
+          // A bit nasty... I wonder how slow this data transfer will be...
+          const [tile] = playerWorld.entries();
+
+          tile
+            .tile()
+            .map()
+            .entries()
+            .forEach((tile) => {
+              if (playerWorld.includes(tile)) {
+                return;
+              }
+
+              playerWorld.register(tile);
+
+              const playerTile = playerWorld.getByTile(tile)!;
+
+              this.#dataQueue.add(
+                playerWorld.id(),
+                () => tile.toPlainObject(this.#dataFilter()),
+                `entries[${playerWorld.entries().indexOf(playerTile)}]`
+              );
+            });
+        }
 
         if (name === 'GrantAdvance') {
           const [Advance] = advanceRegistryInstance.filter(
@@ -250,6 +254,11 @@ export class ElectronClient extends Client implements IClient {
         this.sendPatchData();
       }
     );
+
+    engineInstance.on('engine:plugins:load:failed', (packagePath, error) => {
+      console.log(packagePath + ' failed to load');
+      console.error(error);
+    });
 
     engineInstance.on('player:visibility-changed', (tile, player) => {
       if (player !== this.player()) {
@@ -695,6 +704,24 @@ export class ElectronClient extends Client implements IClient {
       );
 
     const { name, id } = action;
+
+    // TODO: a proper action for this probably...
+    if (name === 'ReassignWorkers') {
+      const [city] = cityRegistryInstance.getBy('id', action.city);
+
+      if (!city) {
+        return false;
+      }
+
+      reassignWorkers(city);
+
+      this.#dataQueue.update(
+        city.id(),
+        city.toPlainObject(this.#dataFilter(filterToReference(Player, Tile)))
+      );
+
+      return false;
+    }
 
     if (name === 'EndTurn') {
       return (

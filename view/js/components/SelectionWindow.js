@@ -9,7 +9,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _SelectionWindow_selectionList;
+var _SelectionWindow_resizeHandler, _SelectionWindow_selectionList;
 import { e, h, t } from '../lib/html.js';
 import { NotificationWindow, } from './NotificationWindow.js';
 export class SelectionWindow extends NotificationWindow {
@@ -58,9 +58,16 @@ export class SelectionWindow extends NotificationWindow {
                 }
             },
         })))));
+        _SelectionWindow_resizeHandler.set(this, () => this.resize());
         _SelectionWindow_selectionList.set(this, void 0);
         this.element().classList.add('selectionWindow');
         __classPrivateFieldSet(this, _SelectionWindow_selectionList, selectionList, "f");
+        this.resize();
+        window.addEventListener('resize', __classPrivateFieldGet(this, _SelectionWindow_resizeHandler, "f"));
+    }
+    close() {
+        window.removeEventListener('resize', __classPrivateFieldGet(this, _SelectionWindow_resizeHandler, "f"));
+        super.close();
     }
     display() {
         return super.display(false).then(() => {
@@ -70,10 +77,26 @@ export class SelectionWindow extends NotificationWindow {
             }
         });
     }
+    resize() {
+        var _a, _b;
+        // TODO: I'd like to have this height scaled automatically.
+        //  Feels like it should be possible using CSS flexbox, but can't get it to work...
+        try {
+            this.selectionList().style.maxHeight = 'none';
+            this.selectionList().style.maxHeight = `calc(${this.element().offsetHeight -
+                3 -
+                this.element().firstElementChild.offsetHeight -
+                ((_b = (_a = this.selectionList().previousElementSibling) === null || _a === void 0 ? void 0 : _a.offsetHeight) !== null && _b !== void 0 ? _b : 0) -
+                this.selectionList().nextElementSibling.offsetHeight}px - 2em)`;
+        }
+        catch (e) {
+            console.warn(e);
+        }
+    }
     selectionList() {
         return __classPrivateFieldGet(this, _SelectionWindow_selectionList, "f");
     }
 }
-_SelectionWindow_selectionList = new WeakMap();
+_SelectionWindow_resizeHandler = new WeakMap(), _SelectionWindow_selectionList = new WeakMap();
 export default SelectionWindow;
 //# sourceMappingURL=SelectionWindow.js.map

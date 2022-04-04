@@ -64,11 +64,48 @@ try {
     minimapCanvas = document.getElementById('minimap') as HTMLCanvasElement,
     unitInfo = document.getElementById('unitInfo') as HTMLCanvasElement,
     notifications = new Notifications(),
-    mainMenu = new MainMenu(mainMenuElement);
+    mainMenu = new MainMenu(mainMenuElement),
+    setActiveUnit = (
+      unit: Unit | null,
+      portal: Portal,
+      unitsMap: Units,
+      activeUnitsMap: ActiveUnit
+    ) => {
+      const unitDetails = new UnitDetails(unitInfo, unit);
+
+      activeUnit = unit;
+
+      unitDetails.build();
+
+      unitsMap.setActiveUnit(unit);
+      unitsMap.render();
+      unitsMap.setVisible(true);
+      activeUnitsMap.setActiveUnit(unit);
+      activeUnitsMap.render();
+      activeUnitsMap.setVisible(true);
+
+      if (unit === null) {
+        portal.render();
+
+        return;
+      }
+
+      lastUnit = unit;
+
+      unitsMap.update([...(lastUnit?.tile ? [lastUnit.tile] : []), unit.tile]);
+
+      if (!portal.isVisible(unit.tile.x, unit.tile.y)) {
+        portal.setCenter(unit.tile.x, unit.tile.y);
+      }
+
+      portal.render();
+    };
 
   const tilesToRender: Tile[] = [];
 
-  let globalNotificationTimer: number | undefined, lastUnit: Unit;
+  let globalNotificationTimer: number | undefined,
+    lastUnit: Unit | null = null,
+    activeUnit: Unit | null = null;
 
   transport.receive('notification', (data): void => {
     notificationArea.innerHTML = data;
@@ -143,8 +180,7 @@ try {
     const scale = 2,
       world = new World(data.player.world);
 
-    let activeUnit: Unit | null = null,
-      activeUnits: PlayerAction[] = [];
+    let activeUnits: PlayerAction[] = [];
 
     const intervalHandler = new IntervalHandler(),
       eventHandler = new EventHandler(),
@@ -282,35 +318,20 @@ try {
                 : 0)
       );
 
-      activeUnit = activeUnitAction ? (activeUnitAction.value as Unit) : null;
-
-      unitsMap.setActiveUnit(activeUnit);
-      activeUnitsMap.setActiveUnit(activeUnit);
-
-      const unitDetails = new UnitDetails(unitInfo, activeUnit);
-
-      unitDetails.build();
-
-      if (activeUnit) {
-        unitsMap.update([
-          ...(lastUnit && lastUnit.tile ? [lastUnit.tile] : []),
-          activeUnit.tile,
-        ]);
-        lastUnit = activeUnit;
-        unitsMap.setActiveUnit(activeUnit);
-        activeUnitsMap.setActiveUnit(activeUnit);
-
-        if (!portal.isVisible(activeUnit.tile.x, activeUnit.tile.y)) {
-          portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
-
-          portal.render();
-        }
-      } else {
-        unitsMap.setActiveUnit(null);
-        activeUnitsMap.setActiveUnit(null);
-
-        portal.render();
+      if (lastUnit !== activeUnitAction?.value) {
+        lastUnit = null;
       }
+
+      setActiveUnit(
+        lastUnit?.active
+          ? lastUnit
+          : activeUnitAction
+          ? (activeUnitAction.value as Unit)
+          : null,
+        portal,
+        unitsMap,
+        activeUnitsMap
+      );
 
       // ensure UI looks responsive
       portal.build(tilesToRender.splice(0));
@@ -492,7 +513,7 @@ try {
           new SelectionWindow(
             'Activate unit',
             playerTileUnits.map((unit: Unit) => ({
-              label: unit._,
+              label: unit._ + (unit.busy ? ' (' + unit.busy!._ + ')' : ''),
               value: unit.id,
             })),
             (selection: string) => {
@@ -513,12 +534,7 @@ try {
                 return;
               }
 
-              // TODO: portal.setActiveUnit(unit);
-              activeUnit = unit;
-              unitsMap.setActiveUnit(activeUnit);
-              unitsMap.render();
-              activeUnitsMap.setActiveUnit(activeUnit);
-              activeUnitsMap.render();
+              setActiveUnit(unit, portal, unitsMap, activeUnitsMap);
             },
             null
           );
@@ -620,7 +636,16 @@ try {
         }
       }
 
-      if (event.key === 'Enter') {
+      if (event.key === 'Escape' && document.activeElement !== null) {
+        (document.activeElement as HTMLElement).blur();
+
+        return;
+      }
+
+      if (
+        event.key === 'Enter' &&
+        data.player.mandatoryActions.some((action) => action._ === 'EndOfTurn')
+      ) {
         transport.send('action', {
           name: 'EndTurn',
         });
@@ -646,21 +671,27 @@ try {
         }
       }
 
-      if (event.key === 'c') {
-        if (activeUnit) {
-          portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
+      if (event.key === 'c' && activeUnit) {
+        portal.setCenter(activeUnit.tile.x, activeUnit.tile.y);
 
-          portal.render();
+        portal.render();
+        minimap.update();
 
-          return;
-        }
+        return;
+      }
+
+      if (event.key === 'w' && activeUnit && activeUnits.length > 1) {
+        const units = activeUnits.map((unitAction) => unitAction.value as Unit),
+          current = units.indexOf(activeUnit),
+          unit = units[current === units.length - 1 ? 0 : current + 1];
+
+        setActiveUnit(unit, portal, unitsMap, activeUnitsMap);
       }
 
       if (event.key === 't') {
         unitsMap.setVisible(!unitsMap.isVisible());
         citiesMap.setVisible(!citiesMap.isVisible());
         cityNamesMap.setVisible(!cityNamesMap.isVisible());
-        activeUnitsMap.setVisible(!activeUnitsMap.isVisible());
 
         portal.render();
 

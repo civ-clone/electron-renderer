@@ -33,7 +33,7 @@ export class UnitDetails extends Element {
       e(
         'p',
         t(
-          `${this.#activeUnit.moves.value} / ${
+          `${this.#activeUnit.moves.value.toFixed(1)} / ${
             this.#activeUnit.movement.value
           } moves`
         )
@@ -52,6 +52,27 @@ export class UnitDetails extends Element {
           `${this.#activeUnit.improvements
             .map((improvement) => improvement._)
             .join(', ')}`
+        )
+      ),
+      e(
+        'p',
+        t(
+          `${this.#activeUnit.tile.terrain._}${
+            this.#activeUnit.tile.terrain.features
+              ? ' ' +
+                this.#activeUnit.tile.terrain.features
+                  .map((feature) => feature._)
+                  .join(', ')
+              : ''
+          }${
+            this.#activeUnit.tile.improvements.length
+              ? ' (' +
+                this.#activeUnit.tile.improvements
+                  .map((improvement) => improvement._)
+                  .join(', ') +
+                ')'
+              : ''
+          }`
         )
       ),
       e(

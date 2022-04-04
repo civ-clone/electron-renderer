@@ -33,7 +33,7 @@ export class AdjustTradeRates extends Action {
         id: this.value().id,
         value: this.#sliderGroup!.sliders().map((slider) => [
           slider.label(),
-          slider.value() / 100,
+          parseFloat((slider.value() / 100).toFixed(2)),
         ]),
       });
     });

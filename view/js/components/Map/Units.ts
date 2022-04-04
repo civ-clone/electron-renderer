@@ -59,13 +59,13 @@ export class Units extends Map implements IMap {
         this.context().fillText(
           identifier,
           offsetX + sizeOffsetX + this.scale(),
-          offsetY + sizeOffsetY
+          offsetY + sizeOffsetY + this.scale()
         );
         this.context().fillStyle = 'white';
         this.context().fillText(
           identifier,
           offsetX + sizeOffsetX,
-          offsetY + sizeOffsetY - this.scale()
+          offsetY + sizeOffsetY
         );
       }
     }

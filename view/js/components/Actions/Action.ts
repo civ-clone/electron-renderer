@@ -35,9 +35,13 @@ export class Action implements IAction {
     this.#action = action;
     this.#element = e('div.action');
 
-    this.#element.addEventListener('keydown', (event) =>
-      event.stopPropagation()
-    );
+    this.#element.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        return;
+      }
+
+      event.stopPropagation();
+    });
 
     this.build();
   }

@@ -22,7 +22,17 @@ import Yields from './Map/Yields.js';
 
 declare var transport: ITransport;
 
-const buildCityBuildDetails = (
+const turns = (city: CityData) =>
+    Math.max(
+      1,
+      Math.ceil(
+        (city.build.cost.value - city.build.progress.value) /
+          city.yields
+            .filter((cityYield) => cityYield._ === 'Production')
+            .reduce((total, cityYield) => total + cityYield.value, 0)
+      )
+    ),
+  buildCityBuildDetails = (
     city: CityData,
     chooseProduction: () => void,
     completeProduction: () => void
@@ -43,15 +53,7 @@ const buildCityBuildDetails = (
             t(
               `Progress ${city.build.progress.value} / ${
                 city.build.cost.value
-              } (${Math.max(
-                1,
-                Math.ceil(
-                  (city.build.cost.value - city.build.progress.value) /
-                    city.yields.filter(
-                      (cityYield) => cityYield._ === 'Production'
-                    )[0].value
-                )
-              )} turns)`
+              } (${turns(city)} turn${turns(city) === 1 ? '' : 's'})`
             )
           )
         : t(''),
@@ -106,16 +108,29 @@ const buildCityBuildDetails = (
     return e(
       'div',
       e(
-        'div.yields',
-        ...city.yields.map((cityYield) =>
-          e(
-            `div.${cityYield._.toLowerCase()}`,
-            e('div', t(cityYield._)),
-            e('div', t(cityYield.value.toString()))
-          )
+        'div.yields-detail',
+        // TODO: reduce/consolidate these
+        ...Object.entries(
+          city.yields.reduce((yieldObject, cityYield) => {
+            if (!(cityYield._ in yieldObject)) {
+              yieldObject[cityYield._] = 0;
+            }
+
+            yieldObject[cityYield._] += cityYield.value;
+
+            return yieldObject;
+          }, {} as PlainObject)
+        ).map(([label, value]) =>
+          e('div', e('div', t(label)), e('div', t(value)))
         )
       ),
-      e('div.map', mapCanvas),
+      h(e('div.map', mapCanvas), {
+        click: () =>
+          transport.send('action', {
+            name: 'ReassignWorkers',
+            city: city.id,
+          }),
+      }),
       buildCityBuildDetails(city, chooseProduction, completeProduction),
       e(
         'div.growth',
@@ -171,6 +186,23 @@ const buildCityBuildDetails = (
                     : '')
               )
             )
+          )
+        )
+      ),
+      e(
+        'div.yields-detail',
+        ...city.yields.map((cityYield) =>
+          e(
+            `div.${cityYield._.toLowerCase()}`,
+            e(
+              'div',
+              t(
+                `${cityYield._} (${cityYield.values
+                  .map(([, description]) => description)
+                  .join(', ')})`
+              )
+            ),
+            e('div', t(cityYield.value.toString()))
           )
         )
       )

@@ -25,9 +25,20 @@ export class UnitDetails extends Element {
         if (__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f") === null) {
             return;
         }
-        this.element().append(e('p', t(`${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f")._} (${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.x}, ${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.y})`)), e('p', t((_b = (_a = __classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").city) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : 'NONE')), e('p', t(`${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").moves.value} / ${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").movement.value} moves`)), e('p', t(`A: ${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").attack.value} / D: ${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").defence.value} / V: ${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").visibility.value}`)), e('p', t(`${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").improvements
+        this.element().append(e('p', t(`${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f")._} (${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.x}, ${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.y})`)), e('p', t((_b = (_a = __classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").city) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : 'NONE')), e('p', t(`${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").moves.value.toFixed(1)} / ${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").movement.value} moves`)), e('p', t(`A: ${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").attack.value} / D: ${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").defence.value} / V: ${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").visibility.value}`)), e('p', t(`${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").improvements
             .map((improvement) => improvement._)
-            .join(', ')}`)), e('p', t(`${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.units
+            .join(', ')}`)), e('p', t(`${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.terrain._}${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.terrain.features
+            ? ' ' +
+                __classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.terrain.features
+                    .map((feature) => feature._)
+                    .join(', ')
+            : ''}${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.improvements.length
+            ? ' (' +
+                __classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.improvements
+                    .map((improvement) => improvement._)
+                    .join(', ') +
+                ')'
+            : ''}`)), e('p', t(`${__classPrivateFieldGet(this, _UnitDetails_activeUnit, "f").tile.units
             .filter((unit) => unit !== __classPrivateFieldGet(this, _UnitDetails_activeUnit, "f"))
             .map((unit) => unit._)
             .join(', ')}`)));

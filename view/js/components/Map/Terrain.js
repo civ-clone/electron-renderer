@@ -17,9 +17,6 @@ export class Terrain extends TerrainAbstract {
                 this.drawImage(`terrain/${tile.terrain._.toLowerCase()}`, x, y);
             }
         }
-        if (tile.terrain.features.length) {
-            tile.terrain.features.forEach((feature) => this.drawImage(`terrain/${feature._.toLowerCase()}`, x, y));
-        }
     }
 }
 export default Terrain;

@@ -7,6 +7,11 @@ export interface IMap {
   tileSize(): number;
   world(): World;
 }
+interface DrawImageOptions {
+  augment?: (image: CanvasImageSource) => CanvasImageSource;
+  offsetX?: number;
+  offsetY?: number;
+}
 export declare class Map implements IMap {
   #private;
   constructor(world: World, scale?: number, canvas?: HTMLCanvasElement);
@@ -23,7 +28,7 @@ export declare class Map implements IMap {
     path: string,
     x: number,
     y: number,
-    augment?: (image: CanvasImageSource) => CanvasImageSource
+    options?: DrawImageOptions
   ): void;
   protected filterNeighbours(
     tile: Tile,

@@ -31,23 +31,18 @@ export class Portal {
     center() {
         return __classPrivateFieldGet(this, _Portal_center, "f");
     }
-    visibleRange() {
-        const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f")), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f"));
-        return [
-            { x: __classPrivateFieldGet(this, _Portal_center, "f").x - xRange, y: __classPrivateFieldGet(this, _Portal_center, "f").y - yRange },
-            { x: __classPrivateFieldGet(this, _Portal_center, "f").x + xRange, y: __classPrivateFieldGet(this, _Portal_center, "f").y + yRange },
-        ];
-    }
     isVisible(x, y) {
-        const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f")), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f"));
-        return (x < __classPrivateFieldGet(this, _Portal_center, "f").x + xRange &&
-            x > __classPrivateFieldGet(this, _Portal_center, "f").x - xRange &&
-            y < __classPrivateFieldGet(this, _Portal_center, "f").y + yRange &&
-            y > __classPrivateFieldGet(this, _Portal_center, "f").y - yRange);
+        const [xLowerBound, xUpperBound, yLowerBound, yUpperBound] = this.visibleBounds();
+        // I _think_ this logic is correct now...
+        return ((xLowerBound > xUpperBound
+            ? x < xUpperBound || x > xLowerBound
+            : x < xUpperBound && x > xLowerBound) &&
+            (yLowerBound > yUpperBound
+                ? y < yUpperBound || y > yLowerBound
+                : y < yUpperBound && y > yLowerBound));
     }
     render() {
-        // TODO: replace `2` with the scale
-        const tileSize = __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize(), layerWidth = __classPrivateFieldGet(this, _Portal_world, "f").width() * tileSize, centerX = __classPrivateFieldGet(this, _Portal_center, "f").x * tileSize + Math.trunc(tileSize / 2), portalCenterX = Math.trunc(__classPrivateFieldGet(this, _Portal_canvas, "f").width / 2), layerHeight = __classPrivateFieldGet(this, _Portal_world, "f").height() * tileSize, centerY = __classPrivateFieldGet(this, _Portal_center, "f").y * tileSize + Math.trunc(tileSize / 2), portalCenterY = Math.trunc(__classPrivateFieldGet(this, _Portal_canvas, "f").height / 2);
+        const tileSize = __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize(), layerWidth = __classPrivateFieldGet(this, _Portal_world, "f").width() * tileSize, centerX = __classPrivateFieldGet(this, _Portal_center, "f").x * tileSize + Math.trunc(tileSize / this.scale()), portalCenterX = Math.trunc(__classPrivateFieldGet(this, _Portal_canvas, "f").width / 2), layerHeight = __classPrivateFieldGet(this, _Portal_world, "f").height() * tileSize, centerY = __classPrivateFieldGet(this, _Portal_center, "f").y * tileSize + Math.trunc(tileSize / this.scale()), portalCenterY = Math.trunc(__classPrivateFieldGet(this, _Portal_canvas, "f").height / 2);
         let startX = portalCenterX - centerX, endX = portalCenterX + layerWidth, startY = portalCenterY - centerY, endY = portalCenterY + layerHeight;
         while (startX > 0) {
             startX -= layerWidth;
@@ -82,6 +77,17 @@ export class Portal {
         __classPrivateFieldGet(this, _Portal_center, "f").x = x;
         __classPrivateFieldGet(this, _Portal_center, "f").y = y;
         this.render();
+    }
+    visibleBounds() {
+        const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f")), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f")), xLowerBound = (__classPrivateFieldGet(this, _Portal_center, "f").x - xRange + __classPrivateFieldGet(this, _Portal_world, "f").width()) % __classPrivateFieldGet(this, _Portal_world, "f").width(), xUpperBound = (__classPrivateFieldGet(this, _Portal_center, "f").x + xRange) % __classPrivateFieldGet(this, _Portal_world, "f").width(), yLowerBound = (__classPrivateFieldGet(this, _Portal_center, "f").y - yRange + __classPrivateFieldGet(this, _Portal_world, "f").height()) % __classPrivateFieldGet(this, _Portal_world, "f").height(), yUpperBound = (__classPrivateFieldGet(this, _Portal_center, "f").y + yRange) % __classPrivateFieldGet(this, _Portal_world, "f").height();
+        return [xLowerBound, xUpperBound, yLowerBound, yUpperBound];
+    }
+    visibleRange() {
+        const xRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").width / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f")), yRange = Math.floor(__classPrivateFieldGet(this, _Portal_canvas, "f").height / __classPrivateFieldGet(this, _Portal_layers, "f")[0].tileSize() / __classPrivateFieldGet(this, _Portal_scale, "f"));
+        return [
+            { x: __classPrivateFieldGet(this, _Portal_center, "f").x - xRange, y: __classPrivateFieldGet(this, _Portal_center, "f").y - yRange },
+            { x: __classPrivateFieldGet(this, _Portal_center, "f").x + xRange, y: __classPrivateFieldGet(this, _Portal_center, "f").y + yRange },
+        ];
     }
 }
 _Portal_canvas = new WeakMap(), _Portal_center = new WeakMap(), _Portal_context = new WeakMap(), _Portal_layers = new WeakMap(), _Portal_scale = new WeakMap(), _Portal_world = new WeakMap();

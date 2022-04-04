@@ -52,6 +52,7 @@ const UnitRegistry_1 = require("@civ-clone/core-unit/UnitRegistry");
 const Year_1 = require("@civ-clone/core-game-year/Year");
 const EventEmitter = require("events");
 const Busy_1 = require("@civ-clone/core-unit/Rules/Busy");
+const assignWorkers_1 = require("@civ-clone/civ1-city/lib/assignWorkers");
 const referenceObject = (object) => object instanceof DataObject_1.default
     ? {
         '#ref': object.id(),
@@ -108,31 +109,23 @@ class ElectronClient extends Client_1.Client {
         });
         // TODO: These could be `HiddenAction`s. Need to add a `perform` method to actions too...
         __classPrivateFieldGet(this, _ElectronClient_receiver, "f").call(this, 'cheat', ({ name, value }) => {
-            // if (name === 'RevealMap') {
-            //   const playerWorld = playerWorldRegistryInstance.getByPlayer(
-            //     this.player()
-            //   );
-            //
-            //   // A bit nasty... I wonder how slow this data transfer will be...
-            //   const [tile] = playerWorld.entries();
-            //
-            //   tile
-            //     .map()
-            //     .entries()
-            //     .forEach((tile) => {
-            //       if (playerWorld.includes(tile)) {
-            //         return;
-            //       }
-            //
-            //       playerWorld.register(tile);
-            //
-            //       this.#dataQueue.add(
-            //         playerWorld.id(),
-            //         () => tile.toPlainObject(this.#dataFilter()),
-            //         `entries[${playerWorld.entries().indexOf(tile)}]`
-            //       );
-            //     });
-            // }
+            if (name === 'RevealMap') {
+                const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
+                // A bit nasty... I wonder how slow this data transfer will be...
+                const [tile] = playerWorld.entries();
+                tile
+                    .tile()
+                    .map()
+                    .entries()
+                    .forEach((tile) => {
+                    if (playerWorld.includes(tile)) {
+                        return;
+                    }
+                    playerWorld.register(tile);
+                    const playerTile = playerWorld.getByTile(tile);
+                    __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").add(playerWorld.id(), () => tile.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this)), `entries[${playerWorld.entries().indexOf(playerTile)}]`);
+                });
+            }
             if (name === 'GrantAdvance') {
                 const [Advance] = AdvanceRegistry_1.instance.filter((Advance) => Advance.name === value), playerResearch = PlayerResearchRegistry_1.instance.getByPlayer(this.player());
                 if (!Advance) {
@@ -163,6 +156,10 @@ class ElectronClient extends Client_1.Client {
                 __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").add(unit.id(), unit.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))));
             }
             this.sendPatchData();
+        });
+        Engine_1.instance.on('engine:plugins:load:failed', (packagePath, error) => {
+            console.log(packagePath + ' failed to load');
+            console.error(error);
         });
         Engine_1.instance.on('player:visibility-changed', (tile, player) => {
             if (player !== this.player()) {
@@ -376,6 +373,16 @@ class ElectronClient extends Client_1.Client {
     handleAction(...args) {
         const [action] = args, player = this.player(), actions = player.actions(), mandatoryActions = actions.filter((action) => action instanceof MandatoryPlayerAction_1.default);
         const { name, id } = action;
+        // TODO: a proper action for this probably...
+        if (name === 'ReassignWorkers') {
+            const [city] = CityRegistry_1.instance.getBy('id', action.city);
+            if (!city) {
+                return false;
+            }
+            (0, assignWorkers_1.reassignWorkers)(city);
+            __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(city.id(), city.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default, Tile_1.default))));
+            return false;
+        }
         if (name === 'EndTurn') {
             return (mandatoryActions.length === 1 &&
                 mandatoryActions.every((action) => action instanceof PlayerActions_3.EndTurn));

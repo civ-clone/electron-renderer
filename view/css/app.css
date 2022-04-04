@@ -202,6 +202,7 @@ body {
 .selectionWindow select {
   background: transparent;
   border: 0;
+  display: block;
   margin: 1em;
   max-height: calc(60vh - 8.5em);
   outline: 0;

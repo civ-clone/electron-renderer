@@ -1,4 +1,10 @@
-import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron';
+import {
+  app,
+  dialog,
+  BrowserWindow,
+  ipcMain,
+  IpcMainInvokeEvent,
+} from 'electron';
 import ElectronClient from './client/ElectronClient';
 import Player from '@civ-clone/core-player/Player';
 import SimpleAIClient from '@civ-clone/simple-ai-client/SimpleAIClient';
@@ -46,6 +52,19 @@ export class Game implements IGame {
     });
 
     this.#window.loadURL(`file://${__dirname}/view/html/index.html`);
+
+    this.#window.on('close', (event) => {
+      const response = dialog.showMessageBoxSync(this.#window!, {
+        type: 'question',
+        buttons: ['Yes', 'No'],
+        title: 'Confirm',
+        message: 'Are you sure you want to quit?',
+      });
+
+      if (response === 1) {
+        event.preventDefault();
+      }
+    });
 
     // this.#window.webContents.openDevTools();
   }

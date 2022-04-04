@@ -10,6 +10,12 @@ export interface IMap {
   world(): World;
 }
 
+interface DrawImageOptions {
+  augment?: (image: CanvasImageSource) => CanvasImageSource;
+  offsetX?: number;
+  offsetY?: number;
+}
+
 export class Map implements IMap {
   #canvas: HTMLCanvasElement;
   #context: CanvasRenderingContext2D;
@@ -83,14 +89,18 @@ export class Map implements IMap {
     path: string,
     x: number,
     y: number,
-    augment: (image: CanvasImageSource) => CanvasImageSource = (image) => image
+    options: DrawImageOptions = {}
   ): void {
     const size = this.tileSize(),
       offsetX = x * size,
       offsetY = y * size,
       image = this.getPreloadedImage(path);
 
-    this.putImage(augment(image), offsetX, offsetY);
+    this.putImage(
+      options.augment ? options.augment(image) : image,
+      offsetX + (options.offsetX ?? 0),
+      offsetY + (options.offsetY ?? 0)
+    );
   }
 
   protected filterNeighbours(

@@ -27,7 +27,9 @@ export declare class SelectionWindow extends NotificationWindow {
     body?: string | Node | null,
     options?: SelectionWindowOptions
   );
+  close(): void;
   display(): Promise<any>;
+  resize(): void;
   selectionList(): HTMLSelectElement;
 }
 export default SelectionWindow;

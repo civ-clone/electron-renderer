@@ -25,6 +25,7 @@ export interface SelectionWindowOptions extends NotificationWindowOptions {
 }
 
 export class SelectionWindow extends NotificationWindow {
+  #resizeHandler = () => this.resize();
   #selectionList: HTMLSelectElement;
 
   constructor(
@@ -115,6 +116,16 @@ export class SelectionWindow extends NotificationWindow {
 
     this.element().classList.add('selectionWindow');
     this.#selectionList = selectionList;
+
+    this.resize();
+
+    window.addEventListener('resize', this.#resizeHandler);
+  }
+
+  close() {
+    window.removeEventListener('resize', this.#resizeHandler);
+
+    super.close();
   }
 
   display(): Promise<any> {
@@ -125,6 +136,24 @@ export class SelectionWindow extends NotificationWindow {
         select.focus();
       }
     });
+  }
+
+  resize(): void {
+    // TODO: I'd like to have this height scaled automatically.
+    //  Feels like it should be possible using CSS flexbox, but can't get it to work...
+    try {
+      this.selectionList().style.maxHeight = 'none';
+      this.selectionList().style.maxHeight = `calc(${
+        this.element().offsetHeight -
+        3 -
+        (this.element().firstElementChild! as HTMLElement).offsetHeight -
+        ((this.selectionList().previousElementSibling as HTMLElement)
+          ?.offsetHeight ?? 0) -
+        (this.selectionList().nextElementSibling as HTMLElement).offsetHeight
+      }px - 2em)`;
+    } catch (e) {
+      console.warn(e);
+    }
   }
 
   selectionList(): HTMLSelectElement {

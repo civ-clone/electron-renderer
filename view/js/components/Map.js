@@ -57,9 +57,10 @@ export class Map {
     world() {
         return __classPrivateFieldGet(this, _Map_world, "f");
     }
-    drawImage(path, x, y, augment = (image) => image) {
+    drawImage(path, x, y, options = {}) {
+        var _a, _b;
         const size = this.tileSize(), offsetX = x * size, offsetY = y * size, image = this.getPreloadedImage(path);
-        this.putImage(augment(image), offsetX, offsetY);
+        this.putImage(options.augment ? options.augment(image) : image, offsetX + ((_a = options.offsetX) !== null && _a !== void 0 ? _a : 0), offsetY + ((_b = options.offsetY) !== null && _b !== void 0 ? _b : 0));
     }
     filterNeighbours(tile, filter, directions = ['n', 'e', 's', 'w']) {
         return directions.filter((direction) => filter(__classPrivateFieldGet(this, _Map_world, "f").getNeighbour(tile, direction)));

@@ -1,4 +1,4 @@
-import { City as CityData, CityBuild, ITransport } from '../types';
+import { BuildItem, City as CityData, CityBuild, ITransport } from '../types';
 import { SelectionWindow, SelectionWindowActions } from './SelectionWindow.js';
 import City from './City.js';
 import Portal from './Portal';
@@ -32,16 +32,20 @@ export class CityBuildSelectionWindow extends SelectionWindow {
     onComplete: onCompleteHandler = () => {},
     additionalActions: SelectionWindowActions = {}
   ) {
-    const [production] = cityBuild.city.yields.filter(
-      (cityYield) => cityYield._ === 'Production'
-    );
+    const production = cityBuild.city.yields
+        .filter((cityYield) => cityYield._ === 'Production')
+        .reduce((total, cityYield) => total + cityYield.value, 0),
+      turns = (buildItem: BuildItem) =>
+        Math.ceil(
+          (buildItem.cost.value - cityBuild.progress.value) / production
+        );
 
     super(
       `What would you like to build in ${cityBuild.city.name}?`,
       cityBuild.available.map((buildItem) => ({
-        label: `${buildItem.item._} (Cost: ${
-          buildItem.cost.value
-        } / ${Math.ceil(buildItem.cost.value / production.value)} turns)`,
+        label: `${buildItem.item._} (Cost: ${buildItem.cost.value} / ${turns(
+          buildItem
+        )} turn${turns(buildItem) === 1 ? '' : 's'})`,
         value: buildItem.item._,
       })),
       (selection) => {

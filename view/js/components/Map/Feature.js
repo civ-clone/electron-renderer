@@ -7,7 +7,12 @@ export class Feature extends TerrainAbstract {
         }
         const { x, y } = tile;
         if (tile.terrain.features.length) {
-            tile.terrain.features.forEach((feature) => this.drawImage(`terrain/${feature._.toLowerCase()}`, x, y));
+            tile.terrain.features.forEach((feature) => feature._ === 'Shield'
+                ? this.drawImage(`terrain/${feature._.toLowerCase()}`, x, y, {
+                    offsetX: 4 * this.scale(),
+                    offsetY: 4 * this.scale(),
+                })
+                : this.drawImage(`terrain/${feature._.toLowerCase()}`, x, y));
         }
     }
 }

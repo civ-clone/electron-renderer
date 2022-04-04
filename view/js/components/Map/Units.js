@@ -48,9 +48,9 @@ export class Units extends Map {
                 this.context().font = `bold ${8 * this.scale()}px sans-serif`;
                 this.context().fillStyle = 'black';
                 this.context().textAlign = 'center';
-                this.context().fillText(identifier, offsetX + sizeOffsetX + this.scale(), offsetY + sizeOffsetY);
+                this.context().fillText(identifier, offsetX + sizeOffsetX + this.scale(), offsetY + sizeOffsetY + this.scale());
                 this.context().fillStyle = 'white';
-                this.context().fillText(identifier, offsetX + sizeOffsetX, offsetY + sizeOffsetY - this.scale());
+                this.context().fillText(identifier, offsetX + sizeOffsetX, offsetY + sizeOffsetY);
             }
         }
     }

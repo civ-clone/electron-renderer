@@ -48,6 +48,17 @@ class Game {
             },
         }), "f");
         __classPrivateFieldGet(this, _Game_window, "f").loadURL(`file://${__dirname}/view/html/index.html`);
+        __classPrivateFieldGet(this, _Game_window, "f").on('close', (event) => {
+            const response = electron_1.dialog.showMessageBoxSync(__classPrivateFieldGet(this, _Game_window, "f"), {
+                type: 'question',
+                buttons: ['Yes', 'No'],
+                title: 'Confirm',
+                message: 'Are you sure you want to quit?',
+            });
+            if (response === 1) {
+                event.preventDefault();
+            }
+        });
         // this.#window.webContents.openDevTools();
     }
     bindEvents() {

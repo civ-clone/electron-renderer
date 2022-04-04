@@ -31,14 +31,17 @@ export class Cities extends Map {
         size - this.scale() * 2
       );
 
-      this.drawImage(`map/city`, x, y, (image) =>
-        this.replaceColors(
-          image,
-          // To come from theme manifest
-          ['#000'],
-          [colors.value[1]]
-        )
-      );
+      this.drawImage(`map/city`, x, y, {
+        augment: (image) =>
+          this.replaceColors(
+            image,
+            // To come from theme manifest
+            ['#000'],
+            [colors.value[1]]
+          ),
+        offsetX: this.scale(),
+        offsetY: this.scale(),
+      });
     }
   }
 }
