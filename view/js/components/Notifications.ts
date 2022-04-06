@@ -1,4 +1,4 @@
-import NotificationWindow from './NotificationWindow.js';
+import NotificationWindow from './NotificationWindow';
 
 export interface Notification {
   message: string;

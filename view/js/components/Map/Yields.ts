@@ -1,4 +1,4 @@
-import Map from '../Map.js';
+import Map from '../Map';
 import { Tile } from '../../types';
 
 export class Yields extends Map {

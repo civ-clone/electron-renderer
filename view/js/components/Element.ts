@@ -1,4 +1,4 @@
-import { e } from '../lib/html.js';
+import { e } from '../lib/html';
 
 export interface IElement {
   build(...args: any[]): void;

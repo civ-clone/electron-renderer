@@ -1,6 +1,6 @@
-import { e } from '../lib/html.js';
-import { NeighbourDirection, Tile, Unit } from '../types';
-import World from './World.js';
+import { e } from '../lib/html';
+import { NeighbourDirection, Tile } from '../types';
+import World from './World';
 
 export interface IMap {
   context(): CanvasRenderingContext2D;
@@ -28,11 +28,12 @@ export class Map implements IMap {
   constructor(
     world: World,
     scale: number = 2,
+    tileSize: number = 16,
     canvas: HTMLCanvasElement = e('canvas') as HTMLCanvasElement
   ) {
     this.#canvas = canvas;
     this.#world = world;
-    this.#tileSize = 16;
+    this.#tileSize = tileSize;
     this.#scale = scale;
 
     this.setCanvasSize();

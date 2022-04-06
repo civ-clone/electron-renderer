@@ -912,6 +912,17 @@ export class ElectronClient extends Client implements IClient {
         playerWorld.toPlainObject(this.#dataFilter(filterToReference(Player)))
       );
 
+      cityRegistryInstance
+        .getByPlayer(this.player())
+        .forEach((city) =>
+          this.#dataQueue.update(
+            city.id(),
+            city.toPlainObject(
+              this.#dataFilter(filterToReference(Player, Tile, Unit))
+            )
+          )
+        );
+
       return false;
     }
 
@@ -919,19 +930,26 @@ export class ElectronClient extends Client implements IClient {
       const playerTradeRates = playerAction.value() as PlayerTradeRates,
         { value } = action;
 
-      try {
-        playerTradeRates.setAll(
-          value.map(([name, value]: [string, string]) => {
-            const [rate] = playerTradeRates
-              .all()
-              .filter((rate) => rate.constructor.name === name);
+      playerTradeRates.setAll(
+        value.map(([name, value]: [string, string]) => {
+          const [rate] = playerTradeRates
+            .all()
+            .filter((rate) => rate.constructor.name === name);
 
-            return [rate.constructor as typeof TradeRate, value];
-          })
+          return [rate.constructor as typeof TradeRate, value];
+        })
+      );
+
+      cityRegistryInstance
+        .getByPlayer(this.player())
+        .forEach((city) =>
+          this.#dataQueue.update(
+            city.id(),
+            city.toPlainObject(
+              this.#dataFilter(filterToReference(Player, Tile, Unit))
+            )
+          )
         );
-      } catch (e) {
-        console.error(e);
-      }
 
       return false;
     }

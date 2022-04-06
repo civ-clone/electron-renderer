@@ -1,5 +1,5 @@
 import { Tile, Unit } from '../../types';
-import { Map, IMap } from '../Map.js';
+import { Map, IMap } from '../Map';
 
 const busyLookup: { [key: string]: string } = {
   BuildingIrrigation: 'I',

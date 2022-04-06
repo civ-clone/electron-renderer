@@ -22,6 +22,9 @@ I'm looking at adding the ability to add an asset pack and a mechanism for manag
 - It hangs when generating the start `Tile`s for way too long - this has been moved to a `Worker` but transferring the data is still slow and locks the main thread :(
 - No `GoTo`.
 - Some `Civilization`'s colours are terrible.
+- `CityImprovement` maintenance isn't deducted.
+- `Happiness` and `Unhappiness` don't work as per Civ1.
+- `Bomber`s don't function correctly.
 
 ## Images
 

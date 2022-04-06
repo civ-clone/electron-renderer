@@ -1,8 +1,8 @@
 import { CityBuild as CityBuildObject, PlayerAction } from '../../types';
-import { e, h } from '../../lib/html.js';
-import Action from './Action.js';
-import CityBuildSelectionWindow from '../CityBuildSelectionWindow.js';
-import Portal from '../Portal.js';
+import { e, h } from '../../lib/html';
+import Action from './Action';
+import CityBuildSelectionWindow from '../CityBuildSelectionWindow';
+import Portal from '../Portal';
 
 export class CityBuild extends Action {
   #portal: Portal;
@@ -15,7 +15,10 @@ export class CityBuild extends Action {
 
   public activate(): void {
     new CityBuildSelectionWindow(this.value(), () => this.complete(), {
-      showCity: CityBuildSelectionWindow.showCityAction(this.value().city),
+      showCity: CityBuildSelectionWindow.showCityAction(
+        this.value().city,
+        this.#portal
+      ),
       showCityOnMap: CityBuildSelectionWindow.showCityOnMapAction(
         this.value().city,
         this.#portal

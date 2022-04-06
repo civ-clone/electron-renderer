@@ -1,5 +1,5 @@
 import { Tile } from '../../types';
-import { Map } from '../Map.js';
+import { Map } from '../Map';
 
 export class CityNames extends Map {
   renderTile(tile: Tile): void {

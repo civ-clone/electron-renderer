@@ -1,6 +1,6 @@
-import { e, t } from '../lib/html.js';
+import { e, t } from '../lib/html';
 import { Player } from '../types';
-import Element from './Element.js';
+import Element from './Element';
 
 export class PlayerDetails extends Element {
   #player: Player;

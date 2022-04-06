@@ -1,9 +1,9 @@
 import { ITransport, PlayerTradeRates } from '../../types';
-import Action from './Action.js';
-import LockedSlider from '../LockedSlider.js';
-import LockedSliderGroup from '../LockedSliderGroup.js';
-import Window from '../Window.js';
-import { e } from '../../lib/html.js';
+import Action from './Action';
+import LockedSlider from '../LockedSlider';
+import LockedSliderGroup from '../LockedSliderGroup';
+import Window from '../Window';
+import { e } from '../../lib/html';
 
 declare var transport: ITransport;
 

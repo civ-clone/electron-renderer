@@ -1,5 +1,5 @@
 import { NeighbourDirection, Tile } from '../../types';
-import { Map, IMap } from '../Map.js';
+import { Map, IMap } from '../Map';
 
 export class TerrainAbstract extends Map implements IMap {
   update(tilesToUpdate: Tile[]): void {

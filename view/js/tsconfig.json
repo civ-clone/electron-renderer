@@ -5,6 +5,7 @@
       "dom",
       "es2019"
     ],
+    "moduleResolution": "node",
     "module": "esnext",
     "sourceMap": true,
     "strict": true,

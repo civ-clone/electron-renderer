@@ -1,5 +1,5 @@
 import { EntityInstance, NeighbourDirection, Tile } from '../../types';
-import TerrainAbstract from './TerrainAbstract.js';
+import TerrainAbstract from './TerrainAbstract';
 
 type Improvement = 'Mine' | 'Pollution' | 'Railroad' | 'Road';
 

@@ -8,34 +8,33 @@ import {
   Tile,
   Unit,
 } from './types';
-import { e, t } from './lib/html.js';
-import { reconstituteData, ObjectMap } from './lib/reconstituteData.js';
-import Actions from './components/Actions.js';
-import ActiveUnit from './components/Map/ActiveUnit.js';
-import Cities from './components/Map/Cities.js';
-import City from './components/City.js';
-import CityNames from './components/Map/CityNames.js';
-import EventHandler from './lib/EventHandler.js';
-import Feature from './components/Map/Feature.js';
-import Fog from './components/Map/Fog.js';
-import GameDetails from './components/GameDetails.js';
-import GoodyHuts from './components/Map/GoodyHuts.js';
-import Improvements from './components/Map/Improvements.js';
-import IntervalHandler from './lib/IntervalHandler.js';
-import Irrigation from './components/Map/Irrigation.js';
-import Land from './components/Map/Land.js';
-import MainMenu from './components/MainMenu.js';
-import Minimap from './components/Minimap.js';
-import NotificationWindow from './components/NotificationWindow.js';
-import Notifications from './components/Notifications.js';
-import PlayerDetails from './components/PlayerDetails.js';
-import Portal from './components/Portal.js';
-import SelectionWindow from './components/SelectionWindow.js';
-import Terrain from './components/Map/Terrain.js';
-import UnitDetails from './components/UnitDetails.js';
-import Units from './components/Map/Units.js';
-import World from './components/World.js';
-import Yields from './components/Map/Yields.js';
+import { e, t } from './lib/html';
+import { reconstituteData, ObjectMap } from './lib/reconstituteData';
+import Actions from './components/Actions';
+import ActiveUnit from './components/Map/ActiveUnit';
+import Cities from './components/Map/Cities';
+import CityNames from './components/Map/CityNames';
+import Feature from './components/Map/Feature';
+import Fog from './components/Map/Fog';
+import GameDetails from './components/GameDetails';
+import GamePortal from './components/GamePortal';
+import GoodyHuts from './components/Map/GoodyHuts';
+import Improvements from './components/Map/Improvements';
+import IntervalHandler from './lib/IntervalHandler';
+import Irrigation from './components/Map/Irrigation';
+import Land from './components/Map/Land';
+import MainMenu from './components/MainMenu';
+import Minimap from './components/Minimap';
+import NotificationWindow from './components/NotificationWindow';
+import Notifications from './components/Notifications';
+import PlayerDetails from './components/PlayerDetails';
+import Portal from './components/Portal';
+import SelectionWindow from './components/SelectionWindow';
+import Terrain from './components/Map/Terrain';
+import UnitDetails from './components/UnitDetails';
+import Units from './components/Map/Units';
+import World from './components/World';
+import Yields from './components/Map/Yields';
 
 // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //  ! Break this down and use a front-end framework? !
@@ -182,43 +181,54 @@ try {
 
     let activeUnits: PlayerAction[] = [];
 
-    const intervalHandler = new IntervalHandler(),
-      eventHandler = new EventHandler(),
-      landMap = new Land(world, scale),
-      irrigationMap = new Irrigation(world, scale),
-      terrainMap = new Terrain(world, scale),
-      improvementsMap = new Improvements(world, scale),
-      featureMap = new Feature(world, scale),
-      goodyHutsMap = new GoodyHuts(world, scale),
-      fogMap = new Fog(world, scale),
-      yieldsMap = new Yields(world, scale),
-      unitsMap = new Units(world, scale),
-      citiesMap = new Cities(world, scale),
-      cityNamesMap = new CityNames(world, scale),
-      activeUnitsMap = new ActiveUnit(world, scale);
+    const intervalHandler = new IntervalHandler();
+
+    const portal = new GamePortal(
+        world,
+        mapPortal,
+        {
+          playerId: data.player.id,
+          // TODO: this needs to be a user-controllable item
+          scale,
+          // TODO: this needs to come from the theme
+          tileSize: 16,
+        },
+        Land,
+        Irrigation,
+        Terrain,
+        Improvements,
+        Feature,
+        GoodyHuts,
+        Fog,
+        Yields,
+        Units,
+        Cities,
+        CityNames,
+        ActiveUnit
+      ),
+      landMap = portal.getLayer(Land) as Land,
+      yieldsMap = portal.getLayer(Yields) as Yields,
+      unitsMap = portal.getLayer(Units) as Units,
+      citiesMap = portal.getLayer(Cities) as Cities,
+      cityNamesMap = portal.getLayer(CityNames) as CityNames,
+      activeUnitsMap = portal.getLayer(ActiveUnit) as ActiveUnit;
 
     yieldsMap.setVisible(false);
 
-    const portal = new Portal(
+    const minimap = new Minimap(
+        minimapCanvas,
         world,
-        mapPortal,
-        scale,
+        portal,
         landMap,
-        irrigationMap,
-        terrainMap,
-        improvementsMap,
-        featureMap,
-        goodyHutsMap,
-        fogMap,
-        yieldsMap,
-        unitsMap,
-        citiesMap,
-        cityNamesMap,
-        activeUnitsMap
+        citiesMap
       ),
-      minimap = new Minimap(minimapCanvas, world, portal, landMap, citiesMap),
       primaryActions = new Actions(actionArea, portal),
       secondaryActions = new Actions(secondaryActionArea, portal);
+
+    portal.on('focus-changed', () => minimap.update());
+    portal.on('activate-unit', (unit) =>
+      setActiveUnit(unit, portal, unitsMap, activeUnitsMap)
+    );
 
     intervalHandler.on(() => {
       activeUnitsMap.setVisible(!activeUnitsMap.isVisible());
@@ -455,97 +465,6 @@ try {
       notifications.receive(data)
     );
 
-    document.addEventListener('click', (event) => {
-      if (!event.target) {
-        return;
-      }
-
-      const target = event.target as HTMLElement;
-
-      if (target.matches('.notificationWindow button[data-action="close"]')) {
-        const parent = target.parentElement;
-
-        if (!parent) {
-          return;
-        }
-
-        parent.remove();
-      }
-
-      if (event.target === mapPortal) {
-        const tileSize = terrainMap.tileSize(),
-          currentCenter = portal.center();
-
-        let x = event.offsetX,
-          y = event.offsetY;
-
-        x =
-          (x - (mapPortal.width / 2 - tileSize / 2)) / tileSize +
-          currentCenter.x;
-        y =
-          (y - (mapPortal.height / 2 - tileSize / 2)) / tileSize +
-          currentCenter.y;
-
-        while (x < 0) {
-          x += world.width();
-        }
-
-        while (y < 0) {
-          y += world.height();
-        }
-
-        while (x > world.width()) {
-          x -= world.width();
-        }
-
-        while (y > world.height()) {
-          y -= world.height();
-        }
-
-        const tile = world.get(Math.trunc(x), Math.trunc(y)),
-          playerTileUnits = tile.units.filter(
-            (unit: Unit) => unit.player.id === data.player.id // && !unit.active
-          );
-
-        if (tile.city) {
-          new City(tile.city);
-        } else if (playerTileUnits.length) {
-          new SelectionWindow(
-            'Activate unit',
-            playerTileUnits.map((unit: Unit) => ({
-              label: unit._ + (unit.busy ? ' (' + unit.busy!._ + ')' : ''),
-              value: unit.id,
-            })),
-            (selection: string) => {
-              const [unit] = playerTileUnits.filter(
-                (tileUnit) => tileUnit.id === selection
-              );
-
-              if (!unit) {
-                return;
-              }
-
-              if (!unit.active) {
-                transport.send('action', {
-                  name: 'InactiveUnit',
-                  id: selection,
-                });
-
-                return;
-              }
-
-              setActiveUnit(unit, portal, unitsMap, activeUnitsMap);
-            },
-            null
-          );
-        } else {
-          portal.setCenter(tile.x, tile.y);
-
-          minimap.update();
-        }
-      }
-    });
-
     const keyToActionsMap: {
         [key: string]: string[];
       } = {
@@ -588,7 +507,7 @@ try {
 
     let lastKey = '';
 
-    eventHandler.on('keydown', (event: KeyboardEvent) => {
+    document.addEventListener('keydown', (event) => {
       if (activeUnit) {
         if (event.key in keyToActionsMap) {
           const actions = [...keyToActionsMap[event.key]];
@@ -714,10 +633,6 @@ try {
 
       lastKey = event.key;
     });
-
-    document.addEventListener('keydown', (event) =>
-      eventHandler.handle('keydown', event)
-    );
   });
 } catch (e) {
   console.error(e);

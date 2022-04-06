@@ -1,8 +1,8 @@
 import {
   NotificationWindow,
   NotificationWindowOptions,
-} from './NotificationWindow.js';
-import { e, h, t } from '../lib/html.js';
+} from './NotificationWindow';
+import { e, h, t } from '../lib/html';
 
 export interface ConfirmationWindowOptions extends NotificationWindowOptions {
   okLabel?: string;

@@ -1,5 +1,5 @@
-import { e } from '../../lib/html.js';
-import Action from './Action.js';
+import { e } from '../../lib/html';
+import Action from './Action';
 import { ITransport } from '../../types';
 
 declare var transport: ITransport;

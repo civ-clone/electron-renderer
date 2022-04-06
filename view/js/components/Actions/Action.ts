@@ -6,7 +6,7 @@ import {
   PlayerTradeRates,
   Unit,
 } from '../../types';
-import { e } from '../../lib/html.js';
+import { e } from '../../lib/html';
 
 declare global {
   interface GlobalEventHandlersEventMap {

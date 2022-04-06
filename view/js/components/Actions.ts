@@ -1,13 +1,13 @@
-import { Element, IElement } from './Element.js';
-import { e, h } from '../lib/html.js';
-import Action from './Actions/Action.js';
-import AdjustTradeRates from './Actions/AdjustTradeRates.js';
-import ChooseResearch from './Actions/ChooseResearch.js';
-import CityBuild from './Actions/CityBuild.js';
-import EndTurn from './Actions/EndTurn.js';
+import { Element, IElement } from './Element';
+import { e, h } from '../lib/html';
+import Action from './Actions/Action';
+import AdjustTradeRates from './Actions/AdjustTradeRates';
+import ChooseResearch from './Actions/ChooseResearch';
+import CityBuild from './Actions/CityBuild';
+import EndTurn from './Actions/EndTurn';
 import { PlayerAction } from '../types';
-import Portal from './Portal.js';
-import Revolution from './Actions/Revolution.js';
+import Portal from './Portal';
+import Revolution from './Actions/Revolution';
 
 declare global {
   interface GlobalEventHandlersEventMap {

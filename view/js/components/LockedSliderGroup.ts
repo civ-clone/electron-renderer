@@ -1,4 +1,4 @@
-import LockedSlider from './LockedSlider.js';
+import LockedSlider from './LockedSlider';
 
 export class LockedSliderGroup {
   #sliders;

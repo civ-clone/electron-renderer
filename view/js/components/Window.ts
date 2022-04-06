@@ -1,5 +1,5 @@
-import { e, h, t } from '../lib/html.js';
-import TransientElement, { ITransientElement } from './TransientElement.js';
+import { e, h, t } from '../lib/html';
+import TransientElement, { ITransientElement } from './TransientElement';
 
 export interface IWindow extends ITransientElement {
   close(): void;

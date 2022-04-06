@@ -1,6 +1,6 @@
-import { e, t } from '../lib/html.js';
+import { e, t } from '../lib/html';
 import { Yield } from '../types';
-import Element from './Element.js';
+import Element from './Element';
 
 export class GameDetails extends Element {
   #turn: Yield;

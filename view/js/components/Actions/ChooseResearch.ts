@@ -1,6 +1,6 @@
-import Action from './Action.js';
-import { e } from '../../lib/html.js';
-import SelectionWindow from '../SelectionWindow.js';
+import Action from './Action';
+import { e } from '../../lib/html';
+import SelectionWindow from '../SelectionWindow';
 import { ITransport, PlayerResearch } from '../../types';
 
 declare var transport: ITransport;

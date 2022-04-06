@@ -1,7 +1,7 @@
-import { e, h, t } from '../lib/html.js';
-import Element from './Element.js';
+import { e, h, t } from '../lib/html';
+import Element from './Element';
 import { ITransport } from '../types';
-import MandatorySelection from './MandatorySelection.js';
+import MandatorySelection from './MandatorySelection';
 
 declare var transport: ITransport;
 

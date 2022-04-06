@@ -488,21 +488,22 @@ class ElectronClient extends Client_1.Client {
             playerGovernment.set(new GovernmentType());
             const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
             __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(playerWorld.id(), playerWorld.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))));
+            CityRegistry_1.instance
+                .getByPlayer(this.player())
+                .forEach((city) => __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(city.id(), city.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default, Tile_1.default, Unit_1.default)))));
             return false;
         }
         if (playerAction instanceof PlayerActions_5.AdjustTradeRates) {
             const playerTradeRates = playerAction.value(), { value } = action;
-            try {
-                playerTradeRates.setAll(value.map(([name, value]) => {
-                    const [rate] = playerTradeRates
-                        .all()
-                        .filter((rate) => rate.constructor.name === name);
-                    return [rate.constructor, value];
-                }));
-            }
-            catch (e) {
-                console.error(e);
-            }
+            playerTradeRates.setAll(value.map(([name, value]) => {
+                const [rate] = playerTradeRates
+                    .all()
+                    .filter((rate) => rate.constructor.name === name);
+                return [rate.constructor, value];
+            }));
+            CityRegistry_1.instance
+                .getByPlayer(this.player())
+                .forEach((city) => __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(city.id(), city.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default, Tile_1.default, Unit_1.default)))));
             return false;
         }
         console.log(`unhandled action: ${JSON.stringify(action)}`);

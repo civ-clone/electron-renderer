@@ -1,6 +1,6 @@
 import { Unit } from '../types';
-import { e, t } from '../lib/html.js';
-import Element from './Element.js';
+import { e, t } from '../lib/html';
+import Element from './Element';
 
 export class UnitDetails extends Element {
   #activeUnit: Unit | null;

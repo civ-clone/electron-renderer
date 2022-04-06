@@ -4,21 +4,21 @@ import {
   ITransport,
   PlainObject,
 } from '../types';
-import { e, h, t } from '../lib/html.js';
-import Cities from './Map/Cities.js';
-import CityBuildSelectionWindow from './CityBuildSelectionWindow.js';
-import ConfirmationWindow from './ConfirmationWindow.js';
-import DataObserver from '../lib/DataObserver.js';
-import Feature from './Map/Feature.js';
-import Fog from './Map/Fog.js';
-import Improvements from './Map/Improvements.js';
-import Irrigation from './Map/Irrigation.js';
-import Land from './Map/Land.js';
-import Portal from './Portal.js';
-import Terrain from './Map/Terrain.js';
-import Window from './Window.js';
-import World from './World.js';
-import Yields from './Map/Yields.js';
+import { e, h, t } from '../lib/html';
+import Cities from './Map/Cities';
+import CityBuildSelectionWindow from './CityBuildSelectionWindow';
+import ConfirmationWindow from './ConfirmationWindow';
+import DataObserver from '../lib/DataObserver';
+import Feature from './Map/Feature';
+import Fog from './Map/Fog';
+import Improvements from './Map/Improvements';
+import Irrigation from './Map/Irrigation';
+import Land from './Map/Land';
+import Portal from './Portal';
+import Terrain from './Map/Terrain';
+import Window from './Window';
+import World from './World';
+import Yields from './Map/Yields';
 
 declare var transport: ITransport;
 
@@ -66,50 +66,45 @@ const turns = (city: CityData) =>
     ),
   buildDetails = (
     city: CityData,
+    portal: Portal,
     chooseProduction: () => void,
     completeProduction: () => void
   ) => {
-    const mapCanvas = e('canvas') as HTMLCanvasElement,
+    const portalCanvas = e('canvas') as HTMLCanvasElement,
       growth: CityGrowth = city.growth,
-      world = new World(city.player.world),
-      landMap = new Land(world),
-      irrigationMap = new Irrigation(world),
-      terrainMap = new Terrain(world),
-      improvementsMap = new Improvements(world),
-      featureMap = new Feature(world),
-      fogMap = new Fog(world),
-      cityMap = new Cities(world),
-      yieldMap = new Yields(world),
-      map = new Portal(
-        world,
-        mapCanvas,
-        // TODO: have this passed in from the underlying trigger
-        2,
-        landMap,
-        irrigationMap,
-        terrainMap,
-        improvementsMap,
-        featureMap,
-        fogMap,
-        cityMap,
-        yieldMap
+      cityPortal = new Portal(
+        new World(city.player.world),
+        portalCanvas,
+        {
+          playerId: city.player.id,
+          scale: portal.scale(),
+          tileSize: portal.tileSize(),
+        },
+        Land,
+        Irrigation,
+        Terrain,
+        Improvements,
+        Feature,
+        Fog,
+        Cities,
+        Yields
       );
 
-    mapCanvas.height = terrainMap.tileSize() * 5;
-    mapCanvas.width = terrainMap.tileSize() * 5;
+    portalCanvas.height = portal.tileSize() * portal.scale() * 5;
+    portalCanvas.width = portal.tileSize() * portal.scale() * 5;
 
-    map.build(city.tiles);
+    cityPortal.setCenter(city.tile.x, city.tile.y);
+    cityPortal.build(city.tiles);
 
-    terrainMap.render(city.tiles);
-    cityMap.render(city.tiles);
+    const yieldMap = cityPortal.getLayer(Yields) as Yields;
     yieldMap.render(city.tilesWorked);
-    map.setCenter(city.tile.x, city.tile.y);
+
+    cityPortal.render();
 
     return e(
       'div',
       e(
         'div.yields-detail',
-        // TODO: reduce/consolidate these
         ...Object.entries(
           city.yields.reduce((yieldObject, cityYield) => {
             if (!(cityYield._ in yieldObject)) {
@@ -124,7 +119,7 @@ const turns = (city: CityData) =>
           e('div', e('div', t(label)), e('div', t(value)))
         )
       ),
-      h(e('div.map', mapCanvas), {
+      h(e('div.cityPortal', portalCanvas), {
         click: () =>
           transport.send('action', {
             name: 'ReassignWorkers',
@@ -212,12 +207,14 @@ const turns = (city: CityData) =>
 export class City extends Window {
   #city: CityData;
   #dataObserver: DataObserver;
+  #portal: Portal;
 
-  constructor(city: CityData) {
+  constructor(city: CityData, portal: Portal) {
     super(
       city.name,
       buildDetails(
         city,
+        portal,
         () => this.changeProduction(),
         () => this.completeProduction()
       ),
@@ -227,6 +224,7 @@ export class City extends Window {
     );
 
     this.#city = city;
+    this.#portal = portal;
     this.#dataObserver = new DataObserver(
       [
         city.id,
@@ -258,6 +256,7 @@ export class City extends Window {
         this.update(
           buildDetails(
             updatedCity,
+            this.#portal,
             () => this.changeProduction(),
             () => this.completeProduction()
           )

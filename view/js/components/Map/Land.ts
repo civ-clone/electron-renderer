@@ -1,6 +1,6 @@
-import TerrainAbstract from './TerrainAbstract.js';
+import TerrainAbstract from './TerrainAbstract';
 import { Tile } from '../../types';
-import { e } from '../../lib/html.js';
+import { e } from '../../lib/html';
 
 export class Land extends TerrainAbstract {
   renderTile(tile: Tile): void {

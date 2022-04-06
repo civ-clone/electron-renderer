@@ -2,7 +2,7 @@ import {
   SelectionWindow,
   SelectionWindowOption,
   SelectionWindowOptions,
-} from './SelectionWindow.js';
+} from './SelectionWindow';
 
 declare global {
   interface GlobalEventHandlersEventMap {

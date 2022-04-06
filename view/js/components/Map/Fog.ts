@@ -1,4 +1,4 @@
-import TerrainAbstract from './TerrainAbstract.js';
+import TerrainAbstract from './TerrainAbstract';
 import { Tile } from '../../types';
 
 export class Fog extends TerrainAbstract {

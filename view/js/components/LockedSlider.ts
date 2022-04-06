@@ -1,5 +1,5 @@
-import Element from './Element.js';
-import { e, t } from '../lib/html.js';
+import Element from './Element';
+import { e, t } from '../lib/html';
 
 const template: (label: string, value: number) => HTMLFieldSetElement = (
   label: string,

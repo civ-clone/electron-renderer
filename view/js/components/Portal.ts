@@ -1,50 +1,112 @@
-import { e } from '../lib/html.js';
-import Map from './Map.js';
-import { Coordinate, Tile } from '../types';
-import World from './World.js';
+import { Coordinate, Tile, Unit } from '../types';
+import { EventEmitter } from 'eventemitter3';
+import Map from './Map';
+import World from './World';
+import { e } from '../lib/html';
 
 export interface IPortal {
   build(updatedTiles: Tile[]): void;
+  canvas(): HTMLCanvasElement;
   center(): Coordinate;
+  getLayer(LayerType: typeof Map): Map | null;
+  getLayers(LayerType: typeof Map): Map[];
   isVisible(x: number, y: number): boolean;
+  playerId(): string | null;
   render(): void;
   scale(): number;
   setCenter(x: number, y: number): void;
+  tileSize(): number;
   visibleBounds(): [number, number, number, number];
   visibleRange(): [Coordinate, Coordinate];
+  world(): World;
 }
 
-export class Portal implements IPortal {
+export interface PortalSettings {
+  playerId: string | null;
+  scale: number;
+  tileSize: number;
+}
+
+type PortalOptions = {
+  [K in keyof PortalSettings]?: PortalSettings[K];
+};
+
+const defaultPortalOptions: PortalSettings = {
+  playerId: null,
+  scale: 2,
+  tileSize: 16,
+};
+
+export class Portal
+  extends EventEmitter<{
+    ['activate-unit']: [Unit];
+    ['focus-changed']: [number, number];
+  }>
+  implements IPortal
+{
   #canvas: HTMLCanvasElement;
   #center: Coordinate = { x: 0, y: 0 };
   #context: CanvasRenderingContext2D;
   #layers: Map[] = [];
+  #playerId: string | null = null;
   #scale: number;
+  #tileSize: number;
   #world: World;
 
   constructor(
     world: World,
     canvas: HTMLCanvasElement = e('canvas') as HTMLCanvasElement,
-    scale = 2,
-    ...layers: Map[]
+    options: PortalOptions = {
+      playerId: null,
+      scale: 2,
+    },
+    ...layers: typeof Map[]
   ) {
+    const settings: PortalSettings = {
+      ...defaultPortalOptions,
+      ...options,
+    };
+
+    super();
+
     this.#world = world;
     this.#canvas = canvas;
-    this.#scale = scale;
-    this.#layers.push(...layers);
+    this.#playerId = settings.playerId;
+    this.#tileSize = settings.tileSize;
+    this.#scale = settings.scale;
+
+    layers.forEach((MapType) =>
+      this.#layers.push(new MapType(this.#world, this.scale(), this.tileSize()))
+    );
 
     this.#context = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+    this.bindEvents();
   }
 
-  build(updatedTiles: Tile[]): void {
+  protected bindEvents(): void {}
+
+  public build(updatedTiles: Tile[]): void {
     this.#layers.forEach((layer: Map) => layer.update(updatedTiles));
   }
 
-  center(): Coordinate {
+  public canvas(): HTMLCanvasElement {
+    return this.#canvas;
+  }
+
+  public center(): Coordinate {
     return this.#center;
   }
 
-  isVisible(x: number, y: number): boolean {
+  public getLayer(LayerType: typeof Map): Map | null {
+    return this.getLayers(LayerType).shift() ?? null;
+  }
+
+  public getLayers(LayerType: typeof Map): Map[] {
+    return this.#layers.filter((layer) => layer instanceof LayerType);
+  }
+
+  public isVisible(x: number, y: number): boolean {
     const [xLowerBound, xUpperBound, yLowerBound, yUpperBound] =
       this.visibleBounds();
 
@@ -59,7 +121,11 @@ export class Portal implements IPortal {
     );
   }
 
-  render(): void {
+  public playerId(): string | null {
+    return this.#playerId;
+  }
+
+  public render(): void {
     const tileSize = this.#layers[0].tileSize(),
       layerWidth = this.#world.width() * tileSize,
       centerX = this.#center.x * tileSize + Math.trunc(tileSize / this.scale()),
@@ -112,18 +178,24 @@ export class Portal implements IPortal {
     }
   }
 
-  scale(): number {
+  public scale(): number {
     return this.#scale;
   }
 
-  setCenter(x: number, y: number): void {
+  public setCenter(x: number, y: number): void {
     this.#center.x = x;
     this.#center.y = y;
 
     this.render();
+
+    this.emit('focus-changed', x, y);
   }
 
-  visibleBounds(): [number, number, number, number] {
+  public tileSize(): number {
+    return this.#tileSize;
+  }
+
+  public visibleBounds(): [number, number, number, number] {
     const xRange = Math.floor(
         this.#canvas.width / this.#layers[0].tileSize() / this.#scale
       ),
@@ -140,7 +212,7 @@ export class Portal implements IPortal {
     return [xLowerBound, xUpperBound, yLowerBound, yUpperBound];
   }
 
-  visibleRange(): [Coordinate, Coordinate] {
+  public visibleRange(): [Coordinate, Coordinate] {
     const xRange = Math.floor(
         this.#canvas.width / this.#layers[0].tileSize() / this.#scale
       ),
@@ -152,6 +224,10 @@ export class Portal implements IPortal {
       { x: this.#center.x - xRange, y: this.#center.y - yRange },
       { x: this.#center.x + xRange, y: this.#center.y + yRange },
     ];
+  }
+
+  public world(): World {
+    return this.#world;
   }
 }
 

@@ -1,4 +1,4 @@
-import { ObjectMap } from './lib/reconstituteData.js';
+import { ObjectMap } from './lib/reconstituteData';
 
 export interface ITransport {
   receive(channel: string, handler: (...args: any[]) => void): void;
@@ -36,9 +36,9 @@ export interface City extends EntityInstance {
   growth: CityGrowth;
   improvements: EntityInstance[];
   player: Player;
-  tile: Tile;
-  tiles: Tile[];
-  tilesWorked: Tile[];
+  tile: PlayerTile;
+  tiles: PlayerTile[];
+  tilesWorked: PlayerTile[];
   units: Unit[];
   yields: Yield[];
 }

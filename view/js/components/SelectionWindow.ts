@@ -1,8 +1,8 @@
-import { e, h, t } from '../lib/html.js';
+import { e, h, t } from '../lib/html';
 import {
   NotificationWindow,
   NotificationWindowOptions,
-} from './NotificationWindow.js';
+} from './NotificationWindow';
 
 export interface SelectionWindowOption {
   label?: string;

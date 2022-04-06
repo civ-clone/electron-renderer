@@ -1,4 +1,4 @@
-import { Window, IWindow, WindowOptions } from './Window.js';
+import { Window, IWindow, WindowOptions } from './Window';
 
 export interface INotificationWindow extends IWindow {}
 

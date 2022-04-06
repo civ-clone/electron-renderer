@@ -1,5 +1,5 @@
-import { IMap } from '../Map.js';
-import Units from './Units.js';
+import { IMap } from '../Map';
+import Units from './Units';
 
 export class ActiveUnit extends Units implements IMap {
   render(): void {

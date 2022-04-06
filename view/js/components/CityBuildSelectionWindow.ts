@@ -1,6 +1,6 @@
 import { BuildItem, City as CityData, CityBuild, ITransport } from '../types';
-import { SelectionWindow, SelectionWindowActions } from './SelectionWindow.js';
-import City from './City.js';
+import { SelectionWindow, SelectionWindowActions } from './SelectionWindow';
+import City from './City';
 import Portal from './Portal';
 
 declare var transport: ITransport;
@@ -10,12 +10,12 @@ type onCompleteHandler = (hasSelected: boolean, ...args: any[]) => void;
 export class CityBuildSelectionWindow extends SelectionWindow {
   private onComplete: onCompleteHandler;
 
-  public static showCityAction = (city: CityData) => ({
+  public static showCityAction = (city: CityData, portal: Portal) => ({
     label: 'View city',
     action(selectionWindow: SelectionWindow) {
       selectionWindow.close();
 
-      new City(city);
+      new City(city, portal);
     },
   });
   public static showCityOnMapAction = (city: CityData, portal: Portal) => ({

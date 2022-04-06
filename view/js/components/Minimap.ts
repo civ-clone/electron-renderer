@@ -1,6 +1,6 @@
-import Map from './Map.js';
-import Portal from './Portal.js';
-import World from './World.js';
+import Map from './Map';
+import Portal from './Portal';
+import World from './World';
 
 export class Minimap {
   #context: CanvasRenderingContext2D;
