@@ -59,6 +59,7 @@ import { instance as yearInstance } from '@civ-clone/core-game-year/Year';
 import * as EventEmitter from 'events';
 import Busy from '@civ-clone/core-unit/Rules/Busy';
 import { reassignWorkers } from '@civ-clone/civ1-city/lib/assignWorkers';
+import CityImprovement from '@civ-clone/core-city-improvement/CityImprovement';
 
 const referenceObject = (object: any) =>
     object instanceof DataObject
@@ -479,6 +480,45 @@ export class ElectronClient extends Client implements IClient {
           playerTile.toPlainObject(this.#dataFilter(filterToReference(Player)))
         );
       });
+    });
+
+    engineInstance.on('city:shrink', (city) => {
+      if (city.player() !== this.player()) {
+        return;
+      }
+
+      this.sendNotification(`Population decrease in ${city.name()}.`);
+    });
+
+    engineInstance.on('city:unit-unsupported', (city: City, unit: Unit) => {
+      if (city.player() !== this.player()) {
+        return;
+      }
+
+      this.sendNotification(
+        `${city.name()} cannot support ${unit.constructor.name}.`
+      );
+    });
+
+    engineInstance.on(
+      'city:unsupported-improvement',
+      (city: City, cityImprovement: CityImprovement) => {
+        if (city.player() !== this.player()) {
+          return;
+        }
+
+        this.sendNotification(
+          `${city.name()} cannot support ${cityImprovement.constructor.name}.`
+        );
+      }
+    );
+
+    engineInstance.on('city:food-storage-exhausted', (city: City) => {
+      if (city.player() !== this.player()) {
+        return;
+      }
+
+      this.sendNotification(`Food storage exhausted in ${city.name()}!`);
     });
 
     engineInstance.on('city:building-complete', (cityBuild, build) => {

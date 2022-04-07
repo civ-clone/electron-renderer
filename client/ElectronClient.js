@@ -262,6 +262,30 @@ class ElectronClient extends Client_1.Client {
                 __classPrivateFieldGet(this, _ElectronClient_dataQueue, "f").update(playerTile.id(), () => playerTile.toPlainObject(__classPrivateFieldGet(this, _ElectronClient_dataFilter, "f").call(this, filterToReference(Player_1.default))));
             });
         });
+        Engine_1.instance.on('city:shrink', (city) => {
+            if (city.player() !== this.player()) {
+                return;
+            }
+            this.sendNotification(`Population decrease in ${city.name()}.`);
+        });
+        Engine_1.instance.on('city:unit-unsupported', (city, unit) => {
+            if (city.player() !== this.player()) {
+                return;
+            }
+            this.sendNotification(`${city.name()} cannot support ${unit.constructor.name}.`);
+        });
+        Engine_1.instance.on('city:unsupported-improvement', (city, cityImprovement) => {
+            if (city.player() !== this.player()) {
+                return;
+            }
+            this.sendNotification(`${city.name()} cannot support ${cityImprovement.constructor.name}.`);
+        });
+        Engine_1.instance.on('city:food-storage-exhausted', (city) => {
+            if (city.player() !== this.player()) {
+                return;
+            }
+            this.sendNotification(`Food storage exhausted in ${city.name()}!`);
+        });
         Engine_1.instance.on('city:building-complete', (cityBuild, build) => {
             const playerWorld = PlayerWorldRegistry_1.instance.getByPlayer(this.player());
             if (cityBuild.city().player() !== this.player() &&
