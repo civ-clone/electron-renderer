@@ -77,6 +77,20 @@ export const e = (selector: string, ...nodes: Node[]): HTMLElement => {
   return e;
 };
 
+export const s = (html: string, ...nodes: Node[]): Node => {
+  const temp = document.createElement('div');
+
+  temp.innerHTML = html;
+
+  if (temp.childNodes.length !== 1) {
+    throw new TypeError('Invalid `html` provided.');
+  }
+
+  temp.firstElementChild!.append(...nodes);
+
+  return temp.firstElementChild!;
+};
+
 export const a = (
   element: HTMLElement,
   attributes: { [key: string]: string }

@@ -33,9 +33,11 @@ export class UnitDetails extends Element {
       e(
         'p',
         t(
-          `${this.#activeUnit.moves.value.toFixed(1)} / ${
-            this.#activeUnit.movement.value
-          } moves`
+          `${
+            Number.isInteger(this.#activeUnit.moves.value)
+              ? this.#activeUnit.moves.value
+              : this.#activeUnit.moves.value.toFixed(2)
+          } / ${this.#activeUnit.movement.value} moves`
         )
       ),
       e(

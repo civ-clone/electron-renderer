@@ -10,7 +10,11 @@ contextBridge.exposeInMainWorld('transport', {
     ipcRenderer.once(
       channel,
       (event: IpcRendererEvent, ...args: any[]): void => {
-        handler(...args);
+        try {
+          handler(...args);
+        } catch (e) {
+          console.error(e);
+        }
       }
     );
   },

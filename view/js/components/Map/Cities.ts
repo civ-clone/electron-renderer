@@ -33,7 +33,7 @@ export class Cities extends Map {
 
       this.drawImage(`map/city`, x, y, {
         augment: (image) =>
-          this.replaceColors(
+          this.replaceColours(
             image,
             // To come from theme manifest
             ['#000'],

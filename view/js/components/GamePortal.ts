@@ -2,6 +2,7 @@ import { ITransport, Unit } from '../types';
 import City from './City';
 import Portal from './Portal';
 import SelectionWindow from './SelectionWindow';
+import InactiveUnitSelectionWindow from './InactiveUnitSelectionWindow';
 
 declare var transport: ITransport;
 
@@ -46,33 +47,8 @@ export class GamePortal extends Portal {
       if (tile.city) {
         new City(tile.city, this);
       } else if (playerTileUnits.length) {
-        new SelectionWindow(
-          'Activate unit',
-          playerTileUnits.map((unit: Unit) => ({
-            label: unit._ + (unit.busy ? ` (${unit.busy!._})` : ''),
-            value: unit.id,
-          })),
-          (selection: string) => {
-            const [unit] = playerTileUnits.filter(
-              (tileUnit) => tileUnit.id === selection
-            );
-
-            if (!unit) {
-              return;
-            }
-
-            if (!unit.active) {
-              transport.send('action', {
-                name: 'InactiveUnit',
-                id: selection,
-              });
-
-              return;
-            }
-
-            this.emit('activate-unit', unit);
-          },
-          null
+        new InactiveUnitSelectionWindow(playerTileUnits, (unit: Unit) =>
+          this.emit('activate-unit', unit)
         );
 
         return;

@@ -191,6 +191,31 @@ export interface Yield extends EntityInstance {
   values: [number, string][];
 }
 
+export interface CityImprovementMaintenanceGold extends Yield {
+  _: 'CityImprovementMaintenanceGold';
+  cityImprovement: EntityInstance;
+}
+
+export interface MartialLawContent extends Yield {
+  _: 'MartialLawContent';
+  unit: Unit;
+}
+
+export interface MilitaryUnhappiness extends Yield {
+  _: 'MilitaryUnhappiness';
+  unit: Unit;
+}
+
+export interface UnitSupportFood extends Yield {
+  _: 'UnitSupportFood';
+  unit: Unit;
+}
+
+export interface UnitSupportProduction extends Yield {
+  _: 'UnitSupportProduction';
+  unit: Unit;
+}
+
 export interface GameData extends EntityInstance {
   player: Player;
   turn: Yield;

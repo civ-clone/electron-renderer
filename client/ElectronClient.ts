@@ -14,6 +14,7 @@ import Advance from '@civ-clone/core-science/Advance';
 import BuildItem from '@civ-clone/core-city-build/BuildItem';
 import ChooseResearch from '@civ-clone/civ1-science/PlayerActions/ChooseResearch';
 import City from '@civ-clone/core-city/City';
+import CityGrowth from '@civ-clone/core-city-growth/CityGrowth';
 import CityBuildItem from '@civ-clone/core-city-build/CityBuild';
 import Civilization from '@civ-clone/core-civilization/Civilization';
 import CompleteProduction from '@civ-clone/civ1-treasury/PlayerActions/CompleteProduction';
@@ -375,8 +376,32 @@ export class ElectronClient extends Client implements IClient {
       });
     });
 
+    ['unit:destroyed'].forEach((event) => {
+      engineInstance.on(event, (unit: Unit, action: UnitAction) => {
+        if (unit.player() === this.player() && unit.city() !== null) {
+          this.#dataQueue.update(unit.city()!.id(), () =>
+            unit
+              .city()!
+              .toPlainObject(
+                this.#dataFilter(
+                  filterToReference(
+                    CityBuild,
+                    CityGrowth,
+                    CityImprovement,
+                    Player,
+                    PlayerTile,
+                    Tile,
+                    Unit
+                  )
+                )
+              )
+          );
+        }
+      });
+    });
+
     ['unit:moved'].forEach((event) => {
-      engineInstance.on(event, (unit, action) => {
+      engineInstance.on(event, (unit: Unit, action: UnitAction) => {
         const playerWorld = playerWorldRegistryInstance.getByPlayer(
             this.player()
           ),
@@ -400,6 +425,26 @@ export class ElectronClient extends Client implements IClient {
             toTile.toPlainObject(
               this.#dataFilter(filterToReference(Player, City))
             )
+          );
+        }
+
+        if (unit.player() === this.player() && unit.city() !== null) {
+          this.#dataQueue.update(unit.city()!.id(), () =>
+            unit
+              .city()!
+              .toPlainObject(
+                this.#dataFilter(
+                  filterToReference(
+                    CityBuild,
+                    CityGrowth,
+                    CityImprovement,
+                    Player,
+                    PlayerTile,
+                    Tile,
+                    Unit
+                  )
+                )
+              )
           );
         }
       });

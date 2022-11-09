@@ -2,6 +2,9 @@
   background: #8a8a8e;
   box-sizing: border-box;
   flex-grow: 0;
+  max-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: .5em;
   width: 12.5em;
 

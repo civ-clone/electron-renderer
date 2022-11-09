@@ -106,15 +106,119 @@ body {
   width: 2em;
 }
 
-.city {
-  background: #cce;
-  color: #333;
-  height: 100vh;
-  left: 0;
-  overflow: auto;
+.city-screen-window {
+  display: flex;
+  flex-direction: column;
+}
+.city-screen-window .body {
+  align-items: stretch;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.city-screen {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+.city-screen .city-map {
+  min-width: 160px;
+  text-align: center;
+  width: 20vw;
+}
+.city-screen .bottom-row {
+  align-items: stretch;
+  border-top: 1px solid rgba(0, 0, 0, 0.3);
+  flex: 1 1;
+}
+.city-screen .top-row,
+.city-screen .bottom-row {
+  display: flex;
+}
+.city-screen .top-row .yield-details,
+.city-screen .top-row .improvements,
+.city-screen .top-row .growth,
+.city-screen .top-row .tabbed-details,
+.city-screen .top-row .build,
+.city-screen .bottom-row .yield-details,
+.city-screen .bottom-row .improvements,
+.city-screen .bottom-row .growth,
+.city-screen .bottom-row .tabbed-details,
+.city-screen .bottom-row .build {
+  flex: 1 1;
+  padding: 0.25rem;
+}
+.city-screen .top-row .yield-details,
+.city-screen .top-row .improvements,
+.city-screen .bottom-row .yield-details,
+.city-screen .bottom-row .improvements {
+  max-width: 40vw;
+}
+.city-screen .yield-details .yield,
+.city-screen .population {
+  display: flex;
+}
+.city-screen .yield-details .yield .citizen,
+.city-screen .population .citizen {
+  max-width: 12px;
+  min-width: 0;
+}
+.city-screen .yield-details .yield .citizen img,
+.city-screen .population .citizen img {
+  width: 16px;
+  image-rendering: pixelated;
+}
+.city-screen .yield-details .yield {
+  display: flex;
+}
+.city-screen .yield-details .yield .used {
+  flex: 0 1;
+}
+.city-screen .yield-details .yield .free {
+  flex: 1 1;
+}
+.city-screen .yield-details .yield .used,
+.city-screen .yield-details .yield .free {
+  display: flex;
+}
+.city-screen .yield-details .yield:not(:last-child),
+.city-screen .yield-details .yield .used:not(:empty) {
+  margin-right: 0.5em;
+}
+.city-screen .yield-icon {
+  max-width: 8px;
+  min-width: 0;
+  padding-right: 2px;
+}
+.city-screen .yield-icon img {
+  width: 14px;
+  image-rendering: pixelated;
+}
+.city-screen .tabbed-details,
+.city-screen .city-map {
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-width: 0 1px;
+}
+.city-screen .supported-units .unit {
+  position: relative;
+}
+.city-screen .supported-units .unit .yield-icon {
   position: absolute;
-  top: 0;
-  width: 100vw;
+  left: 2px;
+  bottom: 2px;
+}
+.city-screen .supported-units .unit .yield-icon:nth-child(3) {
+  left: 8px;
+}
+.city-screen .supported-units .unit .yield-icon:nth-child(4) {
+  left: 14px;
+}
+.city-screen .supported-units .unit .yield-icon:nth-child(5) {
+  left: 20px;
+}
+.city-screen .improvements .yield-icon:first-child {
+  margin-left: 0.5rem;
 }
 
 #game {
@@ -214,6 +318,9 @@ body {
   background: #8a8a8e;
   box-sizing: border-box;
   flex-grow: 0;
+  max-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 0.5em;
   width: 12.5em;
 }

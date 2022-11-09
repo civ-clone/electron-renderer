@@ -1,8 +1,14 @@
 import {
   City as CityData,
   CityGrowth,
+  CityImprovementMaintenanceGold,
   ITransport,
+  MilitaryUnhappiness,
   PlainObject,
+  Unit as UnitData,
+  UnitSupportFood,
+  UnitSupportProduction,
+  Yield,
 } from '../types';
 import { e, h, t } from '../lib/html';
 import Cities from './Map/Cities';
@@ -12,6 +18,7 @@ import DataObserver from '../lib/DataObserver';
 import Feature from './Map/Feature';
 import Fog from './Map/Fog';
 import Improvements from './Map/Improvements';
+import InactiveUnitSelectionWindow from './InactiveUnitSelectionWindow';
 import Irrigation from './Map/Irrigation';
 import Land from './Map/Land';
 import Portal from './Portal';
@@ -19,59 +26,162 @@ import Terrain from './Map/Terrain';
 import Window from './Window';
 import World from './World';
 import Yields from './Map/Yields';
+import Unit from './Unit';
+import { knownGroupLookup, knownGroups, knownIcons } from './lib/yieldMap';
 
 declare var transport: ITransport;
 
-const turns = (city: CityData) =>
+const buildTurns = (city: CityData) =>
     Math.max(
       1,
       Math.ceil(
         (city.build.cost.value - city.build.progress.value) /
           city.yields
-            .filter((cityYield) => cityYield._ === 'Production')
+            .filter((cityYield) =>
+              knownGroupLookup.Production.includes(cityYield._)
+            )
             .reduce((total, cityYield) => total + cityYield.value, 0)
       )
     ),
-  buildCityBuildDetails = (
-    city: CityData,
-    chooseProduction: () => void,
-    completeProduction: () => void
-  ): HTMLElement =>
-    e(
-      'div.build',
-      e(
-        'header',
-        t(
-          `Building ${
-            city.build.building ? city.build.building.item._ : 'nothing'
-          }`
+  growthTurns = (city: CityData) =>
+    Math.max(
+      1,
+      Math.ceil(
+        (city.growth.cost.value - city.growth.progress.value) /
+          city.yields
+            .filter((cityYield) => knownGroupLookup.Food.includes(cityYield._))
+            .reduce((total, cityYield) => total + cityYield.value, 0)
+      )
+    ),
+  renderPopulation = (city: CityData): Node => {
+    const growth = city.growth,
+      mask = parseInt(city.name.replace(/[^a-z]/gi, ''), 36).toString(2);
+
+    let [happiness, unhappiness] = city.yields.reduce(
+      ([happiness, unhappiness], cityYield) => {
+        if (knownGroupLookup.Happiness.includes(cityYield._)) {
+          happiness += cityYield.value;
+        }
+
+        if (knownGroupLookup.Unhappiness.includes(cityYield._)) {
+          unhappiness += cityYield.value;
+        }
+
+        return [happiness, unhappiness];
+      },
+      [0, 0]
+    );
+
+    const state = new Array(growth.size).fill(1);
+
+    let currentIndex = state.length - 1;
+
+    while (unhappiness > 0 && currentIndex > -1) {
+      state[currentIndex--] = 0;
+      unhappiness--;
+    }
+
+    currentIndex = 0;
+
+    while (happiness > 0 && currentIndex < state.length) {
+      if (state[currentIndex] === 0) {
+        state[currentIndex]++;
+        happiness--;
+      }
+
+      if (state[currentIndex] === 1) {
+        state[currentIndex++]++;
+        happiness--;
+      }
+
+      if (state[currentIndex] === 2) {
+        currentIndex++;
+      }
+    }
+
+    return e(
+      'div.population',
+      ...state.map((status, index) =>
+        e(
+          'span.citizen',
+          e(
+            `img[src="../assets/city/people_${
+              ['unhappy', 'content', 'happy'][status]
+            }_${['f', 'm'][parseInt(mask[index % mask.length], 10)]}.png"]`
+          )
         )
+      )
+    );
+  },
+  reduceYield = (type: string, cityYields: Yield[]): [number, number] =>
+    cityYields
+      .filter((cityYield) => knownGroupLookup[type].includes(cityYield._))
+      .reduce(
+        ([used, free], cityYield) => [
+          used + (cityYield.value < 0 ? -cityYield.value : 0),
+          free + cityYield.value,
+        ],
+        [0, 0]
       ),
-      city.build.building
-        ? e(
-            'p',
-            t(
-              `Progress ${city.build.progress.value} / ${
-                city.build.cost.value
-              } (${turns(city)} turn${turns(city) === 1 ? '' : 's'})`
+  renderYields = (city: CityData): Node => {
+    return e(
+      'div.yields-detail',
+      ...[
+        ['Food'],
+        ['Production'],
+        ['Trade'],
+        ['Luxuries', 'Gold', 'Research'],
+      ].map((cityYieldNames) =>
+        e(
+          `div.yields[data-yields="${cityYieldNames.join(' ')}"]`,
+          ...cityYieldNames.map((cityYieldName) =>
+            e(
+              `span.yield[data-yield="${cityYieldName}"]`,
+              ...reduceYield(cityYieldName, city.yields).map((n, i) =>
+                e(
+                  `span.${['used', 'free'][i]}`,
+                  ...yieldImages({
+                    id: '',
+                    _: cityYieldName,
+                    value: n,
+                    values: [],
+                  })
+                  // ...new Array(n)
+                  //   .fill(1)
+                  //   .map(() =>
+                  //     e(
+                  //       'span.yield-icon',
+                  //       e(`img[src="../assets/${knownIcons[cityYieldName]}"]`)
+                  //     )
+                  //   )
+                )
+              )
             )
           )
-        : t(''),
-      h(e('button', t(city.build.building ? 'Change' : 'Choose')), {
-        click: () => chooseProduction(),
-      }),
-      h(e('button', t('Buy')), {
-        click: () => completeProduction(),
-      })
-    ),
-  buildDetails = (
-    city: CityData,
-    portal: Portal,
-    chooseProduction: () => void,
-    completeProduction: () => void
-  ) => {
+        )
+      ),
+      // Other, unknown yields
+      ...Object.entries(
+        city.yields
+          .filter(
+            (cityYield) => !Object.keys(knownGroups).includes(cityYield._)
+          )
+          .reduce((yieldObject, cityYield) => {
+            if (!(cityYield._ in yieldObject)) {
+              yieldObject[cityYield._] = 0;
+            }
+
+            yieldObject[cityYield._] += cityYield.value;
+
+            return yieldObject;
+          }, {} as PlainObject)
+      ).map(([label, value]) =>
+        e('div', e('div', t(label)), e('div', t(value)))
+      )
+    );
+  },
+  renderMap = (portal: Portal, city: CityData): Node => {
     const portalCanvas = e('canvas') as HTMLCanvasElement,
-      growth: CityGrowth = city.growth,
       cityPortal = new Portal(
         new World(city.player.world),
         portalCanvas,
@@ -101,105 +211,187 @@ const turns = (city: CityData) =>
 
     cityPortal.render();
 
-    return e(
-      'div',
-      e(
-        'div.yields-detail',
-        ...Object.entries(
-          city.yields.reduce((yieldObject, cityYield) => {
-            if (!(cityYield._ in yieldObject)) {
-              yieldObject[cityYield._] = 0;
-            }
-
-            yieldObject[cityYield._] += cityYield.value;
-
-            return yieldObject;
-          }, {} as PlainObject)
-        ).map(([label, value]) =>
-          e('div', e('div', t(label)), e('div', t(value)))
-        )
-      ),
-      h(e('div.cityPortal', portalCanvas), {
-        click: () =>
-          transport.send('action', {
-            name: 'ReassignWorkers',
-            city: city.id,
-          }),
-      }),
-      buildCityBuildDetails(city, chooseProduction, completeProduction),
-      e(
-        'div.growth',
-        e('header', t(growth.size.toString())),
-        e('p', t(`Growth ${growth.progress.value} / ${growth.cost.value}`))
-      ),
-      e(
-        'div.improvements',
-        e('header', t('Improvements')),
+    return h(e('div.city-map', portalCanvas), {
+      click: () =>
+        transport.send('action', {
+          name: 'ReassignWorkers',
+          city: city.id,
+        }),
+    });
+  },
+  yieldImages = (cityYield: Yield): Node[] =>
+    new Array(Math.abs(cityYield.value))
+      .fill(0)
+      .map(() =>
         e(
-          'ul',
-          ...city.improvements.map((improvement) => e('li', t(improvement._)))
+          'span.yield-icon',
+          e(`img[src="../assets/${knownIcons[knownGroups[cityYield._]]}"]`)
         )
       ),
+  renderBuildDetails = (
+    city: CityData,
+    chooseProduction: () => void,
+    completeProduction: () => void
+  ): HTMLElement => {
+    const turnsLeft = buildTurns(city);
+
+    return e(
+      'div.build',
+      e(
+        'header',
+        t(
+          `Building ${
+            city.build.building ? city.build.building.item._ : 'nothing'
+          }`
+        )
+      ),
+      h(e('button', t(city.build.building ? 'Change' : 'Choose')), {
+        click() {
+          chooseProduction();
+        },
+      }),
+      h(e('button', t('Buy')), {
+        click() {
+          completeProduction();
+        },
+      }),
+      city.build.building
+        ? e(
+            'p',
+            t(
+              `Progress ${city.build.progress.value} / ${
+                city.build.cost.value
+              } (${turnsLeft} turn${turnsLeft === 1 ? '' : 's'})`
+            )
+          )
+        : t('')
+    );
+  },
+  renderGrowth = (city: CityData): Node => {
+    const growth: CityGrowth = city.growth,
+      turnsLeft = growthTurns(city);
+
+    return e(
+      'div.growth',
+      e('header', t('Growth')),
+      e('p', t(`Size ${growth.size.toString()}`)),
+      e(
+        'p',
+        t(
+          `Progress ${city.build.progress.value} / ${
+            city.build.cost.value
+          } (${turnsLeft} turn${turnsLeft === 1 ? '' : 's'})`
+        )
+      )
+    );
+  },
+  renderImprovements = (city: CityData): Node => {
+    return e(
+      'div.improvements',
+      e(
+        'div',
+        ...city.improvements.map((improvement) =>
+          e(
+            'div',
+            t(improvement._),
+            ...city.yields
+              .filter(
+                (cityYield): cityYield is CityImprovementMaintenanceGold =>
+                  cityYield._ === 'CityImprovementMaintenanceGold'
+              )
+              .filter(
+                (cityYield) => cityYield.cityImprovement.id === improvement.id
+              )
+              .flatMap((cityYield) => yieldImages(cityYield))
+          )
+        )
+      )
+    );
+  },
+  renderGarrisonedUnits = (city: CityData): Node => {
+    return h(
       e(
         'div.garrisoned-units',
         e('header', t('Garrisoned Units')),
         e(
-          'ul',
-          ...city.tile.units.map((unit) =>
-            e(
-              'li',
-              t(
-                unit._ +
-                  (unit.improvements.length
-                    ? ' (' +
-                      unit.improvements
-                        .map((improvement) => improvement._)
-                        .join(', ') +
-                      ')'
-                    : '')
-              )
-            )
-          )
+          'div.units',
+          ...city.tile.units.map((unit) => new Unit(unit).element())
         )
       ),
+      {
+        click() {
+          const cityPlayerUnits = city.tile.units.filter(
+            (unit: UnitData) => unit.player.id === city.player.id
+          );
+
+          if (cityPlayerUnits.length === 0) {
+            return;
+          }
+
+          new InactiveUnitSelectionWindow(cityPlayerUnits);
+        },
+      }
+    );
+  },
+  renderSupportedUnits = (city: CityData): Node => {
+    return e(
+      'div.supported-units',
+      e('header', t('Supported Units')),
       e(
-        'div.supported-units',
-        e('header', t('Supported Units')),
-        e(
-          'ul',
-          ...city.units.map((unit) =>
-            e(
-              'li',
-              t(
-                unit._ +
-                  (unit.improvements.length
-                    ? ' (' +
-                      unit.improvements
-                        .map((improvement) => improvement._)
-                        .join(', ') +
-                      ')'
-                    : '')
-              )
-            )
-          )
-        )
-      ),
-      e(
-        'div.yields-detail',
-        ...city.yields.map((cityYield) =>
+        'div.units',
+        ...city.units.map((unit) =>
           e(
-            `div.${cityYield._.toLowerCase()}`,
-            e(
-              'div',
-              t(
-                `${cityYield._} (${cityYield.values
-                  .map(([, description]) => description)
-                  .join(', ')})`
+            'span.unit',
+            new Unit(unit).element(),
+            ...city.yields
+              .filter(
+                (
+                  cityYield
+                ): cityYield is
+                  | UnitSupportFood
+                  | UnitSupportProduction
+                  | MilitaryUnhappiness =>
+                  [
+                    'UnitSupportFood',
+                    'UnitSupportProduction',
+                    'MilitaryUnhappiness',
+                  ].includes(cityYield._)
               )
-            ),
-            e('div', t(cityYield.value.toString()))
+              .filter((cityYield) => cityYield.unit.id === unit.id)
+              .flatMap((cityYield) => yieldImages(cityYield))
           )
         )
+      )
+    );
+  },
+  buildDetails = (
+    city: CityData,
+    portal: Portal,
+    chooseProduction: () => void,
+    completeProduction: () => void
+  ) => {
+    return e(
+      'div.city-screen',
+      e(
+        'div.top-row',
+        e(
+          'div.yield-details',
+          renderPopulation(city),
+          renderYields(city),
+          renderSupportedUnits(city)
+        ),
+        renderMap(portal, city),
+        renderImprovements(city)
+      ),
+      e(
+        'div.bottom-row',
+        renderGrowth(city),
+        e(
+          'div.tabbed-details',
+          // TODO: add a tab bar
+          e('div.info', renderGarrisonedUnits(city))
+        ),
+        renderBuildDetails(city, chooseProduction, completeProduction)
       )
     );
   };
@@ -222,6 +414,8 @@ export class City extends Window {
         size: 'maximised',
       }
     );
+
+    this.element().classList.add('city-screen-window');
 
     this.#city = city;
     this.#portal = portal;
